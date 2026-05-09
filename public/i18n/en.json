@@ -16,6 +16,8 @@
     "devices.onlyUnavailable": "Only unavailable devices",
     "devices.none":        "No devices found.",
     "devices.noMatches":   "No matches.",
+    "devices.discoveredHeader": "Newly discovered devices ({0})",
+    "devices.discoveredHint":   "These devices were detected during pairing but are not yet configured.",
     "devices.turnOn":      "○ Turn on",
     "devices.turnOff":     "● Turn off",
     "devices.cameraOn":    "○ Turn camera on",

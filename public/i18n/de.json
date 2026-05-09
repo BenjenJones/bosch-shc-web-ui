@@ -16,6 +16,8 @@
     "devices.onlyUnavailable": "Nur nicht erreichbare Geräte",
     "devices.none": "Keine Geräte gefunden.",
     "devices.noMatches": "Keine Treffer.",
+    "devices.discoveredHeader": "Neu erkannte Geräte ({0})",
+    "devices.discoveredHint": "Diese Geräte sind im Pairing erkannt, aber noch nicht eingerichtet.",
     "devices.turnOn": "○ Einschalten",
     "devices.turnOff": "● Ausschalten",
     "devices.cameraOn": "○ Kamera einschalten",

@@ -306,6 +306,10 @@ function renderDeviceList() {
   const visible = state.devices.filter(d =>
     d.roomId && d.status !== 'DISCOVERED' && matchesText(d) && matchesStatus(d)
   );
+  // Discovered devices: not yet configured, no roomId, not affected by status filter
+  const discovered = state.devices
+    .filter(d => d.status === 'DISCOVERED' && matchesText(d))
+    .sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id, 'de'));
   const byRoom = new Map();
   for (const d of visible) {
     if (!byRoom.has(d.roomId)) byRoom.set(d.roomId, []);
@@ -319,7 +323,30 @@ function renderDeviceList() {
     });
   }
 
-  $('#device-list').innerHTML = [...byRoom.entries()]
+  const discoveredHtml = discovered.length ? `
+    <section class="mb-4 border border-amber-300 bg-amber-50 rounded-lg p-3">
+      <h2 class="text-sm uppercase tracking-wide text-amber-800 flex items-center gap-1.5 mb-1">
+        ⚠ ${t('devices.discoveredHeader', discovered.length)}
+      </h2>
+      <p class="text-xs text-amber-700 mb-2">${t('devices.discoveredHint')}</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        ${discovered.map(d => `
+          <article class="card bg-white rounded-lg p-4 border border-amber-200">
+            <header class="flex items-start gap-2.5">
+              <div class="text-2xl leading-none mt-0.5 shrink-0" aria-hidden="true">
+                <img src="svg/${deviceIcon(d)}.svg" style="width:25px;height:25px" />
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-medium leading-tight truncate">${d.name || d.id}</h3>
+                <p class="text-xs text-slate-500">${d.deviceModel || d.profile || ''}</p>
+                <p class="text-[10px] text-slate-400 mt-1 break-all">${d.id}</p>
+              </div>
+            </header>
+          </article>`).join('')}
+      </div>
+    </section>` : '';
+
+  $('#device-list').innerHTML = discoveredHtml + [...byRoom.entries()]
     .sort((a, b) => roomName(a[0]).localeCompare(roomName(b[0]), 'de'))
     .map(([rId, devs]) => {
       // When any filter is active, always open matching rooms
