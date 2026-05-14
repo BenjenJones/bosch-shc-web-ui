@@ -88,13 +88,20 @@ function merge(bundled, spec, sourceLabel) {
 
   // Copy paths (rewriting refs); on duplicate path, merge methods.
   // Prism doesn't strip the spec's server base path from incoming requests,
-  // so we prefix every spec path with /smarthome — that's the path server.js
-  // (and any other SHC client) actually hits.
+  // so we prefix every spec path with the source spec's base path. For most
+  // specs that's `/smarthome` (port 8444); ShcInfo lives on `/public` (port
+  // 8446). Derive from the first servers[] entry so we don't have to special-
+  // case files by name.
+  let basePath = '';
+  try {
+    const u = new URL(spec.servers?.[0]?.url || 'http:///');
+    basePath = u.pathname.replace(/\/$/, '');
+  } catch { /* default to empty */ }
   const tgtPaths = (bundled.paths ||= {});
   for (const [pathKey, pathItem] of Object.entries(spec.paths || {})) {
     const clone = JSON.parse(JSON.stringify(pathItem));
     rewriteRefs(clone, renameMap);
-    const prefixed = `/smarthome${pathKey}`;
+    const prefixed = `${basePath}${pathKey}`;
     if (!tgtPaths[prefixed]) {
       tgtPaths[prefixed] = clone;
     } else {
@@ -136,12 +143,14 @@ for (const file of files) {
 //  weren't auto-imported.
 // =========================================================================
 const PATCH_PATHS = {
-  // server.js calls /smarthome/information (works on real SHC); the official
-  // ShcInfo spec puts /information under :8446/public. We mirror the working
-  // path here so Prism returns 200 instead of 404 in tests.
+  // server.js calls /smarthome/information (works on real SHC firmware and
+  // returns the firmware version + softwareUpdateState the UI needs). The
+  // officially documented /public/information is only the pre-pairing
+  // discovery endpoint and lacks those fields, so we deliberately mock the
+  // working undocumented path here.
   '/information': {
     get: {
-      summary: '[patched] /smarthome/information — undocumented but supported by real SHC firmware.',
+      summary: '[patched] /smarthome/information — undocumented but the only source for firmware/update state.',
       responses: {
         '200': {
           description: 'Controller info.',
@@ -250,38 +259,6 @@ const PATCH_PATHS = {
       summary: '[patched] Manually trigger an automation rule (probed sub-path).',
       parameters: [{ name: 'automationId', in: 'path', required: true, schema: { type: 'string' } }],
       responses: { '202': { description: 'Triggered.' }, '204': { description: 'Triggered.' } },
-    },
-  },
-  // server.js calls the device-style intrusion control endpoint, NOT the
-  // documented /intrusion/actions/* shortcut. We mirror it here so the test
-  // mock works without changing production code.
-  '/devices/intrusionDetectionSystem/services/IntrusionDetectionControl': {
-    get: {
-      summary: '[patched] Intrusion detection state (device-style path).',
-      responses: { '200': { description: 'OK', content: { 'application/json': { example: {
-        '@type': 'DeviceServiceData',
-        id: 'IntrusionDetectionControl',
-        deviceId: 'intrusionDetectionSystem',
-        state: { '@type': 'intrusionDetectionControlState', value: 'SYSTEM_DISARMED', activeProfile: '0' },
-      }}}}},
-    },
-  },
-  '/devices/intrusionDetectionSystem/services/IntrusionDetectionControl/state': {
-    put: {
-      summary: '[patched] Arm/disarm/mute intrusion detection (device-style path).',
-      requestBody: {
-        required: true,
-        content: { 'application/json': { schema: {
-          type: 'object',
-          required: ['@type', 'value'],
-          properties: {
-            '@type': { type: 'string', enum: ['intrusionDetectionControlState'] },
-            value: { type: 'string', enum: ['SYSTEM_ARMING', 'SYSTEM_ARMED', 'SYSTEM_DISARMED', 'MUTE_ALARM'] },
-            activeProfile: { type: 'string' },
-          },
-        }}},
-      },
-      responses: { '202': { description: 'Accepted.' }, '204': { description: 'Accepted.' } },
     },
   },
   // Long polling / JSON-RPC. Body shape is JSON-RPC 2.0; we keep the schema

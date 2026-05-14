@@ -441,10 +441,12 @@ for (const [route, shcPath] of Object.entries(GET_ENDPOINTS)) {
   }));
 }
 
-// /api/info enriches /smarthome/information with fields the SHC itself does
-// not expose (IP from config.json, API version from the request header) and
-// remaps the version fields into the schema the UI expects
-// (softwareUpdateState.swInstalledVersion / .swUpdateState).
+// /api/info pulls from the *undocumented* /smarthome/information rather than
+// the documented /public/information (port 8446). The "public" endpoint is
+// only the pre-pairing discovery shim — it returns apiVersions and
+// shcGeneration but no firmware version or softwareUpdateState. The
+// /smarthome variant is what the Bosch app uses post-pairing and is the
+// only practical source for the fields the UI shows.
 app.get('/api/info', wrap(async (_req, res) => {
   const raw = await shcRequest('GET', '/smarthome/information') || {};
   res.json({
@@ -579,22 +581,62 @@ app.put('/api/userdefinedstates/:id/state', wrap(async (req, res) => {
 }));
 
 // =========================================================================
-//  Intrusion detection (alarm system)
+//  Intrusion detection (alarm system) — official endpoints under
+//  /smarthome/intrusion/{states,actions}. The UI was originally written
+//  against the older device-service-style response, so we reshape the
+//  SystemStateData payload back into { state: { value, activeConfiguration-
+//  Profile, remainingTimeUntilArmed } } here.
 // =========================================================================
-const IDS_PATH = '/smarthome/devices/intrusionDetectionSystem' +
-                 '/services/IntrusionDetectionControl';
+const IDS_STATE_PATH   = '/smarthome/intrusion/states/system';
+const IDS_ACTION_PATHS = {
+  SYSTEM_ARMING:   '/smarthome/intrusion/actions/arm',
+  SYSTEM_ARMED:    '/smarthome/intrusion/actions/arm',
+  SYSTEM_DISARMED: '/smarthome/intrusion/actions/disarm',
+  MUTE_ALARM:      '/smarthome/intrusion/actions/mute',
+};
+
+function adaptIntrusionState(raw) {
+  if (!raw || typeof raw !== 'object') return raw;
+  const arming = raw.armingState?.state || 'SYSTEM_DISARMED';
+  const alarm  = raw.alarmState?.value;
+  // Old contract collapsed "armed" + "alarming/muted" into one `value`. The
+  // UI checks for SYSTEM_ALARM and MUTE_ALARM explicitly, so promote those.
+  const value =
+    alarm === 'ALARM_ON'    ? 'SYSTEM_ALARM' :
+    alarm === 'ALARM_MUTED' ? 'MUTE_ALARM'   :
+    arming;
+  return {
+    '@type': 'DeviceServiceData',
+    id: 'IntrusionDetectionControl',
+    deviceId: 'intrusionDetectionSystem',
+    state: {
+      '@type': 'intrusionDetectionControlState',
+      value,
+      activeConfigurationProfile: raw.activeConfigurationProfile?.profileId ?? '0',
+      remainingTimeUntilArmed: raw.armingState?.remainingTimeUntilArmed ?? null,
+    },
+    raw, // preserve the upstream payload for clients that want richer fields
+  };
+}
 
 app.get('/api/intrusion', wrap(async (_req, res) => {
-  res.json(await shcRequest('GET', IDS_PATH));
+  const raw = await shcRequest('GET', IDS_STATE_PATH);
+  res.json(adaptIntrusionState(raw));
 }));
 
-// Body: { value, activeProfile? }
+// Body: { value, activeProfile? }. Maps to a POST /intrusion/actions/{arm,
+// disarm,mute}; the arm action carries the profile as a typed JSON body.
 app.put('/api/intrusion/state', wrap(async (req, res) => {
-  const result = await shcRequest(
-    'PUT', `${IDS_PATH}/state`,
-    { body: { '@type': 'intrusionDetectionControlState', ...req.body } }
-  );
-  res.json(result || { ok: true });
+  const value  = req.body?.value;
+  const target = IDS_ACTION_PATHS[value];
+  if (!target) {
+    return res.status(400).json({ error: `unsupported intrusion value: ${value}` });
+  }
+  const body = target.endsWith('/arm')
+    ? { '@type': 'armRequest', profileId: String(req.body?.activeProfile ?? '0') }
+    : undefined;
+  await shcRequest('POST', target, body ? { body } : {});
+  res.json({ ok: true });
 }));
 
 // =========================================================================
