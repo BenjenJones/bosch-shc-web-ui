@@ -40,7 +40,41 @@ const state = {
   statusFilter: null,
   lang: (localStorage.getItem('lang') === 'en' ? 'en' : 'de'),
   theme: (localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'),
+  notify: localStorage.getItem('notify') === '1',
 };
+
+async function toggleNotify() {
+  if (!('Notification' in window)) {
+    alert(t('notify.unsupported'));
+    return;
+  }
+  if (Notification.permission === 'denied') {
+    alert(t('notify.denied'));
+    return;
+  }
+  if (Notification.permission === 'default') {
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') return;
+    state.notify = true;
+  } else {
+    state.notify = !state.notify;
+  }
+  localStorage.setItem('notify', state.notify ? '1' : '0');
+  applyStaticTexts();
+}
+
+function notifyNewMessage(m) {
+  if (!state.notify) return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const codeName = m.messageCode?.name || 'UNKNOWN';
+  const title = messageTitle(codeName);
+  const source = m.sourceName || (m.sourceId && deviceName(m.sourceId)) || m.sourceId || '';
+  const body = m.location ? `${m.location} - ${source}` : source;
+  try {
+    const n = new Notification(title, { body, tag: m.id });
+    n.onclick = () => { window.focus(); n.close(); };
+  } catch (_) { /* ignore */ }
+}
 
 function setTheme(theme) {
   if (theme !== 'light' && theme !== 'dark') return;
@@ -93,6 +127,16 @@ function applyStaticTexts() {
     b.classList.toggle('hover:bg-slate-100', !active);
     b.title = t(b.dataset.themeSet === 'dark' ? 'header.themeDark' : 'header.themeLight');
   });
+  // Notify-Toggle: aktiver Zustand spiegelt state.notify + erteilte Permission
+  const nb = $('#notify-toggle');
+  if (nb) {
+    const granted = ('Notification' in window) && Notification.permission === 'granted';
+    const active = state.notify && granted;
+    nb.classList.toggle('bg-blue-600', active);
+    nb.classList.toggle('text-white', active);
+    nb.classList.toggle('hover:bg-slate-100', !active);
+    nb.title = t(active ? 'notify.on' : 'notify.off');
+  }
   // Info line: not yet loaded → "Connecting …", IP present → full info,
   // otherwise (loaded but no IP) → plain "Connected"
   const i = state.info;
@@ -1258,6 +1302,7 @@ $$('#lang-switch [data-lang]').forEach(b =>
 $$('#theme-switch [data-theme-set]').forEach(b =>
   b.addEventListener('click', () => setTheme(b.dataset.themeSet))
 );
+$('#notify-toggle')?.addEventListener('click', toggleNotify);
 
 // =========================================================================
 //  Live events (SSE)
@@ -1283,7 +1328,10 @@ function connectEvents() {
         // existing update or brand new?
         const idx = state.messages.findIndex(m => m.id === e.id);
         if (idx >= 0) state.messages[idx] = e;
-        else state.messages.unshift(e);
+        else {
+          state.messages.unshift(e);
+          if (!e.deleted) notifyNewMessage(e);
+        }
         touchedMsg = true;
       } else if (e['@type'] === 'userDefinedState') {
         const idx = state.userdefinedstates.findIndex(u => u.id === e.id);
