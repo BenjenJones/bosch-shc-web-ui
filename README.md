@@ -31,7 +31,8 @@ The proxy is required because browsers cannot present client certificates (mTLS)
 - **Live updates** without reload via long polling
 
 **Scenarios**
-- Trigger at the press of a button
+- Enable/disable automations
+- Toggle user defined states
 
 **Security**
 - Arm / disarm intrusion detection (full, partial, custom)
@@ -43,7 +44,6 @@ The proxy is required because browsers cannot present client certificates (mTLS)
 - List and remove mobile devices / clients
 - Rename rooms
 - Rename or remove devices, with per-device **firmware update status**
-- Enable/disable automations and trigger them manually
 - Inspect raw device JSON to see which services and fields a device exposes
 
 **Messages**
@@ -53,9 +53,10 @@ The proxy is required because browsers cannot present client certificates (mTLS)
 - Collapsible raw-JSON view for details
 - Per-message dismissal
 - Tab badge showing the count of important messages
+- Messages can be activated to also trigger browser notifications
 
 **Authentication (optional)**
-- Enabled at setup time — if disabled, the UI is open (legacy behavior)
+- Enabled at setup time — if disabled, the UI is open
 - Admin account created during setup; passwords are stored as scrypt hashes with a per-user salt in `auth.json`
 - Login issues an `HttpOnly` session cookie that stays valid indefinitely on the same device
 - **Users tab** (admin only): create users with an initial password, reset a user's password, delete users — new users and password-reset users are forced to change their password on next login
