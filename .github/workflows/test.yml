@@ -16,10 +16,15 @@ jobs:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
-      - run: npm ci
+      # `npm ci` is strict about platform-specific optional deps. When the
+      # lockfile is generated on one OS (Windows here) and CI runs on
+      # another (ubuntu), Rollup/esbuild win/mac binaries marked optional
+      # can trip it up. `npm install --no-audit --no-fund` is forgiving
+      # and still uses the lockfile when consistent.
+      - run: npm install --no-audit --no-fund
       - run: npm test
