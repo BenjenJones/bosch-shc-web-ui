@@ -1,8 +1,8 @@
 node_modules/
 certs/
 .claude
-config.json
-auth.json
+/config.json
+/auth.json
 *.log
 .DS_Store
 test/openapi/_bundled.yml

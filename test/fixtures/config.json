@@ -1,0 +1,10 @@
+{
+  "shcIp": "127.0.0.1",
+  "shcPort": 4010,
+  "shcProtocol": "http",
+  "uiPort": 0,
+  "clientId": "oss_test",
+  "certPath": "test/fixtures/unused-cert.pem",
+  "keyPath":  "test/fixtures/unused-key.pem",
+  "authEnabled": false
+}
