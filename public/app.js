@@ -1103,7 +1103,7 @@ function renderAdmin() {
   $$('#tab-admin [data-device-rename]').forEach(b => b.addEventListener('click', () =>
     promptModal(t('modal.renameDevice'), b.dataset.name, async (newName) => {
       await api(`/api/devices/${encodeURIComponent(b.dataset.deviceRename)}`,
-        { method: 'PUT', body: { name: newName } });
+        { method: 'PUT', body: { '@type': 'device', name: newName } });
       await loadAll();
     })));
 
