@@ -92,7 +92,6 @@
     "admin.controller": "Controller",
     "admin.ip": "IP",
     "admin.mac": "MAC",
-    "admin.country": "Land",
     "admin.api": "API",
     "admin.firmware": "Firmware",
     "admin.updateStatus": "Update-Status",

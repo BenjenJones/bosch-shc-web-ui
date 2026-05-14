@@ -1107,7 +1107,6 @@ function renderAdmin() {
         <dl class="text-sm space-y-1.5">
           <div class="flex justify-between"><dt class="text-slate-500">${t('admin.ip')}</dt>             <dd class="tabular-nums">${state.info.shcIpAddress || '-'}</dd></div>
           <div class="flex justify-between"><dt class="text-slate-500">${t('admin.mac')}</dt>            <dd class="tabular-nums">${state.info.macAddress.toLowerCase().replaceAll(":", "-") || '-'}</dd></div>
-          <div class="flex justify-between"><dt class="text-slate-500">${t('admin.country')}</dt>        <dd>${state.info.country || '-'}</dd></div>
           <div class="flex justify-between"><dt class="text-slate-500">${t('admin.api')}</dt>            <dd class="tabular-nums">${(state.info.apiVersions||[]).join(', ')}</dd></div>
           <div class="flex justify-between"><dt class="text-slate-500">${t('admin.firmware')}</dt>       <dd class="tabular-nums">${sw.swInstalledVersion || '-'}</dd></div>
           <div class="flex justify-between"><dt class="text-slate-500">${t('admin.updateStatus')}</dt>   <dd>${updateInfo}</dd></div>
