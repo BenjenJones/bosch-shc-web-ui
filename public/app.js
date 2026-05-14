@@ -33,8 +33,13 @@ const state = {
   automations: [],
   userdefinedstates: [],
   intrusion: null,
-  // Collapsible rooms: set of room ids currently collapsed
-  collapsedRooms: new Set(),
+  // Collapsible rooms: set of room ids currently collapsed. Persisted via
+  // saveCollapsedRooms() — survives reloads so the user doesn't have to
+  // re-collapse the same rooms every session.
+  collapsedRooms: (() => {
+    try { return new Set(JSON.parse(localStorage.getItem('collapsedRooms') || '[]')); }
+    catch { return new Set(); }
+  })(),
   deviceFilter: '',
   // null | 'AVAILABLE' | 'UNAVAILABLE' — quick status filter
   statusFilter: null,
@@ -81,6 +86,11 @@ function notifyNewMessage(m) {
     const n = new Notification(title, { body, tag: m.id });
     n.onclick = () => { window.focus(); n.close(); };
   } catch (_) { /* ignore */ }
+}
+
+function saveCollapsedRooms() {
+  try { localStorage.setItem('collapsedRooms', JSON.stringify([...state.collapsedRooms])); }
+  catch { /* quota or private-mode — silently drop persistence */ }
 }
 
 function setTheme(theme) {
@@ -365,11 +375,13 @@ function renderDevices() {
     }));
     $('#expand-all').addEventListener('click', () => {
       state.collapsedRooms.clear();
+      saveCollapsedRooms();
       renderDeviceList();
     });
     $('#collapse-all').addEventListener('click', () => {
       const allRooms = new Set(state.devices.filter(d => d.roomId).map(d => d.roomId));
       state.collapsedRooms = allRooms;
+      saveCollapsedRooms();
       renderDeviceList();
     });
   }
@@ -472,6 +484,7 @@ function renderDeviceList() {
     if (state.deviceFilter.trim() || state.statusFilter) return;
     if (el.open) state.collapsedRooms.delete(el.dataset.room);
     else        state.collapsedRooms.add(el.dataset.room);
+    saveCollapsedRooms();
   }));
 }
 
