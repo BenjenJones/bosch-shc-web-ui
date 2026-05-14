@@ -9,11 +9,19 @@ The UI is bilingual (English / German) — switch languages from the header.
 
 ## Architecture
 
+```mermaid
+flowchart LR
+  UI["Browser UI<br/><sub>public/ · HTML · JS · Tailwind</sub>"]
+  Proxy["Node.js Proxy<br/><sub>server.js · holds mTLS cert</sub>"]
+  SHC["Bosch SHC<br/><sub>local API on :8444</sub>"]
+
+  UI -- "HTTP /api/*" --> Proxy
+  Proxy -- "HTTPS + mTLS" --> SHC
+  SHC -. "long-poll events" .-> Proxy
+  Proxy -. "SSE /api/events" .-> UI
 ```
-Browser (UI) ──HTTP──▶ Node.js proxy (mTLS) ──HTTPS:8444──▶ Bosch SHC
-                              │
-                              └── long polling ─▶ Server-Sent Events ─▶ UI
-```
+
+Solid arrows are synchronous request/response, dotted arrows are the live-event channel: `server.js` keeps a long-polling JSON-RPC connection open to the SHC and fans incoming events out to every connected browser via Server-Sent Events.
 
 The proxy is required because browsers cannot present client certificates (mTLS) to third-party hosts — but the SHC requires exactly that.
 
