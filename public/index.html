@@ -3,9 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/svg+xml" href="svg/shield-home.svg" />
   <title>Bosch SHC - lokales UI</title>
-  <script>(function(){try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.dataset.theme='dark';}catch(e){}})();</script>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- init.js sets data-theme before paint (no FOUC); kept external so a
+       strict CSP without `'unsafe-inline'` works. tailwind.css is generated
+       by `npm run build:css` (prestart hook runs it for you). -->
+  <script src="init.js"></script>
+  <link rel="stylesheet" href="tailwind.css" />
   <link rel="stylesheet" href="app.css" />
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen">

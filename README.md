@@ -90,6 +90,8 @@ npm start
 # → http://localhost:3000
 ```
 
+`npm start` runs a `prestart` hook that compiles Tailwind CSS from `public/tailwind.src.css` into `public/tailwind.css` (gitignored). The CSS is fully self-hosted — no CDN — and tree-shaken to only the utilities the UI actually uses (~16 KB minified). If you ever serve `public/` without going through `npm start`, run `npm run build:css` first.
+
 ### Managing users (when auth is enabled)
 
 After signing in as the admin you'll see three additional tabs:
@@ -116,6 +118,8 @@ The client id `oss_local_ui` follows the `oss_…` naming convention required by
 The backend proxy (`server.js`) is intentionally thin — adding a new endpoint usually means adding one entry to `GET_ENDPOINTS` or a single new route. The UI (`public/index.html`) renders generically from the `services` array; further service types can be added inside `renderDeviceCard()` (e.g. `ShutterControl`, `MultiLevelSwitch`, `BinarySwitch`, `IntrusionDetectionControl`).
 
 The translation dictionaries live in `public/i18n/de.json` and `public/i18n/en.json`; add new keys to both.
+
+For frontend iteration, `npm run watch:css` rebuilds `public/tailwind.css` on every change to `public/index.html` or `public/app.js` so new utility classes show up without restarting the server.
 
 ## Troubleshooting
 

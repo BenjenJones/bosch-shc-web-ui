@@ -6,3 +6,4 @@ certs/
 *.log
 .DS_Store
 test/openapi/_bundled.yml
+public/tailwind.css

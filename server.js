@@ -191,6 +191,35 @@ function shcRequest(method, urlPath, { body, port = SHC_PORT, timeoutMs = 35000 
 }
 
 const app = express();
+
+// =========================================================================
+//  Content Security Policy
+//  Everything the UI needs is served from this same origin — no CDN, no
+//  inline scripts, no eval. The theme bootstrap that used to be inline in
+//  index.html now lives in public/init.js so we can run without
+//  `'unsafe-inline'`. `data:` is kept on img-src for SVG masks loaded via
+//  CSS `mask-image: url(...)` which some browsers route through img-src.
+// =========================================================================
+app.use((req, res, next) => {
+  res.setHeader('Content-Security-Policy', [
+    "default-src 'self'",
+    "script-src 'self'",
+    // style-src needs 'unsafe-inline' because the UI uses `style="..."`
+    // attributes with dynamic values (per-icon mask-image URLs, sizing).
+    // Inline styles can't execute JS, so this doesn't open the XSS attack
+    // surface that script-src 'unsafe-inline' would.
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+  ].join('; '));
+  next();
+});
+
 // strict:false so we can forward top-level scalar bodies (e.g. boolean for
 // userdefinedstates/.../state) which the SHC accepts.
 app.use(express.json({ strict: false }));

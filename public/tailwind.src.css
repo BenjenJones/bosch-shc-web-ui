@@ -1,0 +1,5 @@
+/* Source file for the Tailwind CLI — `npm run build:css` produces
+ * public/tailwind.css from this. Don't edit the generated file. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
