@@ -3,9 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Bosch SHC – lokales UI</title>
+  <title>Bosch SHC - lokales UI</title>
+  <script>(function(){try{var t=localStorage.getItem('theme');if(t==='dark')document.documentElement.dataset.theme='dark';}catch(e){}})();</script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style src="app.scss"></style>
+  <link rel="stylesheet" href="app.css" />
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen">
   <header class="bg-white border-b sticky top-0 z-10">
@@ -15,6 +16,14 @@
         <p id="info-line" class="text-xs text-slate-500"></p>
       </div>
       <div class="flex items-center gap-3">
+        <div id="theme-switch" class="inline-flex text-[11px] border border-slate-300 rounded-md overflow-hidden">
+          <button data-theme-set="light" class="px-2 py-1 hover:bg-slate-100">
+            <span class="icon-mask align-middle" style="width:14px;height:14px;-webkit-mask-image:url(svg/weather-sunny.svg);mask-image:url(svg/weather-sunny.svg)"></span>
+          </button>
+          <button data-theme-set="dark"  class="px-2 py-1 hover:bg-slate-100 border-l border-slate-300">
+            <span class="icon-mask align-middle" style="width:14px;height:14px;-webkit-mask-image:url(svg/weather-night.svg);mask-image:url(svg/weather-night.svg)"></span>
+          </button>
+        </div>
         <div id="lang-switch" class="inline-flex text-[11px] border border-slate-300 rounded-md overflow-hidden">
           <button data-lang="de" class="px-2 py-1 hover:bg-slate-100">DE</button>
           <button data-lang="en" class="px-2 py-1 hover:bg-slate-100 border-l border-slate-300">EN</button>

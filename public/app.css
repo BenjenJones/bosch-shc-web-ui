@@ -1,0 +1,167 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    transition: background-color .2s ease, color .2s ease;
+}
+
+.card {
+    transition: transform .15s ease, box-shadow .15s ease, background-color .2s ease, border-color .2s ease;
+}
+
+.card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, .15);
+}
+
+.pulse {
+    animation: pulse 1.4s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1
+    }
+
+    50% {
+        opacity: .35
+    }
+}
+
+/* Modal */
+.modal-bg {
+    background: rgba(15, 23, 42, .55);
+}
+
+/* Make SVG icons tintable via CSS mask */
+.icon-mask {
+    display: inline-block;
+    background-color: currentColor;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
+    -webkit-mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+}
+
+/* Collapsible room groups */
+details.room>summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+details.room>summary::-webkit-details-marker {
+    display: none;
+}
+
+details.room>summary .chev {
+    transition: transform .15s;
+    display: inline-block;
+}
+
+details.room[open]>summary .chev {
+    transform: rotate(90deg);
+}
+
+/* =========================================================================
+   Dark theme — overrides the Tailwind utility classes used in the markup.
+   Activated by setting [data-theme="dark"] on <html>.
+   ========================================================================= */
+[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+/* Neutral surfaces / text */
+[data-theme="dark"] .bg-white          { background-color: #1e293b; }
+[data-theme="dark"] .bg-slate-50       { background-color: #1e293b; }
+[data-theme="dark"] .bg-slate-100      { background-color: #0b1220; }
+[data-theme="dark"] .bg-slate-200      { background-color: #334155; }
+[data-theme="dark"] .bg-slate-300      { background-color: #475569; }
+[data-theme="dark"] .bg-slate-100\/90  { background-color: rgb(11 18 32 / .9); }
+
+[data-theme="dark"] .text-white        { color: #f8fafc; }
+[data-theme="dark"] .text-slate-400    { color: #94a3b8; }
+[data-theme="dark"] .text-slate-500    { color: #94a3b8; }
+[data-theme="dark"] .text-slate-600    { color: #cbd5e1; }
+[data-theme="dark"] .text-slate-700    { color: #e2e8f0; }
+[data-theme="dark"] .text-slate-800    { color: #f1f5f9; }
+
+[data-theme="dark"] .border-slate-200  { border-color: #334155; }
+[data-theme="dark"] .border-slate-300  { border-color: #475569; }
+
+/* The page header uses bare `border-b` (no color utility) → preflight default
+   leaks through. Force it to a dark divider. */
+[data-theme="dark"] header.border-b   { border-color: #334155; }
+
+/* Hover variants — neutrals */
+[data-theme="dark"] .hover\:bg-slate-50:hover   { background-color: #1f2937; }
+[data-theme="dark"] .hover\:bg-slate-100:hover  { background-color: #1f2937; }
+[data-theme="dark"] .hover\:bg-slate-200:hover  { background-color: #334155; }
+[data-theme="dark"] .hover\:text-slate-600:hover { color: #cbd5e1; }
+[data-theme="dark"] .hover\:text-slate-800:hover { color: #f1f5f9; }
+
+/* Blue accent */
+[data-theme="dark"] .bg-blue-50        { background-color: rgb(96 165 250 / .12); }
+[data-theme="dark"] .bg-blue-100       { background-color: rgb(96 165 250 / .20); }
+[data-theme="dark"] .bg-blue-200       { background-color: rgb(96 165 250 / .30); }
+[data-theme="dark"] .bg-blue-600       { background-color: #2563eb; }
+[data-theme="dark"] .text-blue-500     { color: #60a5fa; }
+[data-theme="dark"] .text-blue-600     { color: #60a5fa; }
+[data-theme="dark"] .text-blue-800     { color: #93c5fd; }
+[data-theme="dark"] .border-blue-400   { border-color: #60a5fa; }
+[data-theme="dark"] .border-blue-600   { border-color: #3b82f6; }
+[data-theme="dark"] .hover\:bg-blue-50:hover    { background-color: rgb(96 165 250 / .16); }
+[data-theme="dark"] .hover\:bg-blue-200:hover   { background-color: rgb(96 165 250 / .34); }
+[data-theme="dark"] .hover\:border-blue-400:hover { border-color: #60a5fa; }
+
+/* Emerald accent */
+[data-theme="dark"] .bg-emerald-50     { background-color: rgb(52 211 153 / .12); }
+[data-theme="dark"] .bg-emerald-100    { background-color: rgb(52 211 153 / .20); }
+[data-theme="dark"] .bg-emerald-200    { background-color: rgb(52 211 153 / .30); }
+[data-theme="dark"] .bg-emerald-500    { background-color: #10b981; }
+[data-theme="dark"] .bg-emerald-600    { background-color: #059669; }
+[data-theme="dark"] .bg-emerald-700    { background-color: #047857; }
+[data-theme="dark"] .text-emerald-600  { color: #34d399; }
+[data-theme="dark"] .text-emerald-700  { color: #34d399; }
+[data-theme="dark"] .text-emerald-800  { color: #6ee7b7; }
+[data-theme="dark"] .hover\:bg-emerald-200:hover { background-color: rgb(52 211 153 / .34); }
+[data-theme="dark"] .hover\:bg-emerald-700:hover { background-color: #065f46; }
+
+/* Amber accent */
+[data-theme="dark"] .bg-amber-50       { background-color: rgb(251 191 36 / .12); }
+[data-theme="dark"] .bg-amber-100      { background-color: rgb(251 191 36 / .20); }
+[data-theme="dark"] .bg-amber-200      { background-color: rgb(251 191 36 / .30); }
+[data-theme="dark"] .border-amber-200  { border-color: rgb(251 191 36 / .40); }
+[data-theme="dark"] .border-amber-300  { border-color: rgb(251 191 36 / .55); }
+[data-theme="dark"] .text-amber-600    { color: #fbbf24; }
+[data-theme="dark"] .text-amber-700    { color: #fbbf24; }
+[data-theme="dark"] .text-amber-800    { color: #fcd34d; }
+[data-theme="dark"] .text-amber-900    { color: #fde68a; }
+[data-theme="dark"] .hover\:bg-amber-200:hover { background-color: rgb(251 191 36 / .34); }
+
+/* Rose accent */
+[data-theme="dark"] .bg-rose-50        { background-color: rgb(244 63 94 / .12); }
+[data-theme="dark"] .bg-rose-100       { background-color: rgb(244 63 94 / .20); }
+[data-theme="dark"] .bg-rose-500       { background-color: #f43f5e; }
+[data-theme="dark"] .bg-rose-600       { background-color: #e11d48; }
+[data-theme="dark"] .bg-rose-700       { background-color: #be123c; }
+[data-theme="dark"] .border-rose-200   { border-color: rgb(244 63 94 / .40); }
+[data-theme="dark"] .text-rose-600     { color: #fb7185; }
+[data-theme="dark"] .text-rose-700     { color: #fb7185; }
+[data-theme="dark"] .text-rose-800     { color: #fda4af; }
+[data-theme="dark"] .hover\:bg-rose-50:hover   { background-color: rgb(244 63 94 / .16); }
+[data-theme="dark"] .hover\:bg-rose-700:hover  { background-color: #9f1239; }
+[data-theme="dark"] .hover\:text-rose-600:hover { color: #fb7185; }
+
+/* Indigo accent */
+[data-theme="dark"] .bg-indigo-100     { background-color: rgb(129 140 248 / .20); }
+[data-theme="dark"] .text-indigo-800   { color: #a5b4fc; }
+
+/* Modal backdrop a bit darker so it reads against a dark base. */
+[data-theme="dark"] .modal-bg          { background: rgba(0, 0, 0, .65); }
+
+/* Soften the card hover shadow on dark surfaces. */
+[data-theme="dark"] .card:hover {
+    box-shadow: 0 8px 20px -8px rgba(0, 0, 0, .55);
+}

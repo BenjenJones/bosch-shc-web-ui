@@ -4,6 +4,8 @@
     "header.refresh":      "Refresh",
     "header.liveStatus":   "Live status",
     "header.infoLine":     "SHC {0} · API {1} · SW {2}",
+    "header.themeLight":   "Light theme",
+    "header.themeDark":    "Dark theme",
     "tab.devices":         "Dashboard",
     "tab.scenarios":       "Scenarios",
     "tab.security":        "Security",

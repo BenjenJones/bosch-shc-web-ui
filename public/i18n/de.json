@@ -4,6 +4,8 @@
     "header.refresh": "Neu laden",
     "header.liveStatus": "Live-Status",
     "header.infoLine": "SHC {0} · API {1} · SW {2}",
+    "header.themeLight": "Helles Design",
+    "header.themeDark": "Dunkles Design",
     "tab.devices": "Dashboard",
     "tab.scenarios": "Szenarien",
     "tab.security": "Sicherheit",

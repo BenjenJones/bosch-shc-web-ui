@@ -39,7 +39,17 @@ const state = {
   // null | 'AVAILABLE' | 'UNAVAILABLE' — quick status filter
   statusFilter: null,
   lang: (localStorage.getItem('lang') === 'en' ? 'en' : 'de'),
+  theme: (localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'),
 };
+
+function setTheme(theme) {
+  if (theme !== 'light' && theme !== 'dark') return;
+  state.theme = theme;
+  localStorage.setItem('theme', theme);
+  if (theme === 'dark') document.documentElement.dataset.theme = 'dark';
+  else delete document.documentElement.dataset.theme;
+  applyStaticTexts();
+}
 
 function setLang(lang) {
   if (lang !== 'de' && lang !== 'en') return;
@@ -74,6 +84,14 @@ function applyStaticTexts() {
     b.classList.toggle('bg-blue-600', active);
     b.classList.toggle('text-white', active);
     b.classList.toggle('hover:bg-slate-100', !active);
+  });
+  // Theme-Switch: aktiver Button hervorheben + Tooltips lokalisieren
+  $$('#theme-switch [data-theme-set]').forEach(b => {
+    const active = b.dataset.themeSet === state.theme;
+    b.classList.toggle('bg-blue-600', active);
+    b.classList.toggle('text-white', active);
+    b.classList.toggle('hover:bg-slate-100', !active);
+    b.title = t(b.dataset.themeSet === 'dark' ? 'header.themeDark' : 'header.themeLight');
   });
   // Info line: not yet loaded → "Connecting …", IP present → full info,
   // otherwise (loaded but no IP) → plain "Connected"
@@ -1227,6 +1245,9 @@ $$('.tab').forEach(tabEl => tabEl.addEventListener('click', () => {
 $('#refresh').addEventListener('click', loadAll);
 $$('#lang-switch [data-lang]').forEach(b =>
   b.addEventListener('click', () => setLang(b.dataset.lang))
+);
+$$('#theme-switch [data-theme-set]').forEach(b =>
+  b.addEventListener('click', () => setTheme(b.dataset.themeSet))
 );
 
 // =========================================================================
