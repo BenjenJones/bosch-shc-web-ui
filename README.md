@@ -54,6 +54,14 @@ The proxy is required because browsers cannot present client certificates (mTLS)
 - Per-message dismissal
 - Tab badge showing the count of important messages
 
+**Authentication (optional)**
+- Enabled at setup time — if disabled, the UI is open (legacy behavior)
+- Admin account created during setup; passwords are stored as scrypt hashes with a per-user salt in `auth.json`
+- Login issues an `HttpOnly` session cookie that stays valid indefinitely on the same device
+- **Users tab** (admin only): create users with an initial password, reset a user's password, delete users — new users and password-reset users are forced to change their password on next login
+- **Sessions tab** (admin only): see every active session (device, IP, last activity) and revoke individual sessions on demand
+- Admin-only API endpoints (`/api/clients`, device & room rename/delete, user/session management) reject normal users on the server — the UI hides those tabs to match
+
 ## Requirements
 
 - **Node.js ≥ 18**
@@ -73,17 +81,30 @@ npm run setup
 
 Setup will prompt for the **SHC IP address** and the **system password**. Right before answering, press the **front button on the SHC** until the LED starts blinking — that's pairing mode. The script then writes `certs/client-cert.pem`, `certs/client-key.pem`, and `config.json`.
 
+Finally, setup asks whether the UI should be **protected by a login**. Answer `y` to create an initial admin account; password hash and sessions are then stored in `auth.json` (also gitignored). Answer `n` to leave the UI open. You can change the choice later by re-running `npm run setup`.
+
 ```bash
 # 3. Start the UI
 npm start
 # → http://localhost:3000
 ```
 
+### Managing users (when auth is enabled)
+
+After signing in as the admin you'll see three additional tabs:
+
+- **Admin** — controller info, rooms, devices, paired Bosch clients
+- **Users** — create new users with an initial password (they're forced to change it on first login), reset passwords, delete users
+- **Sessions** — view every active session (user, device, IP, last activity) and revoke individual sessions; the revoked device is bounced back to the login screen on its next request
+
+Regular users see only the Dashboard, Scenarios, Security and Messages tabs and can change their own password via the account button in the header.
+
 ## Security notes
 
 - Setup uses `rejectUnauthorized: false` because the SHC presents a self-signed certificate. For a hardened deployment, Bosch recommends additional **host/CA pinning** — the required CAs are published in the official repo and can be wired into `server.js` (the `ca:` option of `https.Agent`).
 - The certificates in `certs/` are your key to the SHC — don't commit them, don't share them. They are already covered by `.gitignore`.
 - The UI server listens on `0.0.0.0:3000` by default (port configurable via `config.json` → `uiPort`). If you don't want it reachable from the LAN, bind it to `127.0.0.1` instead.
+- `auth.json` contains password hashes (scrypt, per-user salt) and active session tokens. Treat it like a secret — it's already gitignored. Sessions are persisted so they survive server restarts; revoke a session from the **Sessions** tab to force a device to sign in again.
 
 ## Bosch licensing
 
@@ -93,18 +114,20 @@ The client id `oss_local_ui` follows the `oss_…` naming convention required by
 
 The backend proxy (`server.js`) is intentionally thin — adding a new endpoint usually means adding one entry to `GET_ENDPOINTS` or a single new route. The UI (`public/index.html`) renders generically from the `services` array; further service types can be added inside `renderDeviceCard()` (e.g. `ShutterControl`, `MultiLevelSwitch`, `BinarySwitch`, `IntrusionDetectionControl`).
 
-The translation dictionary lives at the top of the `<script>` block in `public/index.html` (`I18N`); add new keys to both `de` and `en`.
+The translation dictionaries live in `public/i18n/de.json` and `public/i18n/en.json`; add new keys to both.
 
 ## Troubleshooting
 
-| Problem                    | Possible cause                                                                                             |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Setup: `401 Unauthorized`  | wrong system password                                                                                      |
-| Setup: `400 Bad Request`   | SHC not in pairing mode, or client id already taken                                                        |
-| Server start: `EADDRINUSE` | port 3000 already in use — change `uiPort` in `config.json`                                                |
-| UI loads but no devices    | inspect `/api/devices` in the browser DevTools → Network                                                   |
-| Live indicator red         | long-polling broke — check the server logs                                                                 |
-| `503` from SHC on a `PUT`  | usually a wrong payload schema — open the device's *info* (ⓘ) in **Admin** to see the actual service state |
+| Problem                              | Possible cause                                                                                             |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Setup: `401 Unauthorized`            | wrong system password                                                                                      |
+| Setup: `400 Bad Request`             | SHC not in pairing mode, or client id already taken                                                        |
+| Server start: `EADDRINUSE`           | port 3000 already in use — change `uiPort` in `config.json`                                                |
+| Server start: `auth.json is missing` | `authEnabled` is true in `config.json` but `auth.json` was deleted — re-run `npm run setup`                |
+| UI loads but no devices              | inspect `/api/devices` in the browser DevTools → Network                                                   |
+| Live indicator red                   | long-polling broke — or the session was revoked; check the server logs / refresh and re-login              |
+| Forgot the admin password            | re-run `npm run setup` — it rewrites the admin in `auth.json`, keeps existing regular users, and clears all sessions |
+| `503` from SHC on a `PUT`            | usually a wrong payload schema — open the device's *info* (ⓘ) in **Admin** to see the actual service state |
 
 ## License
 

@@ -12,6 +12,7 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const crypto = require('crypto');
 const readline = require('readline');
 const { execSync } = require('child_process');
 
@@ -19,10 +20,11 @@ const CERT_DIR = path.join(__dirname, 'certs');
 const CERT_FILE = path.join(CERT_DIR, 'client-cert.pem');
 const KEY_FILE = path.join(CERT_DIR, 'client-key.pem');
 const CONFIG_FILE = path.join(__dirname, 'config.json');
+const AUTH_FILE = path.join(__dirname, 'auth.json');
 
 // Per Bosch terms: client id must start with "oss_"
-const CLIENT_ID = 'oss_local_ui';
-const CLIENT_NAME = 'OSS Local UI';
+const CLIENT_ID = 'oss_bosch_shc_web_ui';
+const CLIENT_NAME = 'oss_bosch_shc_web_ui';
 
 function ask(question, { hidden = false } = {}) {
   return new Promise((resolve) => {
@@ -129,16 +131,70 @@ function registerClient(shcIp, password, certPem) {
     const result = await registerClient(shcIp, password, certPem);
     console.log(`✔ Registration successful (HTTP ${result.status}).`);
 
+    console.log('\n--- Optional: protect the UI with a login ---');
+    const authAnswer = (await ask('Require a user login to access the UI? (y/N): ')).toLowerCase();
+    const authEnabled = authAnswer === 'y' || authAnswer === 'yes' || authAnswer === 'j' || authAnswer === 'ja';
+
+    let adminUser = null;
+    if (authEnabled) {
+      const adminName = (await ask('Admin username [admin]: ')) || 'admin';
+      let adminPass = '';
+      while (!adminPass) {
+        const p1 = await ask('Admin password: ', { hidden: true });
+        process.stdout.write('\n');
+        if (!p1) { console.log('  Password may not be empty.'); continue; }
+        if (p1.length < 4) { console.log('  Please use at least 4 characters.'); continue; }
+        const p2 = await ask('Repeat admin password: ', { hidden: true });
+        process.stdout.write('\n');
+        if (p1 !== p2) { console.log('  Passwords did not match — try again.'); continue; }
+        adminPass = p1;
+      }
+      const salt = crypto.randomBytes(16).toString('hex');
+      const passwordHash = crypto.scryptSync(adminPass, salt, 64).toString('hex');
+      adminUser = {
+        username: adminName,
+        salt,
+        passwordHash,
+        role: 'admin',
+        mustChangePassword: false,
+        createdAt: Date.now(),
+      };
+    }
+
     const config = {
       shcIp,
       certPath: path.relative(__dirname, CERT_FILE),
       keyPath: path.relative(__dirname, KEY_FILE),
       clientId: CLIENT_ID,
       uiPort: 3000,
+      authEnabled,
     };
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
-    console.log(`✔ config.json saved.\n`);
-    console.log('Done! Start the UI with:  npm start');
+    console.log(`✔ config.json saved.`);
+
+    if (authEnabled) {
+      // Re-running setup with auth enabled: keep existing regular users (the
+      // admin is rewritten from this run), but drop ALL sessions — re-running
+      // setup is the documented "recover admin access" path, and stale
+      // sessions must not be allowed to outlive a password rotation.
+      let keepUsers = [];
+      try {
+        const prev = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf8'));
+        if (Array.isArray(prev?.users)) {
+          keepUsers = prev.users.filter(u =>
+            u && u.role !== 'admin' && u.username !== adminUser.username);
+        }
+      } catch (_) { /* no previous file */ }
+      const authData = { users: [adminUser, ...keepUsers], sessions: [] };
+      fs.writeFileSync(AUTH_FILE, JSON.stringify(authData, null, 2));
+      console.log(`✔ auth.json saved (admin: ${adminUser.username}, kept ${keepUsers.length} non-admin user(s), all sessions cleared).`);
+    } else if (fs.existsSync(AUTH_FILE)) {
+      // Auth was disabled — drop the old auth.json so stale users/sessions
+      // don't accidentally come back if it gets re-enabled later.
+      fs.unlinkSync(AUTH_FILE);
+      console.log('✔ Existing auth.json removed (auth disabled).');
+    }
+    console.log('\nDone! Start the UI with:  npm start');
     console.log('   → http://localhost:3000');
   } catch (err) {
     console.error('\n✖ Setup failed:', err.message);

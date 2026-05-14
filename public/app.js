@@ -41,7 +41,14 @@ const state = {
   lang: (localStorage.getItem('lang') === 'en' ? 'en' : 'de'),
   theme: (localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'),
   notify: localStorage.getItem('notify') === '1',
+  // Auth: { enabled, authenticated, user: {username, role, mustChangePassword} | null }
+  auth: { enabled: false, authenticated: true, user: null },
+  // Admin-only tab data
+  users: [],
+  sessions: [],
 };
+
+const isAdmin = () => !state.auth.enabled || state.auth.user?.role === 'admin';
 
 async function toggleNotify() {
   if (!('Notification' in window)) {
@@ -111,7 +118,15 @@ function applyStaticTexts() {
   $('[data-tab="scenarios"]').textContent = t('tab.scenarios');
   $('[data-tab="security"]').textContent  = t('tab.security');
   $('[data-tab="admin"]').textContent     = t('tab.admin');
+  $('[data-tab="users"]').textContent     = t('tab.users');
+  $('[data-tab="sessions"]').textContent  = t('tab.sessions');
   $('[data-tab="messages"] [data-tab-label]').textContent = t('tab.messages');
+  // Account button (only present when auth is enabled)
+  const acc = $('#account-btn');
+  if (acc && state.auth.enabled) {
+    acc.textContent = state.auth.user?.username || t('auth.account');
+    acc.title = t('auth.accountTitle');
+  }
   // Lang-Switch: aktiver Button hervorheben
   $$('#lang-switch [data-lang]').forEach(b => {
     const active = b.dataset.lang === state.lang;
@@ -154,9 +169,18 @@ function applyStaticTexts() {
 async function api(path, opts = {}) {
   const res = await fetch(path, {
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
     ...opts,
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
   });
+  // Auth dropouts (session revoked by admin, server restart with auth.json gone, …)
+  // bounce the user back to the login screen instead of crashing the UI.
+  if (res.status === 401 && state.auth.enabled && !path.startsWith('/api/auth/')) {
+    state.auth.authenticated = false;
+    state.auth.user = null;
+    showLogin();
+    throw new Error('unauthenticated');
+  }
   const text = await res.text();
   let data; try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
   if (!res.ok) {
@@ -175,6 +199,7 @@ const safeApi = (p, o) => api(p, o).catch(() => null);
 //  Load data
 // =========================================================================
 async function loadAll() {
+  // /api/clients is admin-only; non-admins skip it (the server would return 403)
   const [info, rooms, devices, services, scenarios, messages,
          clients, automations, userdefinedstates, intrusion] = await Promise.all([
     safeApi('/api/info'),
@@ -183,7 +208,7 @@ async function loadAll() {
     safeApi('/api/services'),
     safeApi('/api/scenarios'),
     safeApi('/api/messages'),
-    safeApi('/api/clients'),
+    isAdmin() ? safeApi('/api/clients') : Promise.resolve([]),
     safeApi('/api/automations'),
     safeApi('/api/userdefinedstates'),
     safeApi('/api/intrusion'),
@@ -209,7 +234,11 @@ function renderAll() {
   renderScenarios();
   renderSecurity();
   renderMessages();
-  renderAdmin();
+  if (isAdmin()) {
+    renderAdmin();
+    renderUsers();
+    renderSessions();
+  }
 }
 
 const serviceOf = (deviceId, serviceId) =>
@@ -1285,6 +1314,7 @@ function promptModal(title, defaultValue, onSave) {
 // =========================================================================
 //  Tabs (using tabEl instead of t to not shadow the global t() function)
 // =========================================================================
+const ALL_TABS = ['devices','scenarios','security','messages','admin','users','sessions'];
 $$('.tab').forEach(tabEl => tabEl.addEventListener('click', () => {
   $$('.tab').forEach(x => {
     x.classList.remove('border-blue-600', 'font-medium');
@@ -1292,7 +1322,7 @@ $$('.tab').forEach(tabEl => tabEl.addEventListener('click', () => {
   });
   tabEl.classList.add('border-blue-600', 'font-medium');
   tabEl.classList.remove('text-slate-500');
-  ['devices','scenarios','security','messages','admin'].forEach(n =>
+  ALL_TABS.forEach(n =>
     $('#tab-' + n).classList.toggle('hidden', n !== tabEl.dataset.tab));
 }));
 $('#refresh').addEventListener('click', loadAll);
@@ -1347,12 +1377,395 @@ function connectEvents() {
 }
 
 // =========================================================================
+//  Auth – login overlay, account menu, role-based tab visibility
+// =========================================================================
+async function loadAuthStatus() {
+  try {
+    const res = await fetch('/api/auth/status', { credentials: 'same-origin' });
+    state.auth = await res.json();
+  } catch (_) {
+    state.auth = { enabled: false, authenticated: true, user: null };
+  }
+}
+
+function applyRoleVisibility() {
+  const admin = isAdmin();
+  $$('.admin-only').forEach(el => el.classList.toggle('hidden', !admin));
+  // Account button only makes sense when auth is on
+  const acc = $('#account-btn');
+  if (acc) acc.classList.toggle('hidden', !state.auth.enabled);
+}
+
+// Login overlay: two modes — 'login' (username + password) and 'change'
+// (mustChangePassword flow: old password + new password + repeat). Both use
+// the same compact form for simplicity.
+function showLogin(mode = 'login') {
+  const root = $('#login-root');
+  const form = $('#login-form');
+  const errEl = $('#login-error');
+  errEl.classList.add('hidden'); errEl.textContent = '';
+
+  if (mode === 'change') {
+    $('#login-title').textContent = t('auth.changeTitle');
+    $('#login-sub').textContent   = t('auth.changeSub');
+    $('#login-user-label').textContent = t('auth.oldPassword');
+    $('#login-pass-label').textContent = t('auth.newPassword');
+    $('#login-user').type = 'password';
+    $('#login-user').autocomplete = 'current-password';
+    $('#login-pass').type = 'password';
+    $('#login-pass').autocomplete = 'new-password';
+    $('#login-submit').textContent = t('auth.changeBtn');
+    form.dataset.mode = 'change';
+  } else {
+    $('#login-title').textContent = t('auth.loginTitle');
+    $('#login-sub').textContent   = t('auth.loginSub');
+    $('#login-user-label').textContent = t('auth.username');
+    $('#login-pass-label').textContent = t('auth.password');
+    $('#login-user').type = 'text';
+    $('#login-user').autocomplete = 'username';
+    $('#login-pass').type = 'password';
+    $('#login-pass').autocomplete = 'current-password';
+    $('#login-submit').textContent = t('auth.loginBtn');
+    form.dataset.mode = 'login';
+  }
+  $('#login-user').value = '';
+  $('#login-pass').value = '';
+  $('#app-shell').classList.add('hidden');
+  root.classList.remove('hidden');
+  setTimeout(() => $('#login-user').focus(), 0);
+}
+
+function hideLogin() {
+  $('#login-root').classList.add('hidden');
+  $('#app-shell').classList.remove('hidden');
+}
+
+async function submitLogin(e) {
+  e.preventDefault();
+  const form = $('#login-form');
+  const errEl = $('#login-error');
+  errEl.classList.add('hidden'); errEl.textContent = '';
+  try {
+    if (form.dataset.mode === 'change') {
+      const oldPassword = $('#login-user').value;
+      const newPassword = $('#login-pass').value;
+      if (!newPassword || newPassword.length < 4) {
+        errEl.textContent = t('auth.passwordTooShort');
+        errEl.classList.remove('hidden');
+        return;
+      }
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldPassword, newPassword }),
+      });
+      if (!res.ok) {
+        errEl.textContent = t('auth.changeFailed');
+        errEl.classList.remove('hidden');
+        return;
+      }
+      // Refresh status and start the app
+      await loadAuthStatus();
+      hideLogin();
+      applyStaticTexts();
+      applyRoleVisibility();
+      await loadAll();
+      connectEvents();
+    } else {
+      const username = $('#login-user').value.trim();
+      const password = $('#login-pass').value;
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      if (!res.ok) {
+        errEl.textContent = t('auth.loginFailed');
+        errEl.classList.remove('hidden');
+        return;
+      }
+      const data = await res.json();
+      state.auth = { enabled: true, authenticated: true, user: data.user };
+      if (data.user?.mustChangePassword) {
+        showLogin('change');
+        return;
+      }
+      hideLogin();
+      applyStaticTexts();
+      applyRoleVisibility();
+      await loadAll();
+      connectEvents();
+    }
+  } catch (err) {
+    errEl.textContent = t('error.generic', err.message);
+    errEl.classList.remove('hidden');
+  }
+}
+
+async function logout() {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+  } catch (_) { /* ignore */ }
+  // Hard reload – simplest way to drop SSE/state and re-enter the login flow.
+  location.reload();
+}
+
+function openAccountMenu() {
+  if (!state.auth.enabled) return;
+  showModal(`
+    <h4 class="font-medium mb-1">${escapeHtml(state.auth.user?.username || '')}</h4>
+    <p class="text-xs text-slate-500 mb-4">${state.auth.user?.role === 'admin' ? t('auth.roleAdmin') : t('auth.roleUser')}</p>
+    <div class="flex flex-col gap-2">
+      <button id="acc-change" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-md text-left hover:bg-slate-50">${t('auth.changePassword')}</button>
+      <button id="acc-logout" class="w-full px-3 py-2 text-sm border border-rose-300 text-rose-700 rounded-md text-left hover:bg-rose-50">${t('auth.logout')}</button>
+    </div>
+    <div class="mt-4 flex justify-end">
+      <button id="m-cancel" class="px-3 py-1.5 text-sm border border-slate-300 rounded-md">${t('modal.close')}</button>
+    </div>`);
+  $('#m-cancel').onclick = hideModal;
+  $('#acc-logout').onclick = logout;
+  $('#acc-change').onclick = () => {
+    hideModal();
+    openChangePasswordModal();
+  };
+}
+
+function openChangePasswordModal() {
+  showModal(`
+    <h4 class="font-medium mb-3">${t('auth.changePassword')}</h4>
+    <label class="text-xs text-slate-500 block mb-1">${t('auth.oldPassword')}</label>
+    <input id="cp-old" type="password" autocomplete="current-password"
+      class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm mb-2" />
+    <label class="text-xs text-slate-500 block mb-1">${t('auth.newPassword')}</label>
+    <input id="cp-new" type="password" autocomplete="new-password"
+      class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm mb-2" />
+    <label class="text-xs text-slate-500 block mb-1">${t('auth.repeatPassword')}</label>
+    <input id="cp-rep" type="password" autocomplete="new-password"
+      class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm" />
+    <p id="cp-err" class="hidden text-xs text-rose-600 mt-2"></p>
+    <div class="mt-4 flex justify-end gap-2">
+      <button id="m-cancel" class="px-3 py-1.5 text-sm border border-slate-300 rounded-md">${t('modal.cancel')}</button>
+      <button id="m-ok" class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md">${t('modal.save')}</button>
+    </div>`);
+  $('#m-cancel').onclick = hideModal;
+  $('#m-ok').onclick = async () => {
+    const o = $('#cp-old').value, n = $('#cp-new').value, r = $('#cp-rep').value;
+    const err = $('#cp-err');
+    err.classList.add('hidden');
+    if (!o || !n) { err.textContent = t('auth.allFieldsRequired'); err.classList.remove('hidden'); return; }
+    if (n.length < 4) { err.textContent = t('auth.passwordTooShort'); err.classList.remove('hidden'); return; }
+    if (n !== r)   { err.textContent = t('auth.passwordsMismatch'); err.classList.remove('hidden'); return; }
+    try {
+      await api('/api/auth/change-password', { method: 'POST', body: { oldPassword: o, newPassword: n } });
+      hideModal();
+      alert(t('auth.changeOk'));
+    } catch (e) {
+      err.textContent = e.message || t('auth.changeFailed');
+      err.classList.remove('hidden');
+    }
+  };
+}
+
+// =========================================================================
+//  Tab: Users (admin only)
+// =========================================================================
+async function loadUsers() {
+  if (!isAdmin()) return;
+  try { state.users = await api('/api/auth/users') || []; }
+  catch (_) { state.users = []; }
+  renderUsers();
+}
+
+function renderUsers() {
+  if (!isAdmin()) return;
+  const self = state.auth.user?.username;
+  const rows = state.users.map(u => {
+    const isSelf = u.username === self;
+    const mustChange = u.mustChangePassword
+      ? `<span class="ml-2 text-[10px] uppercase tracking-wide text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">${t('users.mustChange')}</span>` : '';
+    return `<li class="flex items-center justify-between py-2 gap-2">
+      <div class="min-w-0">
+        <div class="truncate">${escapeHtml(u.username)} ${mustChange}</div>
+        <div class="text-xs text-slate-500">${u.role === 'admin' ? t('auth.roleAdmin') : t('auth.roleUser')}${isSelf ? ' · ' + t('users.you') : ''}</div>
+      </div>
+      <div class="flex gap-1 shrink-0">
+        <button data-user-reset="${escapeHtml(u.username)}"
+          class="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded">${t('users.resetPassword')}</button>
+        <button data-user-del="${escapeHtml(u.username)}"
+          class="text-xs text-rose-600 hover:bg-rose-50 px-2 py-1 rounded ${isSelf ? 'opacity-30 pointer-events-none' : ''}"
+          ${isSelf ? 'disabled' : ''}>${t('admin.remove')}</button>
+      </div>
+    </li>`;
+  }).join('') || `<li class="text-slate-500 py-2">${t('users.none')}</li>`;
+
+  $('#tab-users').innerHTML = `
+    <article class="card bg-white rounded-lg p-5 border border-slate-200 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-medium">${t('users.header', state.users.length)}</h3>
+        <button id="user-new"
+          class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700">${t('users.create')}</button>
+      </div>
+      <ul class="text-sm divide-y">${rows}</ul>
+    </article>`;
+
+  $('#user-new').onclick = openCreateUserModal;
+  $$('#tab-users [data-user-del]').forEach(b => b.addEventListener('click', () =>
+    confirmModal(t('users.confirmDelete', b.dataset.userDel), async () => {
+      await api(`/api/auth/users/${encodeURIComponent(b.dataset.userDel)}`, { method: 'DELETE' });
+      await loadUsers();
+      await loadSessions();
+    })));
+  $$('#tab-users [data-user-reset]').forEach(b => b.addEventListener('click', () =>
+    openResetPasswordModal(b.dataset.userReset)));
+}
+
+function openCreateUserModal() {
+  showModal(`
+    <h4 class="font-medium mb-3">${t('users.create')}</h4>
+    <label class="text-xs text-slate-500 block mb-1">${t('auth.username')}</label>
+    <input id="nu-name" type="text" autocomplete="off"
+      class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm mb-2" />
+    <label class="text-xs text-slate-500 block mb-1">${t('users.startPassword')}</label>
+    <input id="nu-pass" type="text" autocomplete="off"
+      class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm mb-2" />
+    <label class="flex items-center gap-2 text-sm text-slate-600 mt-2">
+      <input id="nu-admin" type="checkbox" /> ${t('users.makeAdmin')}
+    </label>
+    <p class="text-xs text-slate-500 mt-2">${t('users.startPasswordHint')}</p>
+    <p id="nu-err" class="hidden text-xs text-rose-600 mt-2"></p>
+    <div class="mt-4 flex justify-end gap-2">
+      <button id="m-cancel" class="px-3 py-1.5 text-sm border border-slate-300 rounded-md">${t('modal.cancel')}</button>
+      <button id="m-ok" class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md">${t('users.create')}</button>
+    </div>`);
+  $('#nu-name').focus();
+  $('#m-cancel').onclick = hideModal;
+  $('#m-ok').onclick = async () => {
+    const name = $('#nu-name').value.trim();
+    const pass = $('#nu-pass').value;
+    const role = $('#nu-admin').checked ? 'admin' : 'user';
+    const err = $('#nu-err'); err.classList.add('hidden');
+    if (!name) { err.textContent = t('auth.allFieldsRequired'); err.classList.remove('hidden'); return; }
+    if (pass.length < 4) { err.textContent = t('auth.passwordTooShort'); err.classList.remove('hidden'); return; }
+    try {
+      await api('/api/auth/users', { method: 'POST', body: { username: name, password: pass, role } });
+      hideModal();
+      await loadUsers();
+    } catch (e) {
+      err.textContent = e.message;
+      err.classList.remove('hidden');
+    }
+  };
+}
+
+function openResetPasswordModal(username) {
+  showModal(`
+    <h4 class="font-medium mb-1">${t('users.resetPassword')}</h4>
+    <p class="text-xs text-slate-500 mb-3">${escapeHtml(username)}</p>
+    <label class="text-xs text-slate-500 block mb-1">${t('users.newStartPassword')}</label>
+    <input id="rp-pass" type="text" autocomplete="off"
+      class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm" />
+    <p class="text-xs text-slate-500 mt-2">${t('users.resetHint')}</p>
+    <p id="rp-err" class="hidden text-xs text-rose-600 mt-2"></p>
+    <div class="mt-4 flex justify-end gap-2">
+      <button id="m-cancel" class="px-3 py-1.5 text-sm border border-slate-300 rounded-md">${t('modal.cancel')}</button>
+      <button id="m-ok" class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md">${t('modal.save')}</button>
+    </div>`);
+  $('#rp-pass').focus();
+  $('#m-cancel').onclick = hideModal;
+  $('#m-ok').onclick = async () => {
+    const pass = $('#rp-pass').value;
+    const err = $('#rp-err'); err.classList.add('hidden');
+    if (pass.length < 4) { err.textContent = t('auth.passwordTooShort'); err.classList.remove('hidden'); return; }
+    try {
+      await api(`/api/auth/users/${encodeURIComponent(username)}/reset-password`,
+        { method: 'POST', body: { password: pass } });
+      hideModal();
+      await loadUsers();
+      await loadSessions();
+    } catch (e) {
+      err.textContent = e.message;
+      err.classList.remove('hidden');
+    }
+  };
+}
+
+// =========================================================================
+//  Tab: Sessions (admin only)
+// =========================================================================
+async function loadSessions() {
+  if (!isAdmin()) return;
+  try { state.sessions = await api('/api/auth/sessions') || []; }
+  catch (_) { state.sessions = []; }
+  renderSessions();
+}
+
+function renderSessions() {
+  if (!isAdmin()) return;
+  const dateLocale = state.lang === 'en' ? 'en-GB' : 'de-DE';
+  const rows = state.sessions
+    .slice()
+    .sort((a, b) => (b.lastSeenAt||0) - (a.lastSeenAt||0))
+    .map(s => {
+      const created = s.createdAt ? new Date(s.createdAt).toLocaleString(dateLocale) : '';
+      const seen    = s.lastSeenAt ? new Date(s.lastSeenAt).toLocaleString(dateLocale) : '';
+      const ua      = s.userAgent ? escapeHtml(s.userAgent.slice(0, 100)) : '';
+      const currentBadge = s.current
+        ? `<span class="ml-2 text-[10px] uppercase tracking-wide text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">${t('sessions.current')}</span>` : '';
+      return `<li class="py-2 flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <div class="truncate">${escapeHtml(s.username)} ${currentBadge}</div>
+          <div class="text-xs text-slate-500 truncate">
+            ${t('sessions.created', created)} · ${t('sessions.lastSeen', seen)}
+          </div>
+          ${ua ? `<div class="text-[11px] text-slate-400 truncate">${ua}</div>` : ''}
+          <div class="text-[11px] text-slate-400">${escapeHtml(s.token)}${s.ip ? ' · ' + escapeHtml(s.ip) : ''}</div>
+        </div>
+        <button data-session-del="${escapeHtml(s.tokenId)}"
+          class="text-xs text-rose-600 hover:bg-rose-50 px-2 py-1 rounded shrink-0">${t('sessions.invalidate')}</button>
+      </li>`;
+    }).join('') || `<li class="text-slate-500 py-2">${t('sessions.none')}</li>`;
+
+  $('#tab-sessions').innerHTML = `
+    <article class="card bg-white rounded-lg p-5 border border-slate-200">
+      <h3 class="font-medium mb-3">${t('sessions.header', state.sessions.length)}</h3>
+      <ul class="text-sm divide-y">${rows}</ul>
+    </article>`;
+
+  $$('#tab-sessions [data-session-del]').forEach(b => b.addEventListener('click', () =>
+    confirmModal(t('sessions.confirmInvalidate'), async () => {
+      await api(`/api/auth/sessions/${encodeURIComponent(b.dataset.sessionDel)}`, { method: 'DELETE' });
+      await loadSessions();
+    })));
+}
+
+// Tab clicks for the admin-only tabs trigger lazy loads of their data.
+$('[data-tab="users"]').addEventListener('click', loadUsers);
+$('[data-tab="sessions"]').addEventListener('click', loadSessions);
+$('#account-btn')?.addEventListener('click', openAccountMenu);
+$('#login-form').addEventListener('submit', submitLogin);
+
+// =========================================================================
 //  Boot
 // =========================================================================
 (async () => {
   try {
     await loadI18N();
+    await loadAuthStatus();
     applyStaticTexts();
+
+    if (state.auth.enabled && !state.auth.authenticated) {
+      showLogin('login');
+      return;
+    }
+    if (state.auth.user?.mustChangePassword) {
+      showLogin('change');
+      return;
+    }
+
+    hideLogin();
+    applyRoleVisibility();
     await loadAll();
     connectEvents();
   } catch (err) {

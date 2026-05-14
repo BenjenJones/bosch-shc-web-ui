@@ -8,9 +8,11 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const crypto = require('crypto');
 const express = require('express');
 
 const CONFIG_FILE = path.join(__dirname, 'config.json');
+const AUTH_FILE = path.join(__dirname, 'auth.json');
 if (!fs.existsSync(CONFIG_FILE)) {
   console.error('✖ config.json missing. Please run `npm run setup` first.');
   process.exit(1);
@@ -18,6 +20,110 @@ if (!fs.existsSync(CONFIG_FILE)) {
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
 const cert = fs.readFileSync(path.join(__dirname, config.certPath));
 const key = fs.readFileSync(path.join(__dirname, config.keyPath));
+
+// =========================================================================
+//  Authentication state (optional). When config.authEnabled is false, every
+//  endpoint is open and the auth middleware is a no-op. When enabled, auth.json
+//  holds users (with scrypt-hashed passwords) and persistent sessions.
+// =========================================================================
+const AUTH_ENABLED = !!config.authEnabled;
+const COOKIE_NAME  = 'shc_session';
+// 10 years — sessions are explicitly "valid indefinitely on the same device"
+// per the spec; admins can revoke individual sessions on demand.
+const COOKIE_MAX_AGE_SECONDS = 10 * 365 * 24 * 60 * 60;
+
+let authData = { users: [], sessions: [] };
+if (AUTH_ENABLED) {
+  if (!fs.existsSync(AUTH_FILE)) {
+    console.error('✖ authEnabled is true but auth.json is missing. Re-run `npm run setup`.');
+    process.exit(1);
+  }
+  authData = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf8'));
+  if (!Array.isArray(authData.users))    authData.users = [];
+  if (!Array.isArray(authData.sessions)) authData.sessions = [];
+}
+
+function saveAuth() {
+  if (!AUTH_ENABLED) return;
+  fs.writeFileSync(AUTH_FILE, JSON.stringify(authData, null, 2));
+}
+
+function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
+  const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+  return { salt, passwordHash: hash };
+}
+
+function verifyPassword(password, salt, expectedHash) {
+  const candidate = crypto.scryptSync(password, salt, 64);
+  const expected  = Buffer.from(expectedHash, 'hex');
+  if (candidate.length !== expected.length) return false;
+  return crypto.timingSafeEqual(candidate, expected);
+}
+
+function newToken() {
+  return crypto.randomBytes(32).toString('base64url');
+}
+
+function readCookie(req, name) {
+  const cookie = req.headers.cookie || '';
+  const match = cookie.match(new RegExp('(?:^|; )' + name + '=([^;]+)'));
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function setSessionCookie(res, token) {
+  res.setHeader('Set-Cookie',
+    `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${COOKIE_MAX_AGE_SECONDS}`);
+}
+
+function clearSessionCookie(res) {
+  res.setHeader('Set-Cookie', `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
+}
+
+function findUser(username) {
+  return authData.users.find(u => u.username === username);
+}
+
+function findSession(token) {
+  return authData.sessions.find(s => s.token === token);
+}
+
+function publicUser(u) {
+  if (!u) return null;
+  return { username: u.username, role: u.role, mustChangePassword: !!u.mustChangePassword };
+}
+
+// Resolve req.user from cookie (no-op when AUTH_ENABLED is false). Called for
+// every /api/... request by the middleware below.
+function resolveUser(req) {
+  if (!AUTH_ENABLED) return null;
+  const token = readCookie(req, COOKIE_NAME);
+  if (!token) return null;
+  const session = findSession(token);
+  if (!session) return null;
+  const user = findUser(session.username);
+  if (!user) return null;
+  session.lastSeenAt = Date.now();
+  return { token, session, user };
+}
+
+function requireAuth(req, res, next) {
+  if (!AUTH_ENABLED) return next();
+  const ctx = resolveUser(req);
+  if (!ctx) return res.status(401).json({ error: 'unauthenticated' });
+  // Users with mustChangePassword may only reach the change-password / me /
+  // logout endpoints (handled in their own routes below).
+  req.authCtx = ctx;
+  next();
+}
+
+function requireAdmin(req, res, next) {
+  if (!AUTH_ENABLED) return next();
+  const ctx = req.authCtx || resolveUser(req);
+  if (!ctx) return res.status(401).json({ error: 'unauthenticated' });
+  if (ctx.user.role !== 'admin') return res.status(403).json({ error: 'forbidden' });
+  req.authCtx = ctx;
+  next();
+}
 
 // Reusable HTTPS agent with mTLS
 const agent = new https.Agent({
@@ -82,6 +188,207 @@ const wrap = (fn) => (req, res) =>
   );
 
 // =========================================================================
+//  Auth endpoints (always mounted; behave correctly whether AUTH_ENABLED or not)
+// =========================================================================
+
+// Status: tells the UI whether auth is required, and if so who is logged in.
+// Always 200 so the UI can read it before any login flow.
+app.get('/api/auth/status', (req, res) => {
+  if (!AUTH_ENABLED) return res.json({ enabled: false, authenticated: true });
+  const ctx = resolveUser(req);
+  res.json({
+    enabled: true,
+    authenticated: !!ctx,
+    user: publicUser(ctx?.user),
+  });
+});
+
+// Login: creates a session, sets the HttpOnly cookie, returns the user info.
+// When auth is disabled there's nothing to do — return ok so the UI never
+// breaks if someone hits the endpoint by accident.
+app.post('/api/auth/login', (req, res) => {
+  if (!AUTH_ENABLED) return res.json({ ok: true, authEnabled: false });
+  const { username, password } = req.body || {};
+  if (typeof username !== 'string' || typeof password !== 'string') {
+    return res.status(400).json({ error: 'username/password required' });
+  }
+  const user = findUser(username);
+  if (!user || !verifyPassword(password, user.salt, user.passwordHash)) {
+    return res.status(401).json({ error: 'invalid credentials' });
+  }
+  const token = newToken();
+  const now = Date.now();
+  const ua = (req.headers['user-agent'] || '').slice(0, 200);
+  authData.sessions.push({
+    token,
+    username: user.username,
+    createdAt: now,
+    lastSeenAt: now,
+    userAgent: ua,
+    ip: req.ip || req.socket?.remoteAddress || '',
+  });
+  saveAuth();
+  setSessionCookie(res, token);
+  res.json({ user: publicUser(user) });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  if (!AUTH_ENABLED) return res.json({ ok: true });
+  const token = readCookie(req, COOKIE_NAME);
+  if (token) {
+    authData.sessions = authData.sessions.filter(s => s.token !== token);
+    saveAuth();
+  }
+  clearSessionCookie(res);
+  res.json({ ok: true });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  if (!AUTH_ENABLED) return res.json({ enabled: false, authenticated: true });
+  const ctx = resolveUser(req);
+  if (!ctx) return res.status(401).json({ error: 'unauthenticated' });
+  res.json({ enabled: true, authenticated: true, user: publicUser(ctx.user) });
+});
+
+// Change own password. Allowed for any authenticated user (including those
+// flagged mustChangePassword — that's the whole point of this route).
+app.post('/api/auth/change-password', (req, res) => {
+  if (!AUTH_ENABLED) return res.status(400).json({ error: 'auth disabled' });
+  const ctx = resolveUser(req);
+  if (!ctx) return res.status(401).json({ error: 'unauthenticated' });
+  const { oldPassword, newPassword } = req.body || {};
+  if (typeof oldPassword !== 'string' || typeof newPassword !== 'string') {
+    return res.status(400).json({ error: 'oldPassword/newPassword required' });
+  }
+  if (newPassword.length < 4) {
+    return res.status(400).json({ error: 'password too short' });
+  }
+  const user = ctx.user;
+  if (!verifyPassword(oldPassword, user.salt, user.passwordHash)) {
+    return res.status(401).json({ error: 'old password incorrect' });
+  }
+  const { salt, passwordHash } = hashPassword(newPassword);
+  user.salt = salt;
+  user.passwordHash = passwordHash;
+  user.mustChangePassword = false;
+  saveAuth();
+  res.json({ ok: true });
+});
+
+// Block all /api/* when auth is enabled. The bootstrap auth routes
+// (status, login, logout, me, change-password) above this middleware always
+// run; everything else (including the admin /api/auth/users etc. routes
+// declared below) goes through this gate. Users flagged with
+// mustChangePassword are blocked from anything except change-password.
+const ALWAYS_OPEN = new Set([
+  '/auth/status', '/auth/login', '/auth/logout',
+  '/auth/me',     '/auth/change-password',
+]);
+app.use('/api', (req, res, next) => {
+  if (ALWAYS_OPEN.has(req.path)) return next();
+  if (!AUTH_ENABLED) return next();
+  const ctx = resolveUser(req);
+  if (!ctx) return res.status(401).json({ error: 'unauthenticated' });
+  if (ctx.user.mustChangePassword) {
+    return res.status(403).json({ error: 'password change required' });
+  }
+  req.authCtx = ctx;
+  next();
+});
+
+// =========================================================================
+//  Admin – user management (admin role only)
+// =========================================================================
+app.get('/api/auth/users', requireAdmin, (req, res) => {
+  res.json(authData.users.map(publicUser));
+});
+
+app.post('/api/auth/users', requireAdmin, (req, res) => {
+  const { username, password, role } = req.body || {};
+  if (typeof username !== 'string' || !username.trim()) {
+    return res.status(400).json({ error: 'username required' });
+  }
+  if (typeof password !== 'string' || password.length < 4) {
+    return res.status(400).json({ error: 'password too short' });
+  }
+  if (findUser(username)) {
+    return res.status(409).json({ error: 'user already exists' });
+  }
+  const { salt, passwordHash } = hashPassword(password);
+  const user = {
+    username: username.trim(),
+    salt,
+    passwordHash,
+    role: role === 'admin' ? 'admin' : 'user',
+    mustChangePassword: true, // forces the new user to change on first login
+    createdAt: Date.now(),
+  };
+  authData.users.push(user);
+  saveAuth();
+  res.status(201).json(publicUser(user));
+});
+
+app.delete('/api/auth/users/:username', requireAdmin, (req, res) => {
+  const username = req.params.username;
+  const target = findUser(username);
+  if (!target) return res.status(404).json({ error: 'user not found' });
+  if (target.username === req.authCtx.user.username) {
+    return res.status(400).json({ error: 'cannot delete yourself' });
+  }
+  authData.users   = authData.users.filter(u => u.username !== username);
+  // Remove any active sessions for the deleted user
+  authData.sessions = authData.sessions.filter(s => s.username !== username);
+  saveAuth();
+  res.json({ ok: true });
+});
+
+app.post('/api/auth/users/:username/reset-password', requireAdmin, (req, res) => {
+  const username = req.params.username;
+  const target = findUser(username);
+  if (!target) return res.status(404).json({ error: 'user not found' });
+  const { password } = req.body || {};
+  if (typeof password !== 'string' || password.length < 4) {
+    return res.status(400).json({ error: 'password too short' });
+  }
+  const { salt, passwordHash } = hashPassword(password);
+  target.salt = salt;
+  target.passwordHash = passwordHash;
+  target.mustChangePassword = true;
+  // Reset invalidates all existing sessions for that user.
+  authData.sessions = authData.sessions.filter(s => s.username !== username);
+  saveAuth();
+  res.json({ ok: true });
+});
+
+// =========================================================================
+//  Admin – session management (admin role only)
+// =========================================================================
+app.get('/api/auth/sessions', requireAdmin, (req, res) => {
+  const currentToken = req.authCtx.token;
+  res.json(authData.sessions.map(s => ({
+    token: s.token.slice(0, 8) + '…', // never expose full tokens, even to admins
+    tokenId: s.token,                  // opaque id used only for delete calls
+    username: s.username,
+    createdAt: s.createdAt,
+    lastSeenAt: s.lastSeenAt,
+    userAgent: s.userAgent,
+    ip: s.ip,
+    current: s.token === currentToken,
+  })));
+});
+
+app.delete('/api/auth/sessions/:tokenId', requireAdmin, (req, res) => {
+  const tokenId = req.params.tokenId;
+  const before = authData.sessions.length;
+  authData.sessions = authData.sessions.filter(s => s.token !== tokenId);
+  if (authData.sessions.length === before) {
+    return res.status(404).json({ error: 'session not found' });
+  }
+  saveAuth();
+  res.json({ ok: true });
+});
+
+// =========================================================================
 //  Read endpoints (main data)
 // =========================================================================
 const GET_ENDPOINTS = {
@@ -90,9 +397,14 @@ const GET_ENDPOINTS = {
   '/api/services':          '/smarthome/services',
   '/api/scenarios':         '/smarthome/scenarios',
   '/api/messages':          '/smarthome/messages',
-  '/api/clients':           '/smarthome/clients',
   '/api/userdefinedstates': '/smarthome/userdefinedstates',
 };
+
+// /api/clients is admin-only — the list of paired Bosch app/client devices
+// is only shown in the admin tab and lets the admin revoke clients.
+app.get('/api/clients', requireAdmin, wrap(async (_req, res) => {
+  res.json(await shcRequest('GET', '/smarthome/clients'));
+}));
 
 // SHC firmware differs in where automation rules live. Probe both known paths
 // on first use and cache the working one (or null if neither answers).
@@ -158,7 +470,7 @@ app.put('/api/devices/:id/services/:service/state', wrap(async (req, res) => {
 //  Admin – devices
 // =========================================================================
 // Rename device / change properties (body e.g. { name: "New name" })
-app.put('/api/devices/:id', wrap(async (req, res) => {
+app.put('/api/devices/:id', requireAdmin, wrap(async (req, res) => {
   const result = await shcRequest(
     'PUT',
     `/smarthome/devices/${encodeURIComponent(req.params.id)}`,
@@ -168,7 +480,7 @@ app.put('/api/devices/:id', wrap(async (req, res) => {
 }));
 
 // Remove device
-app.delete('/api/devices/:id', wrap(async (req, res) => {
+app.delete('/api/devices/:id', requireAdmin, wrap(async (req, res) => {
   await shcRequest('DELETE', `/smarthome/devices/${encodeURIComponent(req.params.id)}`);
   res.json({ ok: true });
 }));
@@ -176,7 +488,7 @@ app.delete('/api/devices/:id', wrap(async (req, res) => {
 // =========================================================================
 //  Admin – rooms (rename / change icon)
 // =========================================================================
-app.put('/api/rooms/:id', wrap(async (req, res) => {
+app.put('/api/rooms/:id', requireAdmin, wrap(async (req, res) => {
   const result = await shcRequest(
     'PUT',
     `/smarthome/rooms/${encodeURIComponent(req.params.id)}`,
@@ -188,7 +500,7 @@ app.put('/api/rooms/:id', wrap(async (req, res) => {
 // =========================================================================
 //  Admin – clients (registered apps / devices)
 // =========================================================================
-app.delete('/api/clients/:id', wrap(async (req, res) => {
+app.delete('/api/clients/:id', requireAdmin, wrap(async (req, res) => {
   await shcRequest('DELETE', `/smarthome/clients/${encodeURIComponent(req.params.id)}`);
   res.json({ ok: true });
 }));
