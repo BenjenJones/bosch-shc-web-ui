@@ -111,7 +111,7 @@ Regular users see only the Dashboard, Scenarios, Security and Messages tabs and 
 
 ## Bosch licensing
 
-The client id `oss_local_ui` follows the `oss_…` naming convention required by Bosch's terms. Per Bosch, the SHC API may only be used for **private, non-commercial purposes**.
+The client id `oss_bosch_shc_web_ui` follows the `oss_…` naming convention required by Bosch's terms. Per Bosch, the SHC API may only be used for **private, non-commercial purposes**.
 
 ## Extending
 

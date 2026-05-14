@@ -121,6 +121,11 @@ function applyStaticTexts() {
   $('[data-tab="users"]').textContent     = t('tab.users');
   $('[data-tab="sessions"]').textContent  = t('tab.sessions');
   $('[data-tab="messages"] [data-tab-label]').textContent = t('tab.messages');
+  // Mobile dropdown mirrors the same labels (i18n applied here too)
+  for (const name of ['devices','scenarios','security','messages','admin','users','sessions']) {
+    const opt = $(`#tab-select option[value="${name}"]`);
+    if (opt) opt.textContent = t('tab.' + name);
+  }
   // Account button (only present when auth is enabled)
   const acc = $('#account-btn');
   if (acc && state.auth.enabled) {
@@ -1314,16 +1319,31 @@ function promptModal(title, defaultValue, onSave) {
 //  Tabs (using tabEl instead of t to not shadow the global t() function)
 // =========================================================================
 const ALL_TABS = ['devices','scenarios','security','messages','admin','users','sessions'];
-$$('.tab').forEach(tabEl => tabEl.addEventListener('click', () => {
+
+function selectTab(name) {
+  if (!ALL_TABS.includes(name)) return;
   $$('.tab').forEach(x => {
-    x.classList.remove('border-blue-600', 'font-medium');
-    x.classList.add('border-transparent', 'text-slate-500');
+    const active = x.dataset.tab === name;
+    x.classList.toggle('border-blue-600', active);
+    x.classList.toggle('font-medium',     active);
+    x.classList.toggle('border-transparent', !active);
+    x.classList.toggle('text-slate-500',     !active);
   });
-  tabEl.classList.add('border-blue-600', 'font-medium');
-  tabEl.classList.remove('text-slate-500');
   ALL_TABS.forEach(n =>
-    $('#tab-' + n).classList.toggle('hidden', n !== tabEl.dataset.tab));
-}));
+    $('#tab-' + n).classList.toggle('hidden', n !== name));
+  // Keep the mobile <select> in sync when the change was initiated by a
+  // button click on a wider viewport.
+  const sel = $('#tab-select');
+  if (sel && sel.value !== name) sel.value = name;
+  // Lazy loads for admin tabs (used to be wired as separate click handlers
+  // at the bottom of the file — kept here so they fire regardless of
+  // whether the tab was picked via the buttons or the mobile dropdown).
+  if (name === 'users')    loadUsers();
+  if (name === 'sessions') loadSessions();
+}
+$$('.tab').forEach(tabEl =>
+  tabEl.addEventListener('click', () => selectTab(tabEl.dataset.tab)));
+$('#tab-select')?.addEventListener('change', (e) => selectTab(e.target.value));
 $('#refresh').addEventListener('click', loadAll);
 $$('#lang-switch [data-lang]').forEach(b =>
   b.addEventListener('click', () => setLang(b.dataset.lang))
@@ -1332,6 +1352,36 @@ $$('#theme-switch [data-theme-set]').forEach(b =>
   b.addEventListener('click', () => setTheme(b.dataset.themeSet))
 );
 $('#notify-toggle')?.addEventListener('click', toggleNotify);
+
+// =========================================================================
+//  Mobile header menu — hamburger toggles the controls panel that's
+//  inline on ≥sm and a dropdown on smaller screens. CSS handles the layout
+//  via `sm:` variants; JS only flips the `hidden` class.
+// =========================================================================
+(function setupMobileMenu() {
+  const toggle = $('#menu-toggle');
+  const panel  = $('#menu-panel');
+  if (!toggle || !panel) return;
+  const setOpen = (open) => {
+    panel.classList.toggle('hidden', !open);
+    toggle.setAttribute('aria-expanded', String(open));
+  };
+  toggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setOpen(panel.classList.contains('hidden'));
+  });
+  // Close on outside click — but only when in the mobile dropdown state.
+  // On ≥sm the panel ignores the `hidden` class via `sm:flex`, so this is a
+  // no-op there anyway.
+  document.addEventListener('click', (e) => {
+    if (!panel.contains(e.target) && !toggle.contains(e.target)) setOpen(false);
+  });
+  // Picking any control inside the menu closes it (otherwise it lingers
+  // over the page after the user already changed the language/theme).
+  panel.addEventListener('click', (e) => {
+    if (e.target.closest('button')) setOpen(false);
+  });
+})();
 
 // =========================================================================
 //  Live events (SSE)
@@ -1389,7 +1439,14 @@ async function loadAuthStatus() {
 
 function applyRoleVisibility() {
   const admin = isAdmin();
-  $$('.admin-only').forEach(el => el.classList.toggle('hidden', !admin));
+  // Toggle both the Tailwind class (for buttons) AND the HTML hidden attr
+  // (for <option> elements inside the mobile dropdown — Chrome/Edge don't
+  // honour `display: none` on options in a <select>, but they do honour
+  // the `hidden` attribute).
+  $$('.admin-only').forEach(el => {
+    el.classList.toggle('hidden', !admin);
+    el.hidden = !admin;
+  });
   // Account button only makes sense when auth is on
   const acc = $('#account-btn');
   if (acc) acc.classList.toggle('hidden', !state.auth.enabled);
@@ -1739,9 +1796,8 @@ function renderSessions() {
     })));
 }
 
-// Tab clicks for the admin-only tabs trigger lazy loads of their data.
-$('[data-tab="users"]').addEventListener('click', loadUsers);
-$('[data-tab="sessions"]').addEventListener('click', loadSessions);
+// Lazy loads for the admin-only tabs are now triggered from selectTab()
+// directly, so both the desktop buttons and the mobile dropdown fire them.
 $('#account-btn')?.addEventListener('click', openAccountMenu);
 $('#login-form').addEventListener('submit', submitLogin);
 

@@ -17,37 +17,76 @@
        users never see the dashboard flash before the login overlay. -->
   <div id="app-shell" class="hidden">
   <header class="bg-white border-b sticky top-0 z-10">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div>
-        <h1 class="text-lg font-semibold">Bosch Smart Home</h1>
-        <p id="info-line" class="text-xs text-slate-500"></p>
-      </div>
-      <div class="flex items-center gap-3">
-        <button id="notify-toggle" class="text-[11px] border border-slate-300 rounded-md px-2 py-1 hover:bg-slate-100">
-          <span class="icon-mask align-middle" style="width:14px;height:14px;-webkit-mask-image:url(svg/bell.svg);mask-image:url(svg/bell.svg)"></span>
-        </button>
-        <div id="theme-switch" class="inline-flex text-[11px] border border-slate-300 rounded-md overflow-hidden">
-          <button data-theme-set="light" class="px-2 py-1 hover:bg-slate-100">
-            <span class="icon-mask align-middle" style="width:14px;height:14px;-webkit-mask-image:url(svg/weather-sunny.svg);mask-image:url(svg/weather-sunny.svg)"></span>
-          </button>
-          <button data-theme-set="dark"  class="px-2 py-1 hover:bg-slate-100 border-l border-slate-300">
-            <span class="icon-mask align-middle" style="width:14px;height:14px;-webkit-mask-image:url(svg/weather-night.svg);mask-image:url(svg/weather-night.svg)"></span>
-          </button>
-        </div>
-        <div id="lang-switch" class="inline-flex text-[11px] border border-slate-300 rounded-md overflow-hidden">
-          <button data-lang="de" class="px-2 py-1 hover:bg-slate-100">DE</button>
-          <button data-lang="en" class="px-2 py-1 hover:bg-slate-100 border-l border-slate-300">EN</button>
-        </div>
+    <div class="max-w-6xl mx-auto px-4 py-3">
+      <div class="flex items-center justify-between gap-3 sm:gap-4">
+        <h1 class="text-lg font-semibold min-w-0">Bosch Smart Home</h1>
+        <div class="relative shrink-0 flex items-center gap-2 sm:gap-3">
+        <!-- Always visible: live-event status + primary refresh action -->
         <span id="event-dot" class="inline-block w-2.5 h-2.5 rounded-full bg-slate-300"></span>
         <button id="refresh" class="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-1.5 rounded-md"></button>
-        <button id="account-btn" class="hidden text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-1.5 rounded-md"></button>
+
+        <!-- Mobile-only hamburger; toggles #menu-panel below -->
+        <button id="menu-toggle" type="button" aria-controls="menu-panel" aria-expanded="false"
+          class="sm:hidden text-[11px] border border-slate-300 rounded-md px-2 py-1.5 hover:bg-slate-100">
+          <span class="icon-mask align-middle" style="width:14px;height:14px;-webkit-mask-image:url(svg/menu.svg);mask-image:url(svg/menu.svg)"></span>
+        </button>
+
+        <!--
+          Header controls — on ≥sm an inline row, on mobile a dropdown panel
+          anchored under the hamburger. Same DOM either way, just different
+          flex/positioning utilities. The mobile-only `hidden` class is what
+          #menu-toggle flips in app.js.
+        -->
+        <div id="menu-panel"
+          class="hidden flex sm:flex sm:items-center sm:gap-3
+                 absolute sm:static right-0 top-full mt-2 sm:mt-0
+                 flex-col sm:flex-row items-stretch gap-2
+                 bg-white sm:bg-transparent
+                 border border-slate-200 sm:border-0 rounded-md shadow-lg sm:shadow-none
+                 p-3 sm:p-0 z-20 min-w-[160px] sm:min-w-0">
+          <button id="notify-toggle" class="text-[11px] border border-slate-300 rounded-md px-2 py-1 hover:bg-slate-100">
+            <span class="icon-mask align-middle" style="width:14px;height:14px;-webkit-mask-image:url(svg/bell.svg);mask-image:url(svg/bell.svg)"></span>
+          </button>
+          <div id="theme-switch" class="inline-flex text-[11px] border border-slate-300 rounded-md overflow-hidden">
+            <button data-theme-set="light" class="flex-1 px-2 py-1 hover:bg-slate-100">
+              <span class="icon-mask align-middle" style="width:14px;height:14px;-webkit-mask-image:url(svg/weather-sunny.svg);mask-image:url(svg/weather-sunny.svg)"></span>
+            </button>
+            <button data-theme-set="dark"  class="flex-1 px-2 py-1 hover:bg-slate-100 border-l border-slate-300">
+              <span class="icon-mask align-middle" style="width:14px;height:14px;-webkit-mask-image:url(svg/weather-night.svg);mask-image:url(svg/weather-night.svg)"></span>
+            </button>
+          </div>
+          <div id="lang-switch" class="inline-flex text-[11px] border border-slate-300 rounded-md overflow-hidden">
+            <button data-lang="de" class="flex-1 px-2 py-1 hover:bg-slate-100">DE</button>
+            <button data-lang="en" class="flex-1 px-2 py-1 hover:bg-slate-100 border-l border-slate-300">EN</button>
+          </div>
+          <button id="account-btn" class="hidden text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-1.5 rounded-md"></button>
+        </div>
+        </div>
       </div>
+      <!-- Info line below the title row so it gets the full width and
+           doesn't crowd the controls on narrow screens. -->
+      <p id="info-line" class="text-xs text-slate-500 break-words mt-0.5"></p>
     </div>
-    <nav class="max-w-6xl mx-auto px-4 pb-2 flex gap-4 text-sm overflow-x-auto">
+    <!-- Mobile-only tab picker. Mirrors the <nav> below; tab-switching JS
+         keeps the two in sync. Native <select> for accessibility & to avoid
+         building a custom dropdown. -->
+    <div class="sm:hidden max-w-6xl mx-auto px-4 pb-2">
+      <select id="tab-select"
+        class="w-full text-sm bg-white border border-slate-300 rounded-md px-3 py-1.5">
+        <option value="devices"></option>
+        <option value="scenarios"></option>
+        <option value="security"></option>
+        <option value="messages"></option>
+        <option value="admin"    class="admin-only" hidden></option>
+        <option value="users"    class="admin-only" hidden></option>
+        <option value="sessions" class="admin-only" hidden></option>
+      </select>
+    </div>
+    <nav class="hidden sm:flex max-w-6xl mx-auto px-4 pb-2 gap-4 text-sm">
       <button data-tab="devices"   class="tab font-medium border-b-2 border-blue-600 pb-1.5"></button>
       <button data-tab="scenarios" class="tab text-slate-500 hover:text-slate-800 border-b-2 border-transparent pb-1.5"></button>
       <button data-tab="security"  class="tab text-slate-500 hover:text-slate-800 border-b-2 border-transparent pb-1.5"></button>
-      <button data-tab="messages"  class="tab text-slate-500 hover:text-slate-800 border-b-2 border-transparent pb-1.5"><span data-tab-label></span> <span id="msg-badge" class="hidden ml-1 text-[10px] bg-rose-500 text-white px-1.5 rounded-full"></span></button>
+      <button data-tab="messages"  class="tab inline-flex items-center gap-1 whitespace-nowrap text-slate-500 hover:text-slate-800 border-b-2 border-transparent pb-1.5"><span data-tab-label></span><span id="msg-badge" class="hidden text-[10px] bg-rose-500 text-white px-1.5 rounded-full leading-4"></span></button>
       <button data-tab="admin"     class="tab admin-only hidden text-slate-500 hover:text-slate-800 border-b-2 border-transparent pb-1.5"></button>
       <button data-tab="users"     class="tab admin-only hidden text-slate-500 hover:text-slate-800 border-b-2 border-transparent pb-1.5"></button>
       <button data-tab="sessions"  class="tab admin-only hidden text-slate-500 hover:text-slate-800 border-b-2 border-transparent pb-1.5"></button>
