@@ -8,18 +8,25 @@
 const fs = require('fs');
 const path = require('path');
 const https = require('https');
+const http  = require('http');
 const crypto = require('crypto');
 const express = require('express');
 
-const CONFIG_FILE = path.join(__dirname, 'config.json');
-const AUTH_FILE = path.join(__dirname, 'auth.json');
+// Config & auth paths can be overridden via env (used by the test harness so
+// it doesn't have to touch the real config.json sitting next to the source).
+const CONFIG_FILE = process.env.BOSCH_SHC_CONFIG_FILE || path.join(__dirname, 'config.json');
+const AUTH_FILE   = process.env.BOSCH_SHC_AUTH_FILE   || path.join(__dirname, 'auth.json');
 if (!fs.existsSync(CONFIG_FILE)) {
   console.error('✖ config.json missing. Please run `npm run setup` first.');
   process.exit(1);
 }
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-const cert = fs.readFileSync(path.join(__dirname, config.certPath));
-const key = fs.readFileSync(path.join(__dirname, config.keyPath));
+// shcProtocol defaults to 'https' (real SHC requires mTLS). The test harness
+// sets it to 'http' so it can point at Prism, which has no HTTPS server.
+const SHC_PROTOCOL = config.shcProtocol === 'http' ? 'http' : 'https';
+const SHC_PORT     = config.shcPort || (SHC_PROTOCOL === 'http' ? 80 : 8444);
+const cert = SHC_PROTOCOL === 'https' ? fs.readFileSync(path.join(__dirname, config.certPath)) : null;
+const key  = SHC_PROTOCOL === 'https' ? fs.readFileSync(path.join(__dirname, config.keyPath))  : null;
 
 // =========================================================================
 //  Authentication state (optional). When config.authEnabled is false, every
@@ -125,21 +132,28 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// Reusable HTTPS agent with mTLS
-const agent = new https.Agent({
-  cert,
-  key,
-  rejectUnauthorized: false, // SHC uses a self-signed certificate
-  keepAlive: true,
-});
+// Reusable transport agent — HTTPS+mTLS for the real SHC, plain HTTP for the
+// test mock (Prism).
+const transport = SHC_PROTOCOL === 'http' ? http : https;
+// keep-alive on plain HTTP causes ECONNRESET races against Prism after a
+// 4xx — Prism closes the socket but a pooled request gets queued onto the
+// dead one. Production HTTPS path keeps the pool for performance.
+const agent = SHC_PROTOCOL === 'http'
+  ? new http.Agent({ keepAlive: false })
+  : new https.Agent({
+      cert,
+      key,
+      rejectUnauthorized: false, // SHC uses a self-signed certificate
+      keepAlive: true,
+    });
 
 /** Helper: send a request to the SHC */
-function shcRequest(method, urlPath, { body, port = 8444, timeoutMs = 35000 } = {}) {
+function shcRequest(method, urlPath, { body, port = SHC_PORT, timeoutMs = 35000 } = {}) {
   return new Promise((resolve, reject) => {
     const data = body !== undefined && body !== null
       ? (typeof body === 'string' ? body : JSON.stringify(body))
       : null;
-    const req = https.request(
+    const req = transport.request(
       {
         host: config.shcIp,
         port,
@@ -649,9 +663,17 @@ app.get('/api/events', (req, res) => {
 // =========================================================================
 //  Start
 // =========================================================================
-const PORT = config.uiPort || 3000;
-app.listen(PORT, () => {
-  console.log(`▶ Bosch SHC UI running on http://localhost:${PORT}`);
-  console.log(`  SHC: ${config.shcIp}  (client: ${config.clientId})`);
-  pollLoop().catch((e) => console.error('pollLoop crashed:', e));
-});
+// When loaded by the test harness we want the express app but no listener and
+// no long-polling loop (which would otherwise hold the process open and spam
+// the mock with /remote/json-rpc subscribe calls). The harness sets
+// BOSCH_SHC_NO_LISTEN=1; production startup is unaffected.
+if (!process.env.BOSCH_SHC_NO_LISTEN) {
+  const PORT = config.uiPort || 3000;
+  app.listen(PORT, () => {
+    console.log(`▶ Bosch SHC UI running on http://localhost:${PORT}`);
+    console.log(`  SHC: ${config.shcIp}  (client: ${config.clientId})`);
+    pollLoop().catch((e) => console.error('pollLoop crashed:', e));
+  });
+}
+
+module.exports = { app, shcRequest };

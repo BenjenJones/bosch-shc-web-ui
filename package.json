@@ -5,12 +5,22 @@
   "main": "server.js",
   "scripts": {
     "setup": "node setup.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "mock:build": "node test/scripts/merge-openapi.mjs",
+    "mock:serve": "prism mock test/openapi/_bundled.yml -p 4010 --errors"
   },
   "dependencies": {
     "express": "^4.19.2"
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "@stoplight/prism-cli": "^5.15.10",
+    "js-yaml": "^4.1.1",
+    "supertest": "^7.2.2",
+    "vitest": "^4.1.6"
   }
 }
