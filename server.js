@@ -71,7 +71,9 @@ function shcRequest(method, urlPath, { body, port = 8444, timeoutMs = 35000 } = 
 }
 
 const app = express();
-app.use(express.json());
+// strict:false so we can forward top-level scalar bodies (e.g. boolean for
+// userdefinedstates/.../state) which the SHC accepts.
+app.use(express.json({ strict: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const wrap = (fn) => (req, res) =>

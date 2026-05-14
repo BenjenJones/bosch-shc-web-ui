@@ -752,7 +752,7 @@ async function onTemperatureChange(e) {
 //  Tab: Scenarios
 // =========================================================================
 function renderScenarios() {
-  $('#tab-scenarios').innerHTML = state.scenarios.length
+  const scenariosBlock = state.scenarios.length
     ? `<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         ${state.scenarios.map(s => `
           <button data-scenario="${s.id}"
@@ -762,6 +762,54 @@ function renderScenarios() {
           </button>`).join('')}
       </div>`
     : `<p class="text-slate-500">${t('scenarios.none')}</p>`;
+
+  const udsBlock = state.userdefinedstates.length
+    ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        ${state.userdefinedstates.map(u => `
+          <div class="flex items-center justify-between bg-white border border-slate-200 rounded-md p-3">
+            <span class="font-medium truncate">${u.name}</span>
+            <button data-uds="${u.id}" data-on="${!!u.state}"
+              class="text-xs px-2 py-1 rounded
+              ${u.state ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
+              ${t(u.state ? 'security.active' : 'security.inactive')}
+            </button>
+          </div>`).join('')}
+      </div>`
+    : `<p class="text-slate-500">${t('scenarios.noStates')}</p>`;
+
+  const automationsBlock = state.automations.length
+    ? `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        ${state.automations.map(a => `
+          <div class="flex items-center justify-between bg-white border border-slate-200 rounded-md p-3">
+            <div class="min-w-0">
+              <div class="font-medium truncate">${a.name || a.id}</div>
+              <div class="text-xs text-slate-500">${t(a.enabled ? 'admin.autoEnabled' : 'admin.autoDisabled')}</div>
+            </div>
+            <div class="flex gap-1 shrink-0">
+              <button data-auto-toggle="${a.id}" data-enabled="${!!a.enabled}"
+                class="text-xs px-2 py-1 rounded
+                ${a.enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
+                ${t(a.enabled ? 'admin.on' : 'admin.off')}
+              </button>
+            </div>
+          </div>`).join('')}
+      </div>`
+    : `<p class="text-slate-500">${t('admin.noAutomations')}</p>`;
+
+  $('#tab-scenarios').innerHTML = `
+    <section class="mb-6">
+      <h2 class="text-sm font-medium text-slate-700 mb-2">${t('scenarios.scenariosH', state.scenarios.length)}</h2>
+      ${scenariosBlock}
+    </section>
+    <section class="mb-6">
+      <h2 class="text-sm font-medium text-slate-700 mb-2">${t('scenarios.statesH', state.userdefinedstates.length)}</h2>
+      ${udsBlock}
+    </section>
+    <section>
+      <h2 class="text-sm font-medium text-slate-700 mb-2">${t('admin.automationsH', state.automations.length)}</h2>
+      ${automationsBlock}
+    </section>`;
+
   $$('#tab-scenarios [data-scenario]').forEach(b =>
     b.addEventListener('click', async () => {
       try {
@@ -771,6 +819,29 @@ function renderScenarios() {
       } catch (err) { alert(t('error.generic', err.message)); }
     })
   );
+
+  $$('#tab-scenarios [data-uds]').forEach(b => b.addEventListener('click', async () => {
+    const newState = !(b.dataset.on === 'true');
+    try {
+      await api(`/api/userdefinedstates/${encodeURIComponent(b.dataset.uds)}/state`,
+        { method: 'PUT', body: newState });
+      const u = state.userdefinedstates.find(x => x.id === b.dataset.uds);
+      if (u) u.state = newState;
+      renderScenarios();
+    } catch (err) { alert(t('error.generic', err.message)); }
+  }));
+
+  $$('#tab-scenarios [data-auto-toggle]').forEach(b => b.addEventListener('click', async () => {
+    const enabled = !(b.dataset.enabled === 'true');
+    const existing = state.automations.find(x => x.id === b.dataset.autoToggle);
+    if (!existing) return;
+    try {
+      await api(`/api/automations/${encodeURIComponent(b.dataset.autoToggle)}`,
+        { method: 'PUT', body: { ...existing, enabled } });
+      existing.enabled = enabled;
+      renderScenarios();
+    } catch (err) { alert(t('error.generic', err.message)); }
+  }));
 }
 
 // =========================================================================
@@ -831,24 +902,7 @@ function renderSecurity() {
     </article>`;
   }
 
-  const udsBlock = state.userdefinedstates.length ? `
-    <article class="card bg-white rounded-lg p-5 border border-slate-200 mt-4">
-      <h3 class="font-medium mb-3">${t('security.userStates')}</h3>
-      <p class="text-xs text-slate-500 mb-3">${t('security.userStatesDesc')}</p>
-      <div class="space-y-2">
-        ${state.userdefinedstates.map(u => `
-          <div class="flex items-center justify-between border border-slate-200 rounded-md px-3 py-2">
-            <span>${u.name}</span>
-            <button data-uds="${u.id}" data-on="${!!u.state}"
-              class="px-3 py-1 text-sm rounded-md font-medium
-              ${u.state ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
-              ${t(u.state ? 'security.active' : 'security.inactive')}
-            </button>
-          </div>`).join('')}
-      </div>
-    </article>` : '';
-
-  $('#tab-security').innerHTML = idsBlock + udsBlock;
+  $('#tab-security').innerHTML = idsBlock;
 
   $$('#tab-security [data-ids]').forEach(b => b.addEventListener('click', async () => {
     const value = b.dataset.ids;
@@ -856,16 +910,6 @@ function renderSecurity() {
     if (b.dataset.profile != null) body.activeProfile = b.dataset.profile;
     try { await api('/api/intrusion/state', { method: 'PUT', body }); }
     catch (err) { alert('Fehler: ' + err.message); }
-  }));
-  $$('#tab-security [data-uds]').forEach(b => b.addEventListener('click', async () => {
-    const newState = !(b.dataset.on === 'true');
-    try {
-      await api(`/api/userdefinedstates/${encodeURIComponent(b.dataset.uds)}/state`,
-        { method: 'PUT', body: { state: newState } });
-      const u = state.userdefinedstates.find(x => x.id === b.dataset.uds);
-      if (u) u.state = newState;
-      renderSecurity();
-    } catch (err) { alert(t('error.generic', err.message)); }
   }));
 }
 
@@ -1080,27 +1124,6 @@ function renderAdmin() {
         </div>
       </article>
 
-      <!-- Automationen -->
-      <article class="card bg-white rounded-lg p-5 border border-slate-200 lg:col-span-2">
-        <h3 class="font-medium mb-3">${t('admin.automationsH', state.automations.length)}</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          ${state.automations.map(a => `
-            <div class="flex items-center justify-between border border-slate-200 rounded-md p-3">
-              <div class="min-w-0">
-                <div class="font-medium truncate">${a.name || a.id}</div>
-                <div class="text-xs text-slate-500">${t(a.enabled ? 'admin.autoEnabled' : 'admin.autoDisabled')}</div>
-              </div>
-              <div class="flex gap-1 shrink-0">
-                <button data-auto-toggle="${a.id}" data-enabled="${!!a.enabled}"
-                  class="text-xs px-2 py-1 rounded
-                  ${a.enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
-                  ${t(a.enabled ? 'admin.on' : 'admin.off')}
-                </button>
-              </div>
-            </div>`).join('') || `<p class="text-slate-500">${t('admin.noAutomations')}</p>`}
-        </div>
-      </article>
-
     </div>`;
 
   // Aktionen verdrahten
@@ -1163,17 +1186,6 @@ function renderAdmin() {
     $('#modal-card').classList.add('max-w-2xl');
   }));
 
-  $$('#tab-admin [data-auto-toggle]').forEach(b => b.addEventListener('click', async () => {
-    const enabled = !(b.dataset.enabled === 'true');
-    const existing = state.automations.find(x => x.id === b.dataset.autoToggle);
-    if (!existing) return;
-    try {
-      await api(`/api/automations/${encodeURIComponent(b.dataset.autoToggle)}`,
-        { method: 'PUT', body: { ...existing, enabled } });
-      existing.enabled = enabled;
-      renderAdmin();
-    } catch (err) { alert(t('error.generic', err.message)); }
-  }));
 }
 
 // =========================================================================
@@ -1256,7 +1268,7 @@ function connectEvents() {
   ev.onerror = () => $('#event-dot').className = 'inline-block w-2.5 h-2.5 rounded-full bg-rose-500';
   ev.onmessage = (msg) => {
     let events; try { events = JSON.parse(msg.data); } catch { return; }
-    let touchedDev = false, touchedMsg = false, touchedSec = false;
+    let touchedDev = false, touchedMsg = false, touchedSec = false, touchedScn = false;
     for (const e of events) {
       if (e['@type'] === 'DeviceServiceData') {
         const idx = state.services.findIndex(s => s.id === e.id && s.deviceId === e.deviceId);
@@ -1276,11 +1288,13 @@ function connectEvents() {
       } else if (e['@type'] === 'userDefinedState') {
         const idx = state.userdefinedstates.findIndex(u => u.id === e.id);
         if (idx >= 0) state.userdefinedstates[idx] = e;
+        touchedScn = true;
       }
     }
     if (touchedDev) renderDevices();
     if (touchedSec) renderSecurity();
     if (touchedMsg) renderMessages();
+    if (touchedScn) renderScenarios();
   };
 }
 
