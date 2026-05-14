@@ -1,5 +1,16 @@
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    font-family:
+        "CaskaydiaCove NFM",
+        "CascadyaCove NFM",
+        "CaskaydiaCove Nerd Font Mono",
+        "CaskaydiaMono Nerd Font",
+        "JetBrainsMono Nerd Font Mono",
+        "JetBrainsMono NFM",
+        "FiraCode Nerd Font Mono",
+        "FiraCode NFM",
+        "Hack Nerd Font Mono",
+        "Hack NFM",
+        monospace;
     transition: background-color .2s ease, color .2s ease;
 }
 
@@ -70,6 +81,13 @@ details.room[open]>summary .chev {
    ========================================================================= */
 [data-theme="dark"] {
     color-scheme: dark;
+}
+
+/* Monochrome MDI icons used via <img src="svg/...svg"> are black-filled and
+   become invisible on dark surfaces. Invert them to white. The theme-switch
+   icons use .icon-mask + currentColor and are excluded. */
+[data-theme="dark"] img[src$=".svg"] {
+    filter: invert(1);
 }
 
 /* Neutral surfaces / text */
