@@ -89,9 +89,24 @@ const GET_ENDPOINTS = {
   '/api/scenarios':         '/smarthome/scenarios',
   '/api/messages':          '/smarthome/messages',
   '/api/clients':           '/smarthome/clients',
-  '/api/automations':       '/smarthome/automations',
   '/api/userdefinedstates': '/smarthome/userdefinedstates',
 };
+
+// SHC firmware differs in where automation rules live. Probe both known paths
+// on first use and cache the working one (or null if neither answers).
+let automationsBaseCache;
+async function automationsBase() {
+  if (automationsBaseCache !== undefined) return automationsBaseCache;
+  for (const p of ['/smarthome/automation/rules', '/smarthome/automations']) {
+    try {
+      await shcRequest('GET', p);
+      return (automationsBaseCache = p);
+    } catch (err) {
+      if (err.status !== 404) throw err;
+    }
+  }
+  return (automationsBaseCache = null);
+}
 for (const [route, shcPath] of Object.entries(GET_ENDPOINTS)) {
   app.get(route, wrap(async (_req, res) => {
     res.json(await shcRequest('GET', shcPath));
@@ -185,20 +200,42 @@ app.post('/api/scenarios/:id/trigger', wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
+app.get('/api/automations', wrap(async (_req, res) => {
+  const base = await automationsBase();
+  res.json(base ? await shcRequest('GET', base) : []);
+}));
+
 // Enable/disable or update an automation
 app.put('/api/automations/:id', wrap(async (req, res) => {
+  const base = await automationsBase();
+  if (!base) return res.status(404).json({ error: 'automations endpoint not available' });
   const result = await shcRequest(
     'PUT',
-    `/smarthome/automations/${encodeURIComponent(req.params.id)}`,
+    `${base}/${encodeURIComponent(req.params.id)}`,
     { body: req.body }
   );
   res.json(result || { ok: true });
 }));
 
+// Trigger-sub-path also varies by firmware. Probe the common candidates on
+// first call and cache the one that works.
+let automationsTriggerSub;
 app.post('/api/automations/:id/trigger', wrap(async (req, res) => {
-  await shcRequest('POST',
-    `/smarthome/automations/${encodeURIComponent(req.params.id)}/triggers`);
-  res.json({ ok: true });
+  const base = await automationsBase();
+  if (!base) return res.status(404).json({ error: 'automations endpoint not available' });
+  const id = encodeURIComponent(req.params.id);
+  const candidates = automationsTriggerSub ? [automationsTriggerSub]
+    : ['triggers', 'execute', 'trigger', 'run'];
+  for (const sub of candidates) {
+    try {
+      await shcRequest('POST', `${base}/${id}/${sub}`);
+      automationsTriggerSub = sub;
+      return res.json({ ok: true });
+    } catch (err) {
+      if (err.status !== 404 && err.status !== 405) throw err;
+    }
+  }
+  res.status(404).json({ error: 'no working trigger sub-path on this firmware' });
 }));
 
 // =========================================================================

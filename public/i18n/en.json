@@ -82,6 +82,7 @@
     "msg.TILT_DETECTION":            "Tampering detected",
     "admin.controller":       "Controller",
     "admin.ip":               "IP",
+    "admin.mac":              "MAC",
     "admin.country":          "Country",
     "admin.api":              "API",
     "admin.firmware":         "Firmware",

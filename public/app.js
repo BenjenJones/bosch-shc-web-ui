@@ -69,7 +69,7 @@ function setLang(lang) {
 // Apply all static texts (header, tabs, refresh, lang-switch active state)
 // from the dictionary to the DOM. Called on boot and from setLang().
 function applyStaticTexts() {
-  document.title = state.lang === 'en' ? 'Bosch SHC – local UI' : 'Bosch SHC – lokales UI';
+  document.title = state.lang === 'en' ? 'Bosch SHC - local UI' : 'Bosch SHC - lokales UI';
   $('#refresh').textContent = t('header.refresh');
   $('#event-dot').title = t('header.liveStatus');
   // Tab-Beschriftungen — bei #messages innerhalb des span[data-tab-label]
@@ -100,7 +100,7 @@ function applyStaticTexts() {
   $('#info-line').textContent = !loaded
     ? t('header.connecting')
     : (i.shcIpAddress
-        ? t('header.infoLine', i.shcIpAddress, (i.apiVersions||[]).join(', '), i.softwareUpdateState?.swInstalledVersion ?? '–')
+        ? t('header.infoLine', i.shcIpAddress, (i.apiVersions||[]).join(', '), i.softwareUpdateState?.swInstalledVersion ?? '-')
         : t('header.connected'));
 }
 
@@ -119,7 +119,7 @@ async function api(path, opts = {}) {
     // SHC often returns errors as a nested body object with errorCode/message
     const inner = data.body || {};
     const detail = inner.message || inner.errorCode || (inner.raw && String(inner.raw).slice(0, 200));
-    const msg = detail ? `${data.error || 'HTTP ' + res.status} – ${detail}` : (data.error || `HTTP ${res.status}`);
+    const msg = detail ? `${data.error || 'HTTP ' + res.status} - ${detail}` : (data.error || `HTTP ${res.status}`);
     const e = new Error(msg);
     e.body = data; throw e;
   }
@@ -147,6 +147,7 @@ async function loadAll() {
   state.info        = info || {};
   state.rooms       = rooms || [];
   state.devices     = devices || [];
+  state.info.macAddress = state.devices.find(d => d.rootDeviceId)?.rootDeviceId;
   state.services    = services || [];
   state.scenarios   = scenarios || [];
   state.messages    = messages || [];
@@ -601,8 +602,8 @@ function renderDeviceCard(device) {
       </button>`;
   }
   if (climate && temp) {
-    const setpoint = climate.state?.setpointTemperature ?? '–';
-    const current  = temp.state?.temperature?.toFixed?.(1) ?? '–';
+    const setpoint = climate.state?.setpointTemperature ?? '-';
+    const current  = temp.state?.temperature?.toFixed?.(1) ?? '-';
     body += `
       <div class="mt-2 flex items-center gap-3">
         <div class="text-2xl font-light tabular-nums">${current}°</div>
@@ -618,11 +619,11 @@ function renderDeviceCard(device) {
   } else if (temp && humidity) {
     body += `
       <div class="mt-2 flex items-baseline gap-4">
-        <div class="text-2xl font-light tabular-nums">${temp.state?.temperature?.toFixed?.(1) ?? '–'}°</div>
+        <div class="text-2xl font-light tabular-nums">${temp.state?.temperature?.toFixed?.(1) ?? '-'}°</div>
         ${humTxt}
       </div>`;
   } else if (temp) {
-    body += `<div class="mt-2 text-2xl font-light tabular-nums">${temp.state?.temperature?.toFixed?.(1) ?? '–'}°</div>`;
+    body += `<div class="mt-2 text-2xl font-light tabular-nums">${temp.state?.temperature?.toFixed?.(1) ?? '-'}°</div>`;
   } else if (humidity) {
     body += `<div class="mt-2">${humTxt}</div>`;
   }
@@ -881,7 +882,7 @@ function messageTitle(codeName) {
 }
 
 function severityFromMessage(m) {
-  // Es gibt kein eigenes severity-Feld – wir leiten es ab.
+  // Es gibt kein eigenes severity-Feld - wir leiten es ab.
   const cat = (m.messageCode?.category || '').toUpperCase();
   if (m.flags?.includes('USER_ACTION_REQUIRED')) return 'error';
   if (cat === 'WARNING' || cat === 'ALARM' || cat === 'CRITICAL') return 'error';
@@ -979,8 +980,7 @@ function renderAdmin() {
   const swState = sw.swUpdateState || 'UNKNOWN';
   const updateInfo = swState === 'UPDATE_AVAILABLE'
     ? `<span class="text-amber-700">${t('admin.updateAvailable', sw.swUpdateAvailableVersion)}</span>`
-    : `<span class="text-emerald-700">${t('admin.upToDate', sw.swInstalledVersion || '–')}</span>`;
-
+    : `<span class="text-emerald-700">${t('admin.upToDate', sw.swInstalledVersion || '-')}</span>`;
   $('#tab-admin').innerHTML = `
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
@@ -988,10 +988,11 @@ function renderAdmin() {
       <article class="card bg-white rounded-lg p-5 border border-slate-200">
         <h3 class="font-medium mb-3">${t('admin.controller')}</h3>
         <dl class="text-sm space-y-1.5">
-          <div class="flex justify-between"><dt class="text-slate-500">${t('admin.ip')}</dt>             <dd class="tabular-nums">${state.info.shcIpAddress || '–'}</dd></div>
-          <div class="flex justify-between"><dt class="text-slate-500">${t('admin.country')}</dt>        <dd>${state.info.country || '–'}</dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">${t('admin.ip')}</dt>             <dd class="tabular-nums">${state.info.shcIpAddress || '-'}</dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">${t('admin.mac')}</dt>            <dd class="tabular-nums">${state.info.macAddress.toLowerCase().replaceAll(":", "-") || '-'}</dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">${t('admin.country')}</dt>        <dd>${state.info.country || '-'}</dd></div>
           <div class="flex justify-between"><dt class="text-slate-500">${t('admin.api')}</dt>            <dd class="tabular-nums">${(state.info.apiVersions||[]).join(', ')}</dd></div>
-          <div class="flex justify-between"><dt class="text-slate-500">${t('admin.firmware')}</dt>       <dd class="tabular-nums">${sw.swInstalledVersion || '–'}</dd></div>
+          <div class="flex justify-between"><dt class="text-slate-500">${t('admin.firmware')}</dt>       <dd class="tabular-nums">${sw.swInstalledVersion || '-'}</dd></div>
           <div class="flex justify-between"><dt class="text-slate-500">${t('admin.updateStatus')}</dt>   <dd>${updateInfo}</dd></div>
           <div class="flex justify-between"><dt class="text-slate-500">${t('admin.devices')}</dt>        <dd class="tabular-nums">${state.devices.length}</dd></div>
           <div class="flex justify-between"><dt class="text-slate-500">${t('admin.rooms')}</dt>          <dd class="tabular-nums">${state.rooms.length}</dd></div>
@@ -1053,7 +1054,7 @@ function renderAdmin() {
               ? `<span class="text-amber-700">${t('admin.fwUpdate',
                     u.targetVersion ? t('admin.fwUpdateTo', u.targetVersion) : '',
                     u.currentVersion ? t('admin.fwUpdateCurrent', u.currentVersion) : '',
-                    u.stateText ? ` – ${u.stateText}` : '')}</span>`
+                    u.stateText ? ` - ${u.stateText}` : '')}</span>`
               : (u.currentVersion
                   ? `<span class="text-emerald-700">${t('admin.fwCurrent', u.currentVersion)}</span>`
                   : '');
@@ -1095,8 +1096,6 @@ function renderAdmin() {
                   ${a.enabled ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}">
                   ${t(a.enabled ? 'admin.on' : 'admin.off')}
                 </button>
-                <button data-auto-trigger="${a.id}"
-                  class="text-xs px-2 py-1 rounded bg-blue-100 text-blue-800 hover:bg-blue-200">${t('admin.trigger')}</button>
               </div>
             </div>`).join('') || `<p class="text-slate-500">${t('admin.noAutomations')}</p>`}
         </div>
@@ -1113,8 +1112,11 @@ function renderAdmin() {
 
   $$('#tab-admin [data-room-rename]').forEach(b => b.addEventListener('click', () =>
     promptModal(t('modal.renameRoom'), b.dataset.name, async (newName) => {
-      await api(`/api/rooms/${encodeURIComponent(b.dataset.roomRename)}`,
-        { method: 'PUT', body: { name: newName } });
+      const room = state.rooms.find(r => r.id === b.dataset.roomRename);
+      await api(`/api/rooms/${encodeURIComponent(b.dataset.roomRename)}`, {
+        method: 'PUT',
+        body: { '@type': 'room', id: room?.id, iconId: room?.iconId, name: newName },
+      });
       await loadAll();
     })));
 
@@ -1163,18 +1165,13 @@ function renderAdmin() {
 
   $$('#tab-admin [data-auto-toggle]').forEach(b => b.addEventListener('click', async () => {
     const enabled = !(b.dataset.enabled === 'true');
+    const existing = state.automations.find(x => x.id === b.dataset.autoToggle);
+    if (!existing) return;
     try {
       await api(`/api/automations/${encodeURIComponent(b.dataset.autoToggle)}`,
-        { method: 'PUT', body: { enabled } });
-      const a = state.automations.find(x => x.id === b.dataset.autoToggle);
-      if (a) a.enabled = enabled;
+        { method: 'PUT', body: { ...existing, enabled } });
+      existing.enabled = enabled;
       renderAdmin();
-    } catch (err) { alert(t('error.generic', err.message)); }
-  }));
-  $$('#tab-admin [data-auto-trigger]').forEach(b => b.addEventListener('click', async () => {
-    try {
-      await api(`/api/automations/${encodeURIComponent(b.dataset.autoTrigger)}/trigger`, { method: 'POST' });
-      b.classList.add('pulse'); setTimeout(() => b.classList.remove('pulse'), 1500);
     } catch (err) { alert(t('error.generic', err.message)); }
   }));
 }
