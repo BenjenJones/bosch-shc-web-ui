@@ -180,5 +180,24 @@
     "sessions.invalidate": "Beenden",
     "sessions.confirmInvalidate": "Sitzung wirklich beenden? Das Gerät muss sich neu anmelden.",
     "sessions.created": "angemeldet {0}",
-    "sessions.lastSeen": "zuletzt aktiv {0}"
+    "sessions.lastSeen": "zuletzt aktiv {0}",
+
+    "setup.title": "Erstmaliges Setup",
+    "setup.sub": "Damit die UI mit deinem Bosch Smart Home Controller reden kann, einmalig koppeln.",
+    "setup.ipLabel": "IP-Adresse des SHC",
+    "setup.next": "Weiter",
+    "setup.pairHint": "Drücke jetzt die Taste vorne am SHC, bis die LED blinkt (Pairing-Mode). Erst dann absenden.",
+    "setup.passLabel": "SHC-Systempasswort",
+    "setup.pairBtn": "Mit SHC koppeln",
+    "setup.pairBusy": "Verbinde …",
+    "setup.authQuestion": "UI mit einem Login schützen?",
+    "setup.authHint": "Empfohlen, wenn das UI im LAN erreichbar sein soll. Kannst du auch jetzt überspringen und später per <code>npm run setup</code> nachholen.",
+    "setup.authYes": "Ja, Login einrichten",
+    "setup.authNo": "Nein, offen lassen",
+    "setup.adminUserLabel": "Admin-Benutzername",
+    "setup.adminPassLabel": "Admin-Passwort (min. 4 Zeichen)",
+    "setup.finish": "Setup abschließen",
+    "setup.done": "✓ Setup erfolgreich. Seite wird neu geladen…",
+    "setup.errUsername": "Bitte einen Benutzernamen angeben.",
+    "setup.errPassword": "Passwort muss mindestens 4 Zeichen lang sein."
 }

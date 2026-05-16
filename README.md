@@ -2,6 +2,7 @@
 
 > **Disclaimer**
 > This is an **unofficial, private hobby project** with **no affiliation** to Robert Bosch GmbH or Bosch Smart Home GmbH. "Bosch" and "Smart Home Controller" are trademarks of their respective owners. Use of the local Bosch SHC API is restricted to **private, non-commercial use** per Bosch's terms — see [bosch-shc-api-docs](https://github.com/BoschSmartHome/bosch-shc-api-docs). Use at your own risk; no warranty (see [LICENSE](LICENSE)).
+> This project was created with the help of AI (Claude Opus 4.7) under the supervision of an experienced software architect.
 
 A small, self-hostable web UI for the **Bosch Smart Home Controller**, built on top of the official [bosch-shc-api-docs](https://github.com/BoschSmartHome/bosch-shc-api-docs).
 
@@ -84,21 +85,28 @@ The proxy is required because browsers cannot present client certificates (mTLS)
 # 1. Install dependencies
 npm install
 
-# 2. Run setup (generates a certificate + registers a client with the SHC)
-npm run setup
-```
-
-Setup will prompt for the **SHC IP address** and the **system password**. Right before answering, press the **front button on the SHC** until the LED starts blinking — that's pairing mode. The script then writes `certs/client-cert.pem`, `certs/client-key.pem`, and `config.json`.
-
-Finally, setup asks whether the UI should be **protected by a login**. Answer `y` to create an initial admin account; password hash and sessions are then stored in `auth.json` (also gitignored). Answer `n` to leave the UI open. You can change the choice later by re-running `npm run setup`.
-
-```bash
-# 3. Start the UI
+# 2. Start the UI
 npm start
 # → http://localhost:3000
 ```
 
+On first run the server has no `config.json` yet and boots into **setup-mode**: open the URL in a browser and a three-step wizard pairs you with the SHC right there.
+
+1. Enter the **SHC IP address**.
+2. Press the **front button on the SHC** until the LED blinks (pairing mode), then enter the **system password** and submit.
+3. Choose whether to protect the UI with a login. If yes, set the admin username and password.
+
+The wizard writes `certs/client-cert.pem`, `certs/client-key.pem`, `config.json` and (if auth was enabled) `auth.json`. After completion the page reloads and you're in the normal UI.
+
+Prefer the CLI? `npm run setup` runs the same flow interactively in a terminal and is the way to **change the admin password later** (since the web wizard only appears on a fresh install).
+
 `npm start` runs a `prestart` hook that compiles Tailwind CSS from `public/tailwind.src.css` into `public/tailwind.css` (gitignored). The CSS is fully self-hosted — no CDN — and tree-shaken to only the utilities the UI actually uses (~16 KB minified). If you ever serve `public/` without going through `npm start`, run `npm run build:css` first.
+
+| Problem during setup | What's going on |
+| --- | --- |
+| Wizard step 2: *"SHC registration failed"* | SHC was not in pairing mode (LED not blinking) or the system password is wrong. Press the button again and retry — pairing-mode times out after a few seconds. |
+| Wizard step 2: *"certificate generation failed"* | OpenSSL isn't on the server's PATH. Install it (built-in on macOS/Linux; on Windows e.g. via Git Bash) and retry. |
+| Wizard never appears | `config.json` already exists. To re-pair, stop the server, delete `config.json`, `auth.json`, and `certs/`, then `npm start` again. |
 
 ### Managing users (when auth is enabled)
 

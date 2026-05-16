@@ -11,43 +11,66 @@ const https = require('https');
 const http  = require('http');
 const crypto = require('crypto');
 const express = require('express');
+const setupLib = require('./setup.js');
 
 // Config & auth paths can be overridden via env (used by the test harness so
 // it doesn't have to touch the real config.json sitting next to the source).
 const CONFIG_FILE = process.env.BOSCH_SHC_CONFIG_FILE || path.join(__dirname, 'config.json');
 const AUTH_FILE   = process.env.BOSCH_SHC_AUTH_FILE   || path.join(__dirname, 'auth.json');
-if (!fs.existsSync(CONFIG_FILE)) {
-  console.error('✖ config.json missing. Please run `npm run setup` first.');
-  process.exit(1);
-}
-const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-// shcProtocol defaults to 'https' (real SHC requires mTLS). The test harness
-// sets it to 'http' so it can point at Prism, which has no HTTPS server.
-const SHC_PROTOCOL = config.shcProtocol === 'http' ? 'http' : 'https';
-const SHC_PORT     = config.shcPort || (SHC_PROTOCOL === 'http' ? 80 : 8444);
-const cert = SHC_PROTOCOL === 'https' ? fs.readFileSync(path.join(__dirname, config.certPath)) : null;
-const key  = SHC_PROTOCOL === 'https' ? fs.readFileSync(path.join(__dirname, config.keyPath))  : null;
 
 // =========================================================================
-//  Authentication state (optional). When config.authEnabled is false, every
-//  endpoint is open and the auth middleware is a no-op. When enabled, auth.json
-//  holds users (with scrypt-hashed passwords) and persistent sessions.
+//  Runtime state — populated by initRuntime() once config.json exists. The
+//  values used to live in module-level `const`s and the server exited if
+//  config was missing; now we boot in "setup-mode" instead (no SHC stack,
+//  /api/setup/* is the only working endpoint) so the user can pair via the
+//  web wizard.
 // =========================================================================
-const AUTH_ENABLED = !!config.authEnabled;
-const COOKIE_NAME  = 'shc_session';
+let config       = null;
+let SHC_PROTOCOL = 'https';
+let SHC_PORT     = 8444;
+let cert         = null;
+let key          = null;
+let transport    = https;
+let agent        = null;
+let AUTH_ENABLED = false;
+let authData     = { users: [], sessions: [] };
+
+const COOKIE_NAME = 'shc_session';
 // 10 years — sessions are explicitly "valid indefinitely on the same device"
 // per the spec; admins can revoke individual sessions on demand.
 const COOKIE_MAX_AGE_SECONDS = 10 * 365 * 24 * 60 * 60;
 
-let authData = { users: [], sessions: [] };
-if (AUTH_ENABLED) {
-  if (!fs.existsSync(AUTH_FILE)) {
-    console.error('✖ authEnabled is true but auth.json is missing. Re-run `npm run setup`.');
-    process.exit(1);
+function isReady() { return config !== null; }
+
+function initRuntime() {
+  if (!fs.existsSync(CONFIG_FILE)) return false;
+  config       = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+  // shcProtocol defaults to 'https' (real SHC requires mTLS). The test
+  // harness sets it to 'http' so it can point at Prism, which has no HTTPS
+  // server.
+  SHC_PROTOCOL = config.shcProtocol === 'http' ? 'http' : 'https';
+  SHC_PORT     = config.shcPort || (SHC_PROTOCOL === 'http' ? 80 : 8444);
+  cert = SHC_PROTOCOL === 'https' ? fs.readFileSync(path.join(__dirname, config.certPath)) : null;
+  key  = SHC_PROTOCOL === 'https' ? fs.readFileSync(path.join(__dirname, config.keyPath))  : null;
+  transport = SHC_PROTOCOL === 'http' ? http : https;
+  // keep-alive on plain HTTP causes ECONNRESET races against Prism after a
+  // 4xx — Prism closes the socket but a pooled request gets queued onto the
+  // dead one. Production HTTPS path keeps the pool for performance.
+  agent = SHC_PROTOCOL === 'http'
+    ? new http.Agent({ keepAlive: false })
+    : new https.Agent({ cert, key, rejectUnauthorized: false, keepAlive: true });
+  AUTH_ENABLED = !!config.authEnabled;
+  if (AUTH_ENABLED) {
+    if (!fs.existsSync(AUTH_FILE)) {
+      throw new Error('authEnabled is true but auth.json is missing — re-run setup or disable auth in config.json.');
+    }
+    authData = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf8'));
+    if (!Array.isArray(authData.users))    authData.users = [];
+    if (!Array.isArray(authData.sessions)) authData.sessions = [];
+  } else {
+    authData = { users: [], sessions: [] };
   }
-  authData = JSON.parse(fs.readFileSync(AUTH_FILE, 'utf8'));
-  if (!Array.isArray(authData.users))    authData.users = [];
-  if (!Array.isArray(authData.sessions)) authData.sessions = [];
+  return true;
 }
 
 function saveAuth() {
@@ -132,22 +155,12 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// Reusable transport agent — HTTPS+mTLS for the real SHC, plain HTTP for the
-// test mock (Prism).
-const transport = SHC_PROTOCOL === 'http' ? http : https;
-// keep-alive on plain HTTP causes ECONNRESET races against Prism after a
-// 4xx — Prism closes the socket but a pooled request gets queued onto the
-// dead one. Production HTTPS path keeps the pool for performance.
-const agent = SHC_PROTOCOL === 'http'
-  ? new http.Agent({ keepAlive: false })
-  : new https.Agent({
-      cert,
-      key,
-      rejectUnauthorized: false, // SHC uses a self-signed certificate
-      keepAlive: true,
-    });
-
-/** Helper: send a request to the SHC */
+/** Helper: send a request to the SHC. The transport/agent it picks come from
+ *  the module-level `let`s set by initRuntime(); calling this before runtime
+ *  is ready will throw on agent being null. The setup-mode middleware
+ *  short-circuits everything except /api/setup/* and /api/auth/status before
+ *  it can get here, so in practice that only happens if you call shcRequest
+ *  directly. */
 function shcRequest(method, urlPath, { body, port = SHC_PORT, timeoutMs = 35000 } = {}) {
   return new Promise((resolve, reject) => {
     const data = body !== undefined && body !== null
@@ -231,12 +244,107 @@ const wrap = (fn) => (req, res) =>
   );
 
 // =========================================================================
+//  Setup-mode gate
+//  When config.json is missing the server has no SHC connection and no auth
+//  state to enforce. The only thing it can usefully serve is the wizard's
+//  index.html (handled by static middleware above) and the /api/setup/*
+//  endpoints. Everything else returns 503 so the UI can render a clear
+//  "setup required" message instead of getting silent 404s/500s.
+// =========================================================================
+app.use('/api', (req, res, next) => {
+  if (isReady()) return next();
+  if (req.path === '/setup' || req.path === '/setup/status') return next();
+  if (req.path === '/auth/status')                            return next();
+  res.status(503).json({ error: 'setup required', setupRequired: true });
+});
+
+// =========================================================================
+//  Setup endpoints — drive the in-browser pairing wizard. Mirror what
+//  setup.js does on the CLI: generate certs, register with the SHC,
+//  optionally configure auth. After each step we initRuntime() so the
+//  server flips from setup-mode to normal mode without a manual restart.
+// =========================================================================
+app.get('/api/setup/status', (_req, res) => {
+  res.json({
+    needed: !isReady(),
+    hasCerts: fs.existsSync(setupLib.CERT_FILE) && fs.existsSync(setupLib.KEY_FILE),
+  });
+});
+
+// Body: { shcIp, password, authEnabled, adminUsername?, adminPassword? }.
+// Single one-shot endpoint — does cert + SHC pairing + config + auth.json
+// atomically. Strictly gated on !isReady() so that once setup has run once,
+// no further calls succeed. Re-pairing (and admin-password rotation) goes
+// through the CLI `npm run setup`.
+//
+// The wizard puts the time-sensitive bit (SHC pairing mode requires the
+// physical button press) at the end of the form so the user can press the
+// button right before submitting; auth choices are made earlier and
+// preserved in JS state if registration needs a retry.
+app.post('/api/setup', wrap(async (req, res) => {
+  if (isReady()) return res.status(409).json({ error: 'already configured — re-run `npm run setup` from the CLI to change anything' });
+
+  const shcIp         = (req.body?.shcIp || '').trim();
+  const password      = req.body?.password;
+  const authEnabled   = !!req.body?.authEnabled;
+  const adminUsername = (req.body?.adminUsername || '').trim();
+  const adminPassword = req.body?.adminPassword;
+
+  if (!shcIp)                                    return res.status(400).json({ error: 'shcIp required' });
+  if (typeof password !== 'string' || !password) return res.status(400).json({ error: 'password required' });
+  if (authEnabled) {
+    if (!adminUsername)                                                 return res.status(400).json({ error: 'adminUsername required when authEnabled' });
+    if (typeof adminPassword !== 'string' || adminPassword.length < 4)  return res.status(400).json({ error: 'adminPassword must be at least 4 chars' });
+  }
+
+  // Cert generation first — if openssl isn't around we want to fail before
+  // touching the SHC (it would only timeout otherwise).
+  try {
+    setupLib.ensureCerts();
+  } catch (err) {
+    return res.status(500).json({
+      error: 'cert generation failed — is openssl on PATH?',
+      detail: err.message,
+    });
+  }
+  const certPem = fs.readFileSync(setupLib.CERT_FILE, 'utf8');
+
+  // SHC registration — fails fast on wrong password or no pairing mode.
+  // 401 from the SHC = wrong system password; 400 typically = not in pairing
+  // mode. Pass the upstream status through so the wizard can surface a
+  // useful message instead of a generic 5xx.
+  try {
+    await setupLib.registerClient(shcIp, password, certPem);
+  } catch (err) {
+    return res.status(err.status || 502).json({
+      error: 'SHC registration failed',
+      status: err.status, detail: err.body || err.message,
+    });
+  }
+
+  // From here on disk-only — write auth.json first (if requested), then the
+  // config that references it, so a partial write can't leave us in a state
+  // where authEnabled=true points at a missing auth.json.
+  if (authEnabled) {
+    setupLib.writeAuth({ adminUsername, adminPassword });
+  } else {
+    setupLib.removeAuthFile();
+  }
+  setupLib.writeConfig({ shcIp, authEnabled });
+
+  initRuntime();
+  kickPollLoop();
+  res.json({ ok: true });
+}));
+
+// =========================================================================
 //  Auth endpoints (always mounted; behave correctly whether AUTH_ENABLED or not)
 // =========================================================================
 
 // Status: tells the UI whether auth is required, and if so who is logged in.
 // Always 200 so the UI can read it before any login flow.
 app.get('/api/auth/status', (req, res) => {
+  if (!isReady())   return res.json({ enabled: false, authenticated: false, setupRequired: true });
   if (!AUTH_ENABLED) return res.json({ enabled: false, authenticated: true });
   const ctx = resolveUser(req);
   res.json({
@@ -338,6 +446,86 @@ app.use('/api', (req, res, next) => {
   req.authCtx = ctx;
   next();
 });
+
+// =========================================================================
+//  First-run web setup wizard. Endpoints are reachable only while the
+//  server is in setup-mode (config.json missing); once the wizard finishes
+//  isReady() flips true and the setup-mode gate above stops routing them.
+//  We deliberately don't gate them with `requireAuth` — there's no admin
+//  to authenticate yet, and the SHC's own pairing-mode (front-button press)
+//  is the physical proof-of-presence here.
+// =========================================================================
+app.get('/api/setup/status', (_req, res) => {
+  res.json({
+    needed:   !isReady(),
+    hasCerts: fs.existsSync(setupLib.CERT_FILE) && fs.existsSync(setupLib.KEY_FILE),
+  });
+});
+
+// Step 1 of the wizard: generate the client cert (if not already present),
+// register with the SHC over its pairing port (8443), and persist a minimal
+// config.json. After this, isReady() flips true and the rest of /api/*
+// becomes reachable. Auth is still off — that's the optional step 2.
+app.post('/api/setup/register', wrap(async (req, res) => {
+  if (isReady()) {
+    return res.status(409).json({ error: 'already configured — remove config.json to re-pair' });
+  }
+  const shcIp    = (req.body?.shcIp || '').trim();
+  const password = req.body?.password;
+  if (!shcIp)                                    return res.status(400).json({ error: 'shcIp required' });
+  if (typeof password !== 'string' || !password) return res.status(400).json({ error: 'password required' });
+
+  try {
+    setupLib.ensureCerts();
+  } catch (err) {
+    return res.status(500).json({
+      error: 'certificate generation failed — is openssl installed and on PATH?',
+      detail: err.message,
+    });
+  }
+  const certPem = fs.readFileSync(setupLib.CERT_FILE, 'utf8');
+  try {
+    await setupLib.registerClient(shcIp, password, certPem);
+  } catch (err) {
+    return res.status(err.status || 502).json({
+      error: 'SHC registration failed — wrong password, or SHC not in pairing mode?',
+      detail: err.message,
+    });
+  }
+  // Reset any stale auth.json from a previous pairing and write a minimal
+  // config (auth disabled). The user can opt into auth via step 2.
+  setupLib.removeAuthFile();
+  setupLib.writeConfig({ shcIp, authEnabled: false });
+  initRuntime();
+  kickPollLoop();
+  res.json({ ok: true });
+}));
+
+// Step 2 (optional): enable login auth. Allowed only between the register
+// step and the first non-setup request — once auth is on or the user closes
+// the wizard, admin rotation goes through the CLI (`npm run setup`) again.
+app.post('/api/setup/complete', wrap(async (req, res) => {
+  if (!isReady()) {
+    return res.status(409).json({ error: 'not registered yet — call /api/setup/register first' });
+  }
+  if (AUTH_ENABLED) {
+    return res.status(409).json({ error: 'auth already configured' });
+  }
+  const enabled = !!req.body?.authEnabled;
+  if (enabled) {
+    const username = (req.body?.adminUsername || '').trim();
+    const password = req.body?.adminPassword;
+    if (!username)                                    return res.status(400).json({ error: 'adminUsername required' });
+    if (typeof password !== 'string' || password.length < 4)
+                                                      return res.status(400).json({ error: 'adminPassword must be at least 4 chars' });
+    setupLib.writeAuth({ adminUsername: username, adminPassword: password });
+  } else {
+    setupLib.removeAuthFile();
+  }
+  setupLib.writeConfig({ shcIp: config.shcIp, authEnabled: enabled });
+  initRuntime();
+  res.json({ ok: true });
+}));
 
 // =========================================================================
 //  Admin – user management (admin role only)
@@ -719,6 +907,19 @@ async function pollLoop() {
   }
 }
 
+// Start the long-polling loop exactly once per process. Called both at boot
+// (when config existed already) and at the end of /api/setup/register (so
+// pairing-via-web users don't need a server restart to get live events).
+let pollStarted = false;
+function kickPollLoop() {
+  if (pollStarted || !isReady()) return;
+  // The test harness talks to Prism over plain HTTP; pollLoop would spam
+  // /remote/json-rpc subscribe forever in that mode, so skip it there.
+  if (SHC_PROTOCOL !== 'https') return;
+  pollStarted = true;
+  pollLoop().catch((e) => { console.error('pollLoop crashed:', e); pollStarted = false; });
+}
+
 app.get('/api/events', (req, res) => {
   res.set({
     'Content-Type': 'text/event-stream',
@@ -734,16 +935,25 @@ app.get('/api/events', (req, res) => {
 // =========================================================================
 //  Start
 // =========================================================================
-// When loaded by the test harness we want the express app but no listener and
-// no long-polling loop (which would otherwise hold the process open and spam
-// the mock with /remote/json-rpc subscribe calls). The harness sets
-// BOSCH_SHC_NO_LISTEN=1; production startup is unaffected.
+// Populate runtime from disk if config.json exists. Missing config is not
+// fatal — the server boots in setup-mode and lets the user pair via the
+// wizard at /api/setup/*.
+try { initRuntime(); }
+catch (err) { console.error('✖ initRuntime:', err.message); process.exit(1); }
+
+// When loaded by the test harness we want the express app but no listener
+// and no long-polling loop. The harness sets BOSCH_SHC_NO_LISTEN=1.
 if (!process.env.BOSCH_SHC_NO_LISTEN) {
-  const PORT = config.uiPort || 3000;
+  // Default to 3000 for setup-mode boots where there's no config yet.
+  const PORT = (isReady() && config.uiPort) || 3000;
   app.listen(PORT, () => {
-    console.log(`▶ Bosch SHC UI running on http://localhost:${PORT}`);
-    console.log(`  SHC: ${config.shcIp}  (client: ${config.clientId})`);
-    pollLoop().catch((e) => console.error('pollLoop crashed:', e));
+    if (isReady()) {
+      console.log(`▶ Bosch SHC UI running on http://localhost:${PORT}`);
+      console.log(`  SHC: ${config.shcIp}  (client: ${config.clientId})`);
+    } else {
+      console.log(`▶ Bosch SHC UI running on http://localhost:${PORT}  (SETUP MODE — visit it to pair)`);
+    }
+    kickPollLoop();
   });
 }
 
