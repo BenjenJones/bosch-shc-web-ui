@@ -43,6 +43,9 @@ const state = {
   deviceFilter: '',
   // null | 'AVAILABLE' | 'UNAVAILABLE' — quick status filter
   statusFilter: null,
+  // Multi-select quick filter by device category (see DEVICE_CATEGORIES).
+  // Empty set = no filter.
+  typeFilter: new Set(),
   lang: (() => {
     const stored = localStorage.getItem('lang');
     if (stored === 'en' || stored === 'de') return stored;
@@ -338,6 +341,33 @@ const DEVICE_MODEL_RANK = (() => {
   DEVICE_TYPE_ORDER.forEach((group, i) => group.forEach(model => m.set(model, i)));
   return m;
 })();
+
+// Categories used by the type quick-filter dropdown. Each entry groups one or
+// more deviceModel values under a single human-readable label + icon. Models
+// are matched exactly; prefixes match `${prefix}` or `${prefix}_…` (catches
+// e.g. CAMERA_360, TRV_GEN2_FOO).
+const DEVICE_CATEGORIES = [
+  { id: 'thermostat', icon: 'home-thermometer', models: ['THB','RTH','RTH2','RT2','TRV','TRV_GEN2','ROOM_CLIMATE_CONTROL'], prefixes: ['TRV'] },
+  { id: 'contact',    icon: 'window-closed',    models: ['SWD','SWD2'], prefixes: ['SWD'] },
+  { id: 'shutter',    icon: 'window-shutter',   models: ['BBL','BBL_2','MICROMODULE_SHUTTER','SHUTTER_CONTROL'] },
+  { id: 'light',      icon: 'lightbulb-on',     models: ['BSM','MICROMODULE_LIGHT_CONTROL','LIGHT_CONTROL_2','HUE_LIGHT','LEDVANCE_LIGHT','SMART_BULB'] },
+  { id: 'plug',       icon: 'power-plug',       models: ['PSM','PLUG','PLUG_COMPACT'] },
+  { id: 'smoke',      icon: 'smoke-detector',   models: ['SD','SMOKE_DETECTOR','SMOKE_DETECTOR_2','TWINGUARD'] },
+  { id: 'motion',     icon: 'motion-sensor',    models: ['MD','MOTION_DETECTOR'] },
+  { id: 'water',      icon: 'water-alert',      models: ['WLS','WATER_LEAKAGE_SENSOR'] },
+  { id: 'switch',     icon: 'light-switch-off', models: ['UNIVERSAL_SWITCH','UNIVERSAL_SWITCH_2','WRC2'] },
+  { id: 'camera',     icon: 'cctv',             models: ['EYES_OUTDOOR'], prefixes: ['CAMERA'] },
+  { id: 'bridge',     icon: 'router-network',   models: ['HUE_BRIDGE'] },
+];
+function deviceCategory(device) {
+  const m = (device.deviceModel || '').toUpperCase();
+  for (const cat of DEVICE_CATEGORIES) {
+    if (cat.models.includes(m)) return cat.id;
+    if (cat.prefixes?.some(p => m === p || m.startsWith(p + '_'))) return cat.id;
+  }
+  return null;
+}
+
 function deviceSortRank(device) {
   const m = (device.deviceModel || '').toUpperCase();
   if (DEVICE_MODEL_RANK.has(m)) return DEVICE_MODEL_RANK.get(m);
@@ -355,6 +385,17 @@ function renderDevices() {
       <div id="device-toolbar" class="flex items-center gap-2 mb-3 sticky top-[88px] bg-slate-100/90 backdrop-blur py-2 z-[5]">
         <input id="device-filter" type="search" placeholder="${t('devices.filter')}"
           class="flex-1 border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white" />
+        <details id="type-filter-dd" class="dropdown relative shrink-0">
+          <summary id="type-filter-summary"
+            title="${t('devices.typeFilterTitle')}"
+            class="inline-flex items-center gap-1 px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white hover:bg-slate-50">
+            <span>${t('devices.typeFilter')}</span>
+            <span id="type-filter-badge" class="hidden text-[10px] bg-blue-600 text-white px-1.5 rounded-full leading-4"></span>
+            <span class="text-slate-400 leading-none">▾</span>
+          </summary>
+          <div id="type-filter-panel"
+            class="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg p-1 z-20 min-w-[200px] max-h-[70vh] overflow-auto"></div>
+        </details>
         <button id="filter-available"   data-status="AVAILABLE"
           title="${t('devices.onlyAvailable')}"
           class="status-filter inline-flex items-center justify-center px-2 py-1.5 border border-slate-300 rounded-md bg-white hover:bg-slate-50">
@@ -381,6 +422,25 @@ function renderDevices() {
       updateStatusFilterButtons();
       renderDeviceList();
     }));
+    const typeDd = $('#type-filter-dd');
+    typeDd.addEventListener('change', (e) => {
+      const cb = e.target.closest('input[type=checkbox][data-cat]');
+      if (!cb) return;
+      if (cb.checked) state.typeFilter.add(cb.dataset.cat);
+      else            state.typeFilter.delete(cb.dataset.cat);
+      updateTypeFilterBadge();
+      renderDeviceList();
+    });
+    typeDd.addEventListener('click', (e) => {
+      if (e.target.closest('#type-filter-clear')) {
+        state.typeFilter.clear();
+        renderTypeFilterOptions();
+        renderDeviceList();
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (typeDd.open && !typeDd.contains(e.target)) typeDd.open = false;
+    });
     $('#expand-all').addEventListener('click', () => {
       state.collapsedRooms.clear();
       saveCollapsedRooms();
@@ -394,7 +454,50 @@ function renderDevices() {
     });
   }
   updateStatusFilterButtons();
+  renderTypeFilterOptions();
   renderDeviceList();
+}
+
+// Populates the type filter dropdown panel. Only categories that actually
+// have at least one device in the current state are shown — empty categories
+// would just be noise. Also drops stale selections (e.g. a category whose
+// last device was just removed).
+function renderTypeFilterOptions() {
+  const panel = $('#type-filter-panel');
+  if (!panel) return;
+  const present = new Set(state.devices.map(deviceCategory).filter(Boolean));
+  for (const id of [...state.typeFilter]) {
+    if (!present.has(id)) state.typeFilter.delete(id);
+  }
+  const cats = DEVICE_CATEGORIES.filter(c => present.has(c.id));
+  const clearBtn = state.typeFilter.size ? `
+    <button id="type-filter-clear" type="button"
+      class="w-full text-left text-xs text-slate-500 hover:text-slate-800 px-2 py-1">
+      ${t('devices.typeFilterClear')}
+    </button>
+    <div class="border-t border-slate-200 my-1"></div>` : '';
+  panel.innerHTML = clearBtn + (cats.length ? cats.map(c => `
+    <label class="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-100 cursor-pointer text-sm">
+      <input type="checkbox" data-cat="${c.id}" ${state.typeFilter.has(c.id) ? 'checked' : ''}
+        class="accent-blue-600" />
+      <img src="svg/${c.icon}.svg" alt="" style="width:16px;height:16px" />
+      <span>${t('devices.type.' + c.id)}</span>
+    </label>`).join('')
+    : `<p class="text-xs text-slate-500 px-2 py-1">${t('devices.none')}</p>`);
+  updateTypeFilterBadge();
+}
+
+function updateTypeFilterBadge() {
+  const badge = $('#type-filter-badge');
+  if (!badge) return;
+  const n = state.typeFilter.size;
+  badge.textContent = n;
+  badge.classList.toggle('hidden', n === 0);
+  const summary = $('#type-filter-summary');
+  if (summary) {
+    summary.classList.toggle('border-blue-600', n > 0);
+    summary.classList.toggle('text-blue-600',   n > 0);
+  }
 }
 
 function updateStatusFilterButtons() {
@@ -419,11 +522,13 @@ function renderDeviceList() {
   };
   const matchesStatus = (d) =>
     !state.statusFilter || d.status === state.statusFilter;
+  const matchesType = (d) =>
+    state.typeFilter.size === 0 || state.typeFilter.has(deviceCategory(d));
 
   const visible = state.devices.filter(d =>
-    d.roomId && d.status !== 'DISCOVERED' && matchesText(d) && matchesStatus(d)
+    d.roomId && d.status !== 'DISCOVERED' && matchesText(d) && matchesStatus(d) && matchesType(d)
   );
-  // Discovered devices: not yet configured, no roomId, not affected by status filter
+  // Discovered devices: not yet configured, no roomId, not affected by status/type filter
   const discovered = state.devices
     .filter(d => d.status === 'DISCOVERED' && matchesText(d))
     .sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id, 'de'));
@@ -467,7 +572,7 @@ function renderDeviceList() {
     .sort((a, b) => roomName(a[0]).localeCompare(roomName(b[0]), 'de'))
     .map(([rId, devs]) => {
       // When any filter is active, always open matching rooms
-      const filtering = !!filter || !!state.statusFilter;
+      const filtering = !!filter || !!state.statusFilter || state.typeFilter.size > 0;
       const open = filtering ? true : !state.collapsedRooms.has(rId);
       return `
       <details class="room mb-4" data-room="${rId}" ${open ? 'open' : ''}>
@@ -489,7 +594,7 @@ function renderDeviceList() {
   $$('#device-list [data-temp-set]').forEach(el => el.addEventListener('change', onTemperatureChange));
   // Remember the open/closed state on user interaction (not while filtering)
   $$('#device-list details.room').forEach(el => el.addEventListener('toggle', () => {
-    if (state.deviceFilter.trim() || state.statusFilter) return;
+    if (state.deviceFilter.trim() || state.statusFilter || state.typeFilter.size) return;
     if (el.open) state.collapsedRooms.delete(el.dataset.room);
     else        state.collapsedRooms.add(el.dataset.room);
     saveCollapsedRooms();

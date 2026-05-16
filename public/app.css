@@ -75,6 +75,16 @@ details.room[open]>summary .chev {
     transform: rotate(90deg);
 }
 
+/* Generic dropdown built on <details>: hide the disclosure marker so the
+   summary looks like a regular button. */
+details.dropdown>summary {
+    list-style: none;
+    cursor: pointer;
+}
+details.dropdown>summary::-webkit-details-marker {
+    display: none;
+}
+
 /* =========================================================================
    Dark theme — overrides the Tailwind utility classes used in the markup.
    Activated by setting [data-theme="dark"] on <html>.
