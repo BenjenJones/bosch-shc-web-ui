@@ -957,4 +957,8 @@ if (!process.env.BOSCH_SHC_NO_LISTEN) {
   });
 }
 
-module.exports = { app, shcRequest };
+module.exports = {
+  app, shcRequest,
+  // Internals exposed for unit tests — pure functions, no live state.
+  _internals: { hashPassword, verifyPassword, readCookie, adaptIntrusionState, publicUser, newToken },
+};
