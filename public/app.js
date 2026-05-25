@@ -382,34 +382,36 @@ function renderDevices() {
   // re-renders (e.g. triggered by SSE events).
   if (!$('#device-toolbar')) {
     $('#tab-devices').innerHTML = `
-      <div id="device-toolbar" class="flex items-center gap-2 mb-3 sticky top-[88px] bg-slate-100/90 backdrop-blur py-2 z-[5]">
+      <div id="device-toolbar" class="mb-3 sticky top-[88px] bg-slate-100/90 backdrop-blur py-2 z-[5] flex flex-col sm:flex-row sm:items-center gap-2">
         <input id="device-filter" type="search" placeholder="${t('devices.filter')}"
-          class="flex-1 border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white" />
-        <details id="type-filter-dd" class="dropdown relative shrink-0">
-          <summary id="type-filter-summary"
-            title="${t('devices.typeFilterTitle')}"
-            class="inline-flex items-center gap-1 px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white hover:bg-slate-50">
-            <span>${t('devices.typeFilter')}</span>
-            <span id="type-filter-badge" class="hidden text-[10px] bg-blue-600 text-white px-1.5 rounded-full leading-4"></span>
-            <span class="text-slate-400 leading-none">▾</span>
-          </summary>
-          <div id="type-filter-panel"
-            class="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg p-1 z-20 min-w-[200px] max-h-[70vh] overflow-auto"></div>
-        </details>
-        <button id="filter-available"   data-status="AVAILABLE"
-          title="${t('devices.onlyAvailable')}"
-          class="status-filter inline-flex items-center justify-center px-2 py-1.5 border border-slate-300 rounded-md bg-white hover:bg-slate-50">
-          <img src="svg/wifi-strength-4.svg" alt="" style="width:16px;height:16px" />
-        </button>
-        <button id="filter-unavailable" data-status="UNAVAILABLE"
-          title="${t('devices.onlyUnavailable')}"
-          class="status-filter inline-flex items-center justify-center px-2 py-1.5 border border-slate-300 rounded-md bg-white hover:bg-slate-50">
-          <img src="svg/wifi-off.svg" alt="" style="width:16px;height:16px" />
-        </button>
-        <button id="expand-all"   title="${t('devices.expandAll')}"
-          class="px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white hover:bg-slate-50">⇕</button>
-        <button id="collapse-all" title="${t('devices.collapseAll')}"
-          class="px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white hover:bg-slate-50">⇔</button>
+          class="w-full sm:flex-1 border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white" />
+        <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap sm:shrink-0">
+          <details id="type-filter-dd" class="dropdown relative shrink-0">
+            <summary id="type-filter-summary"
+              title="${t('devices.typeFilterTitle')}"
+              class="inline-flex items-center gap-1 px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white hover:bg-slate-50">
+              <span>${t('devices.typeFilter')}</span>
+              <span id="type-filter-badge" class="hidden text-[10px] bg-blue-600 text-white px-1.5 rounded-full leading-4"></span>
+              <span class="text-slate-400 leading-none">▾</span>
+            </summary>
+            <div id="type-filter-panel"
+              class="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg p-1 z-20 min-w-[200px] max-h-[70vh] overflow-auto"></div>
+          </details>
+          <button id="filter-available"   data-status="AVAILABLE"
+            title="${t('devices.onlyAvailable')}"
+            class="status-filter shrink-0 inline-flex items-center justify-center px-2 py-1.5 border border-slate-300 rounded-md bg-white hover:bg-slate-50">
+            <img src="svg/wifi-strength-4.svg" alt="" style="width:16px;height:16px" />
+          </button>
+          <button id="filter-unavailable" data-status="UNAVAILABLE"
+            title="${t('devices.onlyUnavailable')}"
+            class="status-filter shrink-0 inline-flex items-center justify-center px-2 py-1.5 border border-slate-300 rounded-md bg-white hover:bg-slate-50">
+            <img src="svg/wifi-off.svg" alt="" style="width:16px;height:16px" />
+          </button>
+          <button id="expand-all"   title="${t('devices.expandAll')}"
+            class="shrink-0 px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white hover:bg-slate-50">⇕</button>
+          <button id="collapse-all" title="${t('devices.collapseAll')}"
+            class="shrink-0 px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white hover:bg-slate-50">⇔</button>
+        </div>
       </div>
       <div id="device-list"></div>`;
     $('#device-filter').addEventListener('input', (e) => {
