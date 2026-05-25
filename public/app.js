@@ -348,7 +348,7 @@ const DEVICE_MODEL_RANK = (() => {
 // e.g. CAMERA_360, TRV_GEN2_FOO).
 const DEVICE_CATEGORIES = [
   { id: 'thermostat', icon: 'home-thermometer', models: ['THB','RTH','RTH2','RT2','TRV','TRV_GEN2','ROOM_CLIMATE_CONTROL'], prefixes: ['TRV'] },
-  { id: 'contact',    icon: 'window-closed',    models: ['SWD','SWD2'], prefixes: ['SWD'] },
+  { id: 'contact',    icon: 'window-closed',    models: ['SWD','SWD2', 'SWD2_PLUS'], prefixes: ['SWD'] },
   { id: 'shutter',    icon: 'window-shutter',   models: ['BBL','BBL_2','MICROMODULE_SHUTTER','SHUTTER_CONTROL'] },
   { id: 'light',      icon: 'lightbulb-on',     models: ['BSM','MICROMODULE_LIGHT_CONTROL','LIGHT_CONTROL_2','HUE_LIGHT','LEDVANCE_LIGHT','SMART_BULB'] },
   { id: 'plug',       icon: 'power-plug',       models: ['PSM','PLUG','PLUG_COMPACT'] },
