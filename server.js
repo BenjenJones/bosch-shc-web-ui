@@ -719,8 +719,16 @@ app.delete('/api/devices/:id', requireAdmin, wrap(async (req, res) => {
 }));
 
 // =========================================================================
-//  Admin – rooms (rename / change icon)
+//  Admin – rooms (create / rename / change icon)
 // =========================================================================
+// Creating rooms is not part of the documented SHC API (only GET is), but the
+// controller accepts a POST to /smarthome/rooms the same way it accepts the
+// undocumented rename PUT below.
+app.post('/api/rooms', requireAdmin, wrap(async (req, res) => {
+  const result = await shcRequest('POST', '/smarthome/rooms', { body: req.body });
+  res.json(result || { ok: true });
+}));
+
 app.put('/api/rooms/:id', requireAdmin, wrap(async (req, res) => {
   const result = await shcRequest(
     'PUT',
@@ -728,6 +736,11 @@ app.put('/api/rooms/:id', requireAdmin, wrap(async (req, res) => {
     { body: req.body }
   );
   res.json(result || { ok: true });
+}));
+
+app.delete('/api/rooms/:id', requireAdmin, wrap(async (req, res) => {
+  await shcRequest('DELETE', `/smarthome/rooms/${encodeURIComponent(req.params.id)}`);
+  res.json({ ok: true });
 }));
 
 // =========================================================================

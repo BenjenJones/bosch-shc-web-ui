@@ -354,7 +354,7 @@ const DEVICE_CATEGORIES = [
   { id: 'plug',       icon: 'power-plug',       models: ['PSM','PLUG','PLUG_COMPACT'] },
   { id: 'smoke',      icon: 'smoke-detector',   models: ['SD','SMOKE_DETECTOR','SMOKE_DETECTOR_2','TWINGUARD'] },
   { id: 'motion',     icon: 'motion-sensor',    models: ['MD','MOTION_DETECTOR'] },
-  { id: 'water',      icon: 'water-alert',      models: ['WLS','WATER_LEAKAGE_SENSOR'] },
+  { id: 'water',      icon: 'water-alert',      models: ['WLS','WATER_LEAKAGE_SENSOR', 'WATER_DETECTOR'] },
   { id: 'switch',     icon: 'light-switch-off', models: ['UNIVERSAL_SWITCH','UNIVERSAL_SWITCH_2','WRC2'] },
   { id: 'camera',     icon: 'cctv',             models: ['EYES_OUTDOOR'], prefixes: ['CAMERA'] },
   { id: 'bridge',     icon: 'router-network',   models: ['HUE_BRIDGE'] },
@@ -1268,7 +1268,11 @@ function renderAdmin() {
 
       <!-- Rooms -->
       <article class="card bg-white rounded-lg p-5 border border-slate-200">
-        <h3 class="font-medium mb-3">${t('admin.roomsHeader', state.rooms.length)}</h3>
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-medium">${t('admin.roomsHeader', state.rooms.length)}</h3>
+          <button id="room-add"
+            class="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded">${t('admin.addRoom')}</button>
+        </div>
         <ul class="text-sm divide-y">
           ${state.rooms.map(r => {
             const count = state.devices.filter(d => d.roomId === r.id).length;
@@ -1278,8 +1282,12 @@ function renderAdmin() {
                 <div>${r.name}</div>
                 <div class="text-xs text-slate-500">${countLabel}</div>
               </div>
-              <button data-room-rename="${r.id}" data-name="${r.name.replace(/"/g,'')}"
-                class="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded">${t('admin.rename')}</button>
+              <div class="flex gap-1 shrink-0">
+                <button data-room-rename="${r.id}" data-name="${r.name.replace(/"/g,'')}"
+                  class="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded">${t('admin.rename')}</button>
+                <button data-room-del="${r.id}" data-name="${r.name.replace(/"/g,'')}"
+                  class="text-xs text-rose-600 hover:bg-rose-50 px-2 py-1 rounded">${t('admin.remove')}</button>
+              </div>
             </li>`;
           }).join('')}
         </ul>
@@ -1338,6 +1346,15 @@ function renderAdmin() {
       await loadAll();
     })));
 
+  $('#tab-admin #room-add')?.addEventListener('click', () =>
+    promptModal(t('modal.addRoom'), '', async (name) => {
+      await api('/api/rooms', {
+        method: 'POST',
+        body: { '@type': 'room', name, iconId: 'icon_room_misc' },
+      });
+      await loadAll();
+    }));
+
   $$('#tab-admin [data-room-rename]').forEach(b => b.addEventListener('click', () =>
     promptModal(t('modal.renameRoom'), b.dataset.name, async (newName) => {
       const room = state.rooms.find(r => r.id === b.dataset.roomRename);
@@ -1345,6 +1362,12 @@ function renderAdmin() {
         method: 'PUT',
         body: { '@type': 'room', id: room?.id, iconId: room?.iconId, name: newName },
       });
+      await loadAll();
+    })));
+
+  $$('#tab-admin [data-room-del]').forEach(b => b.addEventListener('click', () =>
+    confirmModal(t('modal.confirmRmRoom', b.dataset.name), async () => {
+      await api(`/api/rooms/${encodeURIComponent(b.dataset.roomDel)}`, { method: 'DELETE' });
       await loadAll();
     })));
 
