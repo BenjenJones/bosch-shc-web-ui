@@ -191,3 +191,64 @@ describe('admin mutations', () => {
     expect(res.status).toBeLessThan(300);
   });
 });
+
+// =========================================================================
+//  Create / delete CRUD — undocumented SHC endpoints proxied by server.js.
+//  These are mocked via PATCH_PATHS in merge-openapi.mjs; Prism (--errors)
+//  still validates the outgoing path + body, so a wrong proxy URL/shape fails.
+// =========================================================================
+describe('create/delete (undocumented CRUD)', () => {
+  test('POST /api/rooms creates a room', async () => {
+    const res = await request(app)
+      .post('/api/rooms')
+      .send({ '@type': 'room', name: 'Studio', iconId: 'icon_room_misc' });
+    expect(res.status).toBeLessThan(300);
+  });
+  test('DELETE /api/rooms/:id deletes a room', async () => {
+    const res = await request(app).delete('/api/rooms/hz_1');
+    expect(res.status).toBeLessThan(300);
+  });
+
+  test('POST /api/automations creates an automation', async () => {
+    const res = await request(app)
+      .post('/api/automations')
+      .send({
+        '@type': 'automationRule', name: 'Test', enabled: true,
+        automationTriggers: [], automationConditions: [], automationActions: [],
+        conditionLogicalOp: 'AND',
+      });
+    expect(res.status).toBeLessThan(300);
+  });
+  test('DELETE /api/automations/:id deletes an automation', async () => {
+    const res = await request(app).delete('/api/automations/rule-1');
+    expect(res.status).toBeLessThan(300);
+  });
+
+  test('POST /api/scenarios creates a scenario', async () => {
+    const res = await request(app)
+      .post('/api/scenarios')
+      .send({ '@type': 'scenario', name: 'Movie', iconId: 'icon_scenario_movie_evening', actions: [] });
+    expect(res.status).toBeLessThan(300);
+  });
+  test('PUT /api/scenarios/:id updates a scenario', async () => {
+    const res = await request(app)
+      .put('/api/scenarios/scn-1')
+      .send({ '@type': 'scenario', id: 'scn-1', name: 'Movie 2', iconId: 'icon_scenario_movie_evening', actions: [] });
+    expect(res.status).toBeLessThan(300);
+  });
+  test('DELETE /api/scenarios/:id deletes a scenario', async () => {
+    const res = await request(app).delete('/api/scenarios/scn-1');
+    expect(res.status).toBeLessThan(300);
+  });
+
+  test('POST /api/userdefinedstates creates a state', async () => {
+    const res = await request(app)
+      .post('/api/userdefinedstates')
+      .send({ '@type': 'userDefinedState', name: 'Present', state: false });
+    expect(res.status).toBeLessThan(300);
+  });
+  test('DELETE /api/userdefinedstates/:id deletes a state', async () => {
+    const res = await request(app).delete('/api/userdefinedstates/uds-1');
+    expect(res.status).toBeLessThan(300);
+  });
+});
