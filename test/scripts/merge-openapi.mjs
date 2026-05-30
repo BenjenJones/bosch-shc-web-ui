@@ -115,7 +115,7 @@ function merge(bundled, spec, sourceLabel) {
 const bundled = {
   openapi: '3.0.0',
   info: {
-    title: 'Bosch SHC – bundled local API (test mock)',
+    title: 'Bosch SHC - bundled local API (test mock)',
     version: '3.2',
     description: 'Auto-generated bundle of all Bosch SHC OpenAPI specs for Prism mocking. See test/scripts/merge-openapi.mjs.',
   },

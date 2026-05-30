@@ -1,0 +1,216 @@
+{
+        "@type": "automationRule",
+        "id": "61d14377-6bf8-4cf7-a40a-6633d5eedc79",
+        "name": "Test",
+        "enabled": false,
+        "automationTriggers": [
+            {
+                "type": "WallThermostatTemperatureThresholdTrigger",
+                "configuration": "{\"deviceId\":\"hdm:HomeMaticIP:REPLACED_ID,\"threshold\":20.0,\"comparisonMode\":\"LESS_THAN\"}"
+            },
+            {
+                "type": "SmartPlugOnOffTrigger",
+                "configuration": "{\"smartPlugId\":\"hdm:ZigBee:REPLACED_ID,\"triggerState\":\"OFF\"}"
+            },
+            {
+                "type": "IndoorCameraAudioTrigger",
+                "configuration": "{\"cameraId\":\"hdm:Cameras:REPLACED_ID\"}"
+            },
+            {
+                "type": "IndoorCameraMotionTrigger",
+                "configuration": "{\"cameraId\":\"hdm:Cameras:REPLACED_ID\"}"
+            },
+            {
+                "type": "RoomClimateControlMeasuredTemperatureTrigger",
+                "configuration": "{\"deviceId\":\"roomClimateControl_hz_1\",\"threshold\":20.0,\"comparisonMode\":\"LESS_THAN\"}"
+            },
+            {
+                "type": "KeypadButtonPressTrigger",
+                "configuration": "{\"deviceId\":\"hdm:HomeMaticIP:REPLACED_ID,\"keyName\":\"BUTTON_2\",\"keyCode\":2,\"buttonEvent\":\"PRESS_LONG\"}"
+            },
+            {
+                "type": "SmartPlugOnOffTrigger",
+                "configuration": "{\"smartPlugId\":\"hdm:ZigBee:REPLACED_ID,\"triggerState\":\"ON\"}"
+            },
+            {
+                "type": "WallThermostatHumidityThresholdTrigger",
+                "configuration": "{\"deviceId\":\"hdm:HomeMaticIP:REPLACED_ID,\"threshold\":50,\"comparisonMode\":\"LESS_THAN\"}"
+            },
+            {
+                "type": "KeypadButtonPressTrigger",
+                "configuration": "{\"deviceId\":\"hdm:HomeMaticIP:REPLACED_ID,\"keyName\":\"BUTTON_1\",\"keyCode\":1,\"buttonEvent\":\"PRESS_SHORT\"}"
+            },
+            {
+                "type": "SmartPlugPowerConsumptionTrigger_v2",
+                "configuration": "{\"deviceId\":\"hdm:ZigBee:REPLACED_ID,\"thresholdWatt\":10.0,\"durationSeconds\":10,\"comparisonMode\":\"GREATER_THAN\"}"
+            },
+            {
+                "type": "RoomHumidityThresholdTrigger",
+                "configuration": "{\"roomId\":\"hz_3\",\"threshold\":50,\"comparisonMode\":\"LESS_THAN\"}"
+            },
+            {
+                "type": "AstroTimeEventTrigger",
+                "configuration": "{\"eventType\":\"SUNSET\",\"offsetInMinutes\":45}"
+            },
+            {
+                "type": "AstroTimeEventTrigger",
+                "configuration": "{\"eventType\":\"SUNRISE\",\"offsetInMinutes\":0}"
+            },
+            {
+                "type": "DailyTimerTrigger",
+                "configuration": "{\"time\":\"21:32\"}"
+            },
+            {
+                "type": "UserDefinedStateTrigger",
+                "configuration": "{\"stateId\":\"REPLACED_ID\",\"stateChange\":\"TO_INACTIVE\"}"
+            }
+        ],
+        "automationConditions": [
+            {
+                "type": "SmartPlugOnOffCondition",
+                "configuration": "{\"smartPlugId\":\"hdm:ZigBee:REPLACED_ID,\"conditionState\":\"OFF\"}"
+            },
+            {
+                "type": "ShutterContactCondition",
+                "configuration": "{\"shutterContactId\":\"hdm:HomeMaticIP:REPLACED_ID,\"conditionState\":\"CLOSED\"}"
+            },
+            {
+                "type": "AstroTimeCondition",
+                "configuration": "{\"astroTimeConditionType\":\"NIGHTTIME\",\"startOffsetInMinutes\":-31}"
+            },
+            {
+                "type": "TimePeriodCondition",
+                "configuration": "{\"startTime\":\"21:16\",\"endTime\":\"22:16\"}"
+            },
+            {
+                "type": "RoomClimateControlRoomControlModeCondition",
+                "configuration": "{\"rccId\":\"roomClimateControl_hz_2\",\"roomControlMode\":\"OFF\"}"
+            },
+            {
+                "type": "RoomClimateControlMeasuredTemperatureCondition",
+                "configuration": "{\"deviceId\":\"roomClimateControl_hz_1\",\"threshold\":20.0,\"comparisonMode\":\"LESS_THAN\"}"
+            },
+            {
+                "type": "SmartPlugOnOffCondition",
+                "configuration": "{\"smartPlugId\":\"hdm:ZigBee:REPLACED_ID,\"conditionState\":\"ON\"}"
+            },
+            {
+                "type": "IntrusionDetectionSystemArmedDisarmedCondition",
+                "configuration": "{\"conditionState\":\"SYSTEM_ARMED\",\"selectedProfiles\":[\"0\",\"1\"]}"
+            },
+            {
+                "type": "WeekdaysCondition",
+                "configuration": "{\"weekdays\":[\"MONDAY\",\"TUESDAY\",\"WEDNESDAY\",\"THURSDAY\",\"FRIDAY\"]}"
+            },
+            {
+                "type": "ShutterContactCondition",
+                "configuration": "{\"shutterContactId\":\"hdm:ZigBee:REPLACED_ID,\"conditionState\":\"OPEN\"}"
+            },
+            {
+                "type": "WallThermostatHumidityCondition",
+                "configuration": "{\"deviceId\":\"hdm:HomeMaticIP:REPLACED_ID,\"threshold\":50,\"comparisonMode\":\"LESS_THAN\"}"
+            },
+            {
+                "type": "RoomClimateControlRoomControlModeCondition",
+                "configuration": "{\"rccId\":\"roomClimateControl_hz_2\",\"roomControlMode\":\"HEATING\"}"
+            },
+            {
+                "type": "WallThermostatTemperatureThresholdCondition",
+                "configuration": "{\"deviceId\":\"hdm:HomeMaticIP:REPLACED_ID,\"threshold\":20.0,\"comparisonMode\":\"GREATER_THAN\"}"
+            },
+            {
+                "type": "UserDefinedStateCondition",
+                "configuration": "{\"stateId\":\"REPLACED_ID\",\"state\":\"INACTIVE\"}"
+            },
+            {
+                "type": "UserDefinedStateCondition",
+                "configuration": "{\"stateId\":\"REPLACED_ID\",\"state\":\"ACTIVE\"}"
+            },
+            {
+                "type": "RoomHumidityCondition",
+                "configuration": "{\"roomId\":\"hz_3\",\"threshold\":50,\"comparisonMode\":\"GREATER_THAN\"}"
+            },
+            {
+                "type": "AstroTimeCondition",
+                "configuration": "{\"astroTimeConditionType\":\"DAYTIME\",\"startOffsetInMinutes\":0}"
+            }
+        ],
+        "automationActions": [
+            {
+                "type": "ThermostatSilentModeAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"deviceId\":\"hdm:HomeMaticIP:REPLACED_ID,\"mode\":\"MODE_SILENT\"}"
+            },
+            {
+                "type": "ThermostatSilentModeAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"deviceId\":\"hdm:HomeMaticIP:REPLACED_ID,\"mode\":\"MODE_NORMAL\"}"
+            },
+            {
+                "type": "RoomClimateAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"rccId\":\"roomClimateControl_hz_2\",\"roomControlMode\":\"HEATING\",\"operationMode\":\"MANUAL\",\"operationModeToggleActive\":true,\"temperature\":14.5,\"temperatureToggleActive\":true,\"scheduleId\":\"86ea6f28-6ff2-4f8c-906d-df2df47983f5\",\"scheduleName\":\"Individuell\",\"scheduleToggleActive\":true,\"enableBoostMode\":true,\"boostModeToggleActive\":true}"
+            },
+            {
+                "type": "PresenceSimulationEnableDisableAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"action\":\"SYSTEM_DISABLED\"}"
+            },
+            {
+                "type": "SmartPlugOnOffAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"smartPlugId\":\"hdm:ZigBee:REPLACED_ID,\"action\":\"TURN_OFF\",\"temporaryTurnOnTime\":null,\"operationMode\":null,\"addEnergySnapshot\":null,\"energySnapshotName\":null,\"overwriteOldestEnergySnapshotIfNeeded\":null,\"resetPowerConsumption\":null}"
+            },
+            {
+                "type": "CustomPushNotificationAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"message\":\"Test Nachricht\"}"
+            },
+            {
+                "type": "IntrusionDetectionSystemArmDisarmAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"action\":\"SYSTEM_ARMED\",\"selectedProfile\":\"1\"}"
+            },
+            {
+                "type": "IndoorCameraAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"cameraId\":\"hdm:Cameras:REPLACED_ID\",\"actionEnableCamera\":\"TURN_ON\",\"actionEnableCameraNotification\":\"TURN_NOTIFICATION_ON\"}"
+            },
+            {
+                "type": "ScenarioAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"scenarioId\":\"a0425e24-cdcc-4cc3-aa0c-6c8758713aa5\"}"
+            },
+            {
+                "type": "SmartPlugOnOffAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"smartPlugId\":\"hdm:ZigBee:REPLACED_ID,\"action\":\"TURN_ON\",\"temporaryTurnOnTime\":null,\"operationMode\":null,\"addEnergySnapshot\":null,\"energySnapshotName\":null,\"overwriteOldestEnergySnapshotIfNeeded\":null,\"resetPowerConsumption\":null}"
+            },
+            {
+                "type": "UserDefinedStateAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"stateId\":\"REPLACED_ID\",\"state\":\"ACTIVE\"}"
+            },
+            {
+                "type": "PresenceSimulationEnableDisableAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"action\":\"SYSTEM_ENABLED\"}"
+            },
+            {
+                "type": "RoomClimateAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"rccId\":\"roomClimateControl_hz_3\",\"roomControlMode\":\"HEATING\",\"operationMode\":\"AUTOMATIC\",\"operationModeToggleActive\":true,\"temperature\":20.0,\"temperatureToggleActive\":true,\"scheduleId\":\"ec20e1b0-d8a3-44da-862c-32bbc00d0abd\",\"scheduleName\":\"Individuell\",\"scheduleToggleActive\":false,\"enableBoostMode\":true,\"boostModeToggleActive\":false}"
+            },
+            {
+                "type": "IndoorCameraAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"cameraId\":\"hdm:Cameras:REPLACED_ID\",\"actionEnableCamera\":\"TURN_OFF\",\"actionEnableCameraNotification\":\"TURN_NOTIFICATION_OFF\"}"
+            },
+            {
+                "type": "IntrusionDetectionSystemArmDisarmAction",
+                "delayInSeconds": 0,
+                "configuration": "{\"action\":\"SYSTEM_DISARMED\",\"selectedProfile\":null}"
+            }
+        ],
+        "conditionLogicalOp": "OR"
+    }

@@ -1,0 +1,642 @@
+import { state, $, $$, t, api, escapeHtml, roomName, deviceName, serviceOf, deviceUpdateInfo, saveCollapsedRooms } from './core.js';
+
+// =========================================================================
+//  Tab: Devices
+// =========================================================================
+// Fixed sort order for device types within a room.
+// Lower number = higher up. Unknown models end up at the bottom.
+const DEVICE_TYPE_ORDER = [
+  ['ROOM_CLIMATE_CONTROL'],                                         // virtual room climate control
+  ['THB', 'RTH', 'RTH2', 'RT2'],                                    // room thermostat
+  ['TRV', 'TRV_GEN2'],                                              // radiator thermostat
+  ['SWD', 'SWD2'],                                                  // door/window contact
+  ['BBL', 'BBL_2', 'MICROMODULE_SHUTTER', 'SHUTTER_CONTROL'],       // shutter
+  ['BSM', 'MICROMODULE_LIGHT_CONTROL', 'LIGHT_CONTROL_2',
+   'HUE_LIGHT', 'LEDVANCE_LIGHT', 'SMART_BULB'],                    // light
+  ['PSM', 'PLUG', 'PLUG_COMPACT'],                                  // smart plug
+  ['SD', 'SMOKE_DETECTOR', 'SMOKE_DETECTOR_2', 'TWINGUARD'],        // smoke detector
+  ['MD', 'MOTION_DETECTOR'],                                        // motion detector
+  ['WLS', 'WATER_LEAKAGE_SENSOR'],                                  // water leakage sensor
+  ['UNIVERSAL_SWITCH', 'UNIVERSAL_SWITCH_2', 'WRC2'],               // universal switch
+  ['HUE_BRIDGE'],                                                   // bridges
+];
+const DEVICE_MODEL_RANK = (() => {
+  const m = new Map();
+  DEVICE_TYPE_ORDER.forEach((group, i) => group.forEach(model => m.set(model, i)));
+  return m;
+})();
+
+// Categories used by the type quick-filter dropdown. Each entry groups one or
+// more deviceModel values under a single human-readable label + icon. Models
+// are matched exactly; prefixes match `${prefix}` or `${prefix}_…` (catches
+// e.g. CAMERA_360, TRV_GEN2_FOO).
+const DEVICE_CATEGORIES = [
+  { id: 'thermostat', icon: 'home-thermometer', models: ['THB','RTH','RTH2','RT2','TRV','TRV_GEN2','ROOM_CLIMATE_CONTROL'], prefixes: ['TRV'] },
+  { id: 'contact',    icon: 'window-closed',    models: ['SWD','SWD2'], prefixes: ['SWD', 'SWD2'] },
+  { id: 'shutter',    icon: 'window-shutter',   models: ['BBL','BBL_2','MICROMODULE_SHUTTER','SHUTTER_CONTROL'] },
+  { id: 'light',      icon: 'lightbulb-on',     models: ['BSM','MICROMODULE_LIGHT_CONTROL','LIGHT_CONTROL_2','HUE_LIGHT','LEDVANCE_LIGHT','SMART_BULB'] },
+  { id: 'plug',       icon: 'power-plug',       models: ['PSM','PLUG','PLUG_COMPACT'] },
+  { id: 'smoke',      icon: 'smoke-detector',   models: ['SD','SMOKE_DETECTOR','SMOKE_DETECTOR_2','TWINGUARD'] },
+  { id: 'motion',     icon: 'motion-sensor',    models: ['MD','MOTION_DETECTOR'] },
+  { id: 'water',      icon: 'water-alert',      models: ['WLS','WATER_LEAKAGE_SENSOR', 'WATER_DETECTOR'] },
+  { id: 'switch',     icon: 'light-switch-off', models: ['UNIVERSAL_SWITCH','UNIVERSAL_SWITCH_2','WRC2'] },
+  { id: 'camera',     icon: 'cctv',             models: ['EYES_OUTDOOR'], prefixes: ['CAMERA'] },
+  { id: 'bridge',     icon: 'router-network',   models: ['HUE_BRIDGE'] },
+];
+function deviceCategory(device) {
+  const m = (device.deviceModel || '').toUpperCase();
+  for (const cat of DEVICE_CATEGORIES) {
+    if (cat.models.includes(m)) return cat.id;
+    if (cat.prefixes?.some(p => m === p || m.startsWith(p + '_'))) return cat.id;
+  }
+  return null;
+}
+
+function deviceSortRank(device) {
+  const m = (device.deviceModel || '').toUpperCase();
+  if (DEVICE_MODEL_RANK.has(m)) return DEVICE_MODEL_RANK.get(m);
+  // Prefix matches (e.g. CAMERA_*, TRV_*) for robustness
+  for (const [model, rank] of DEVICE_MODEL_RANK) {
+    if (m.startsWith(model + '_')) return rank;
+  }
+  return DEVICE_TYPE_ORDER.length;
+}
+function renderDevices() {
+  // Build the toolbar only once so the filter input keeps focus during
+  // re-renders (e.g. triggered by SSE events).
+  if (!$('#device-toolbar')) {
+    $('#tab-devices').innerHTML = `
+      <div id="device-toolbar" class="mb-3 sticky top-[88px] bg-slate-100/90 backdrop-blur py-2 z-[5] flex flex-col sm:flex-row sm:items-center gap-2">
+        <input id="device-filter" type="search" placeholder="${t('devices.filter')}"
+          class="w-full sm:flex-1 border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white" />
+        <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap sm:shrink-0">
+          <details id="type-filter-dd" class="dropdown relative shrink-0">
+            <summary id="type-filter-summary"
+              title="${t('devices.typeFilterTitle')}"
+              class="inline-flex items-center gap-1 px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white hover:bg-slate-50">
+              <span>${t('devices.typeFilter')}</span>
+              <span id="type-filter-badge" class="hidden text-[10px] bg-blue-600 text-white px-1.5 rounded-full leading-4"></span>
+              <span class="text-slate-400 leading-none">▾</span>
+            </summary>
+            <div id="type-filter-panel"
+              class="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg p-1 z-20 min-w-[200px] max-h-[70vh] overflow-auto"></div>
+          </details>
+          <button id="filter-available"   data-status="AVAILABLE"
+            title="${t('devices.onlyAvailable')}"
+            class="status-filter shrink-0 inline-flex items-center justify-center px-2 py-1.5 border border-slate-300 rounded-md bg-white hover:bg-slate-50">
+            <img src="svg/wifi-strength-4.svg" alt="" style="width:16px;height:16px" />
+          </button>
+          <button id="filter-unavailable" data-status="UNAVAILABLE"
+            title="${t('devices.onlyUnavailable')}"
+            class="status-filter shrink-0 inline-flex items-center justify-center px-2 py-1.5 border border-slate-300 rounded-md bg-white hover:bg-slate-50">
+            <img src="svg/wifi-off.svg" alt="" style="width:16px;height:16px" />
+          </button>
+          <button id="expand-all"   title="${t('devices.expandAll')}"
+            class="shrink-0 px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white hover:bg-slate-50">⇕</button>
+          <button id="collapse-all" title="${t('devices.collapseAll')}"
+            class="shrink-0 px-2 py-1.5 text-sm border border-slate-300 rounded-md bg-white hover:bg-slate-50">⇔</button>
+        </div>
+      </div>
+      <div id="device-list"></div>`;
+    $('#device-filter').addEventListener('input', (e) => {
+      state.deviceFilter = e.target.value;
+      renderDeviceList();
+    });
+    $$('#device-toolbar .status-filter').forEach(b => b.addEventListener('click', () => {
+      // Click on active filter clears it; otherwise activate this filter
+      state.statusFilter = state.statusFilter === b.dataset.status ? null : b.dataset.status;
+      updateStatusFilterButtons();
+      renderDeviceList();
+    }));
+    const typeDd = $('#type-filter-dd');
+    typeDd.addEventListener('change', (e) => {
+      const cb = e.target.closest('input[type=checkbox][data-cat]');
+      if (!cb) return;
+      if (cb.checked) state.typeFilter.add(cb.dataset.cat);
+      else            state.typeFilter.delete(cb.dataset.cat);
+      updateTypeFilterBadge();
+      renderDeviceList();
+    });
+    typeDd.addEventListener('click', (e) => {
+      if (e.target.closest('#type-filter-clear')) {
+        state.typeFilter.clear();
+        renderTypeFilterOptions();
+        renderDeviceList();
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (typeDd.open && !typeDd.contains(e.target)) typeDd.open = false;
+    });
+    $('#expand-all').addEventListener('click', () => {
+      state.collapsedRooms.clear();
+      saveCollapsedRooms();
+      renderDeviceList();
+    });
+    $('#collapse-all').addEventListener('click', () => {
+      const allRooms = new Set(state.devices.filter(d => d.roomId).map(d => d.roomId));
+      state.collapsedRooms = allRooms;
+      saveCollapsedRooms();
+      renderDeviceList();
+    });
+  }
+  updateStatusFilterButtons();
+  renderTypeFilterOptions();
+  renderDeviceList();
+}
+
+// Populates the type filter dropdown panel. Only categories that actually
+// have at least one device in the current state are shown — empty categories
+// would just be noise. Also drops stale selections (e.g. a category whose
+// last device was just removed).
+function renderTypeFilterOptions() {
+  const panel = $('#type-filter-panel');
+  if (!panel) return;
+  const present = new Set(state.devices.map(deviceCategory).filter(Boolean));
+  for (const id of [...state.typeFilter]) {
+    if (!present.has(id)) state.typeFilter.delete(id);
+  }
+  const cats = DEVICE_CATEGORIES.filter(c => present.has(c.id));
+  const clearBtn = state.typeFilter.size ? `
+    <button id="type-filter-clear" type="button"
+      class="w-full text-left text-xs text-slate-500 hover:text-slate-800 px-2 py-1">
+      ${t('devices.typeFilterClear')}
+    </button>
+    <div class="border-t border-slate-200 my-1"></div>` : '';
+  panel.innerHTML = clearBtn + (cats.length ? cats.map(c => `
+    <label class="flex items-center gap-2 px-2 py-1 rounded hover:bg-slate-100 cursor-pointer text-sm">
+      <input type="checkbox" data-cat="${c.id}" ${state.typeFilter.has(c.id) ? 'checked' : ''}
+        class="accent-blue-600" />
+      <img src="svg/${c.icon}.svg" alt="" style="width:16px;height:16px" />
+      <span>${t('devices.type.' + c.id)}</span>
+    </label>`).join('')
+    : `<p class="text-xs text-slate-500 px-2 py-1">${t('devices.none')}</p>`);
+  updateTypeFilterBadge();
+}
+
+function updateTypeFilterBadge() {
+  const badge = $('#type-filter-badge');
+  if (!badge) return;
+  const n = state.typeFilter.size;
+  badge.textContent = n;
+  badge.classList.toggle('hidden', n === 0);
+  const summary = $('#type-filter-summary');
+  if (summary) {
+    summary.classList.toggle('border-blue-600', n > 0);
+    summary.classList.toggle('text-blue-600',   n > 0);
+  }
+}
+
+function updateStatusFilterButtons() {
+  $$('#device-toolbar .status-filter').forEach(b => {
+    const active = state.statusFilter === b.dataset.status;
+    b.classList.toggle('bg-blue-600', active);
+    b.classList.toggle('text-white',  active);
+    b.classList.toggle('border-blue-600', active);
+    b.classList.toggle('bg-white',    !active);
+    b.classList.toggle('hover:bg-slate-50', !active);
+    b.classList.toggle('border-slate-300',  !active);
+  });
+}
+
+function renderDeviceList() {
+  const filter = (state.deviceFilter || '').trim().toLowerCase();
+  const matchesText = (d) => {
+    if (!filter) return true;
+    return (d.name || '').toLowerCase().includes(filter)
+        || (d.deviceModel || '').toLowerCase().includes(filter)
+        || roomName(d.roomId).toLowerCase().includes(filter);
+  };
+  const matchesStatus = (d) =>
+    !state.statusFilter || d.status === state.statusFilter;
+  const matchesType = (d) =>
+    state.typeFilter.size === 0 || state.typeFilter.has(deviceCategory(d));
+
+  const visible = state.devices.filter(d =>
+    d.roomId && d.status !== 'DISCOVERED' && matchesText(d) && matchesStatus(d) && matchesType(d)
+  );
+  // Discovered devices: not yet configured, no roomId, not affected by status/type filter
+  const discovered = state.devices
+    .filter(d => d.status === 'DISCOVERED' && matchesText(d))
+    .sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id, 'de'));
+  const byRoom = new Map();
+  for (const d of visible) {
+    if (!byRoom.has(d.roomId)) byRoom.set(d.roomId, []);
+    byRoom.get(d.roomId).push(d);
+  }
+  for (const devs of byRoom.values()) {
+    devs.sort((a, b) => {
+      const r = deviceSortRank(a) - deviceSortRank(b);
+      if (r !== 0) return r;
+      return (a.name || a.id).localeCompare(b.name || b.id, 'de');
+    });
+  }
+
+  const discoveredHtml = discovered.length ? `
+    <section class="mb-4 border border-amber-300 bg-amber-50 rounded-lg p-3">
+      <h2 class="text-sm uppercase tracking-wide text-amber-800 flex items-center gap-1.5 mb-1">
+        ⚠ ${t('devices.discoveredHeader', discovered.length)}
+      </h2>
+      <p class="text-xs text-amber-700 mb-2">${t('devices.discoveredHint')}</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        ${discovered.map(d => `
+          <article class="card bg-white rounded-lg p-4 border border-amber-200">
+            <header class="flex items-start gap-2.5">
+              <div class="text-2xl leading-none mt-0.5 shrink-0" aria-hidden="true">
+                <img src="svg/${deviceIcon(d)}.svg" style="width:25px;height:25px" />
+              </div>
+              <div class="min-w-0">
+                <h3 class="font-medium leading-tight truncate">${d.name || d.id}</h3>
+                <p class="text-xs text-slate-500">${d.deviceModel || d.profile || ''}</p>
+                <p class="text-[10px] text-slate-400 mt-1 break-all">${d.id}</p>
+              </div>
+            </header>
+          </article>`).join('')}
+      </div>
+    </section>` : '';
+
+  $('#device-list').innerHTML = discoveredHtml + [...byRoom.entries()]
+    .sort((a, b) => roomName(a[0]).localeCompare(roomName(b[0]), 'de'))
+    .map(([rId, devs]) => {
+      // When any filter is active, always open matching rooms
+      const filtering = !!filter || !!state.statusFilter || state.typeFilter.size > 0;
+      const open = filtering ? true : !state.collapsedRooms.has(rId);
+      return `
+      <details class="room mb-4" data-room="${rId}" ${open ? 'open' : ''}>
+        <summary class="flex items-end justify-between mb-2 px-1 gap-3">
+          <h2 class="text-sm uppercase tracking-wide text-slate-500 flex items-center gap-1.5">
+            <span class="chev text-slate-400">▸</span>
+            ${roomName(rId)}
+            <span class="normal-case text-[11px] text-slate-400">(${devs.length})</span>
+          </h2>
+          ${renderRoomClimateBadge(rId)}
+        </summary>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          ${devs.map(safeRenderDeviceCard).join('')}
+        </div>
+      </details>`;
+    }).join('') || `<p class="text-slate-500">${filter ? t('devices.noMatches') : t('devices.none')}</p>`;
+
+  $$('#device-list [data-action]').forEach(el => el.addEventListener('click', onDeviceAction));
+  $$('#device-list [data-temp-set]').forEach(el => el.addEventListener('change', onTemperatureChange));
+  // Remember the open/closed state on user interaction (not while filtering)
+  $$('#device-list details.room').forEach(el => el.addEventListener('toggle', () => {
+    if (state.deviceFilter.trim() || state.statusFilter || state.typeFilter.size) return;
+    if (el.open) state.collapsedRooms.delete(el.dataset.room);
+    else        state.collapsedRooms.add(el.dataset.room);
+    saveCollapsedRooms();
+  }));
+}
+
+// Climate summary for a room: prefers the virtual roomClimateControl_*
+// device of the room for the temperature and any HumidityLevel source in the
+// same room for the humidity.
+function renderRoomClimateBadge(roomId) {
+  const roomDeviceIds = state.devices
+    .filter(d => d.roomId === roomId)
+    .map(d => d.id);
+
+  // Temperature: prefer the virtual roomClimateControl_* device, fall back to any TemperatureLevel
+  const rccDevice = state.devices.find(
+    d => d.roomId === roomId && d.id?.startsWith('roomClimateControl_')
+  );
+  let tempSvc = rccDevice && serviceOf(rccDevice.id, 'TemperatureLevel');
+  if (!tempSvc) {
+    tempSvc = state.services.find(
+      s => s.id === 'TemperatureLevel' && roomDeviceIds.includes(s.deviceId)
+    );
+  }
+  // Humidity: any HumidityLevel in the room (e.g. Room Thermostat II or Twinguard)
+  const humSvc = state.services.find(
+    s => s.id === 'HumidityLevel' && roomDeviceIds.includes(s.deviceId)
+  );
+
+  const t = tempSvc?.state?.temperature;
+  const h = humSvc?.state?.humidity;
+  if (t == null && h == null) return '';
+
+  const parts = [];
+  if (t != null) parts.push(`<span class="tabular-nums">${t.toFixed(1)}°C</span>`);
+  if (h != null) parts.push(`<span class="tabular-nums">${Math.round(h)}% rH</span>`);
+  return `<div class="text-xs text-slate-600 flex items-center gap-2">${parts.join(' · ')}</div>`;
+}
+
+// Returns an icon name for a device. Primary lookup is by deviceModel
+// (Bosch shorthand like TRV, SWD, PSM …), with a fallback based on the
+// services present for unknown or third-party devices.
+function deviceIcon(device) {
+  const services = state.services.filter(s => s.deviceId === device.id);
+  const m = (device.deviceModel || '').toUpperCase();
+  const has = (id) => state.services.some(s => s.deviceId === device.id && s.id === id);
+
+  // Radiator thermostat
+  if (m === 'TRV' || m === 'TRV_GEN2' || m.startsWith('TRV')) {
+    const valve = services.find(s => s.id === 'ValveTappet');
+    return (valve?.state?.position ?? 0) > 0 ? 'radiator' : 'radiator-disabled';
+  }
+  // Room thermostat / virtual room climate control
+  if (m === 'THB' || m === 'RTH' || m === 'RTH2' || m === 'RT2'
+      || m === 'ROOM_CLIMATE_CONTROL') return 'home-thermometer';
+  // Door/window contact
+  if (m === 'SWD' || m === 'SWD2' || m.startsWith('SWD')) {
+    const sc = services.find(s => s.id === 'ShutterContact');
+    return sc?.state?.value === 'OPEN' ? 'window-open' : 'window-closed';
+  }
+  // Smart plug
+  if (m === 'PSM' || m === 'PLUG' || m === 'PLUG_COMPACT') {
+    const power = services.find(s => s.id === 'PowerSwitch');
+    return power?.state?.switchState === 'ON' ? 'power-plug' : 'power-plug-off';
+  }
+  // Light switch / micromodule / smart bulb
+  if (m === 'BSM' || m === 'MICROMODULE_LIGHT_CONTROL'
+      || m === 'LIGHT_CONTROL_2' || m === 'HUE_LIGHT'
+      || m === 'LEDVANCE_LIGHT' || m === 'SMART_BULB') {
+        return "lightbulb-on";
+      };
+  if (m === 'HUE_BRIDGE') return 'router-network';
+  // Shutter / blinds
+  if (m === 'BBL' || m === 'BBL_2' || m === 'MICROMODULE_SHUTTER' || m === 'SHUTTER_CONTROL') {
+        return 'window-shutter'
+  };
+  // Smoke detector
+  if (m === 'SD' || m === 'SMOKE_DETECTOR' || m === 'SMOKE_DETECTOR_2' || m === 'TWINGUARD') {
+    return 'smoke-detector'
+  };
+  // Motion detector
+  if (m === 'MD' || m === 'MOTION_DETECTOR') return 'motion-sensor';
+  // Water leakage sensor
+  if (m === 'WLS' || m === 'WATER_LEAKAGE_SENSOR') return 'water-alert';
+  // Cameras
+  if (m.startsWith('CAMERA') || m === 'EYES_OUTDOOR') return 'cctv';
+  // Universal switch / remote
+  if (m === 'UNIVERSAL_SWITCH' || m === 'UNIVERSAL_SWITCH_2' || m === 'WRC2') return 'light-switch-off';
+  // Alarm system
+  if (m === 'INTRUSION_DETECTION_SYSTEM') return 'shield-home';
+  // Presence simulation
+  if (m === 'PRESENCE_SIMULATION_SERVICE') return 'account-multiple';
+
+  // Fallback based on the services that are present
+  if (has('ValveTappet')) return 'radiator';
+  if (has('RoomClimateControl')) return 'home-thermometer';
+  if (has('ShutterContact')) return 'window-shutter';
+  if (has('PowerSwitch')) return 'power-plug';
+  if (has('SmokeDetectorCheck') || has('AirQualityLevel')) return 'smoke-detector';
+  if (has('LatestMotion')) return 'motion-sensor';
+  if (has('WaterLeakageSensor')) return 'water-alert';
+  if (has('HumidityLevel') || has('TemperatureLevel')) return '';
+  return '⚙️';
+}
+
+// Known camera services and how they map to a toggle button.
+// PrivacyMode is inverted: "Privacy ENABLED" = camera OFF, so the camera is
+// considered "on" when the value is DISABLED.
+const CAMERA_SERVICE_DEFS = {
+  PrivacyMode: {
+    type:  'privacyModeState',
+    field: 'value',
+    onValue:  'DISABLED',
+    offValue: 'ENABLED',
+    onKey:  'devices.cameraOff', // camera is on → button says "turn off"
+    offKey: 'devices.cameraOn',
+  },
+  CameraNotification: {
+    type:  'cameraNotificationState',
+    field: 'value',
+    onValue:  'ENABLED',
+    offValue: 'DISABLED',
+    onKey:  'devices.notifyOff',
+    offKey: 'devices.notifyOn',
+  },
+  CameraLight: {
+    type:  'cameraLightState',
+    field: 'value',
+    onValue:  'ON',
+    offValue: 'OFF',
+    onKey:  'devices.lightOff',
+    offKey: 'devices.lightOn',
+  },
+};
+
+// Maps the value of CommunicationQuality.state.quality to icon, color and a
+// human-readable tooltip. Possible values per the Bosch SHC API:
+// UNKNOWN, FETCHING, BAD, MEDIUM, NORMAL, GOOD.
+function commQualityInfo(quality) {
+  const map = {
+    GOOD:     { icon: 'wifi-strength-4',       cls: 'text-emerald-600', label: t('commQuality.good') },
+    NORMAL:   { icon: 'wifi-strength-3',       cls: 'text-lime-600',    label: t('commQuality.normal') },
+    MEDIUM:   { icon: 'wifi-strength-2',       cls: 'text-amber-600',   label: t('commQuality.medium') },
+    BAD:      { icon: 'wifi-strength-1',       cls: 'text-rose-600',    label: t('commQuality.bad') },
+    FETCHING: { icon: 'wifi-sync',             cls: 'text-blue-500',    label: t('commQuality.fetching') },
+    UNKNOWN:  { icon: 'wifi-strength-outline', cls: 'text-slate-400',   label: t('commQuality.unknown') },
+  };
+  return map[quality] || { icon: 'wifi-off', cls: 'text-slate-400', label: quality || t('commQuality.unknown') };
+}
+
+// Wrapper: a render error in a single card must not tear down the whole
+// device list. We show a fallback error card instead.
+function safeRenderDeviceCard(device) {
+  try {
+    return renderDeviceCard(device);
+  } catch (err) {
+    console.error('renderDeviceCard failed for', device?.id, err);
+    return `
+      <article class="card bg-rose-50 rounded-lg p-4 border border-rose-200">
+        <h3 class="font-medium text-rose-800 truncate">${device?.name || device?.id || '?'}</h3>
+        <p class="text-xs text-rose-700 mt-1">${t('error.cardRender', err.message)}</p>
+      </article>`;
+  }
+}
+
+function renderDeviceCard(device) {
+  const services = state.services.filter(s => s.deviceId === device.id);
+  const power    = services.find(s => s.id === 'PowerSwitch');
+  const climate  = services.find(s => s.id === 'RoomClimateControl');
+  const temp     = services.find(s => s.id === 'TemperatureLevel');
+  const humidity = services.find(s => s.id === 'HumidityLevel');
+  const battery  = services.find(s => s.id === 'BatteryLevel');
+  const shutter  = services.find(s => s.id === 'ShutterContact');
+  const valve    = services.find(s => s.id === 'ValveTappet');
+  const energy   = services.find(s => s.id === 'PowerMeter');
+  const silentMode = services.find(s => s.id === 'SilentMode');
+  const communicationQuality = services.find(s => s.id === 'CommunicationQuality');
+
+  const humTxt = (humidity?.state?.humidity != null)
+    ? `<span class="inline-flex items-center gap-1 text-slate-500 text-sm tabular-nums">
+         <img src="svg/water-percent.svg" style="width:20px;height:20px" alt="" />
+         ${Math.round(humidity.state.humidity)}% rH
+       </span>`
+    : '';
+
+  let body = '';
+  if (power) {
+    const on = power.state?.switchState === 'ON';
+    body += `
+      <button data-action="toggle-power" data-device="${device.id}" data-on="${on}"
+        class="w-full mt-2 px-3 py-2 rounded-md font-medium text-sm
+        ${on ? 'bg-amber-100 text-amber-900 hover:bg-amber-200'
+             : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
+        ${t(on ? 'devices.turnOff' : 'devices.turnOn')}
+      </button>`;
+  }
+  // Inline camera toggles (PrivacyMode, CameraNotification, CameraLight),
+  // shown if the device exposes the respective service.
+  for (const [svcId, def] of Object.entries(CAMERA_SERVICE_DEFS)) {
+    const svc = services.find(s => s.id === svcId);
+    if (!svc) continue;
+    const on = svc.state?.[def.field] === def.onValue;
+    body += `
+      <button data-action="toggle-cam" data-device="${device.id}" data-svc="${svcId}" data-on="${on}"
+        class="w-full mt-2 px-3 py-2 rounded-md font-medium text-sm
+        ${on ? 'bg-amber-100 text-amber-900 hover:bg-amber-200'
+             : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
+        ${t(on ? def.onKey : def.offKey)}
+      </button>`;
+  }
+  if (climate && temp) {
+    const setpoint = climate.state?.setpointTemperature ?? '-';
+    const current  = temp.state?.temperature?.toFixed?.(1) ?? '-';
+    body += `
+      <div class="mt-2 flex items-center gap-3">
+        <div class="text-2xl font-light tabular-nums">${current}°</div>
+        <div class="text-xs text-slate-500">${t('devices.current')}</div>
+        <div class="ml-auto flex items-center gap-1.5">
+          <input type="number" min="5" max="30" step="0.5" value="${setpoint}"
+            data-temp-set data-device="${device.id}"
+            class="w-16 text-right border border-slate-300 rounded-md px-2 py-1 text-sm tabular-nums" />
+          <span class="text-xs text-slate-500">${t('devices.target')}</span>
+        </div>
+      </div>
+      ${humTxt ? `<div class="mt-1">${humTxt}</div>` : ''}`;
+  } else if (temp && humidity) {
+    body += `
+      <div class="mt-2 flex items-baseline gap-4">
+        <div class="text-2xl font-light tabular-nums">${temp.state?.temperature?.toFixed?.(1) ?? '-'}°</div>
+        ${humTxt}
+      </div>`;
+  } else if (temp) {
+    body += `<div class="mt-2 text-2xl font-light tabular-nums">${temp.state?.temperature?.toFixed?.(1) ?? '-'}°</div>`;
+  } else if (humidity) {
+    body += `<div class="mt-2">${humTxt}</div>`;
+  }
+  if (shutter) {
+    const open = shutter.state?.value === 'OPEN';
+    body += `<div class="mt-2 inline-flex items-center gap-1.5 text-sm
+      ${open ? 'text-rose-700' : 'text-emerald-700'}">
+      <span class="w-2 h-2 rounded-full ${open ? 'bg-rose-500' : 'bg-emerald-500'}"></span>
+      ${t(open ? 'devices.opened' : 'devices.closed')}
+    </div>`;
+  }
+  if (energy?.state) {
+    body += `<div class="mt-2 text-xs text-slate-500">
+      ${energy.state.powerConsumption ?? 0} W · ${(energy.state.energyConsumption/1000).toFixed(2)} kWh
+    </div>`;
+  }
+  if (silentMode) {
+    // Display-only: PUTting to SilentMode triggers SERVICE_INVOCATION_FAILED
+    // on some TRV models and pushes the device to UNAVAILABLE. Writing is
+    // disabled until the correct payload format is confirmed.
+    const silent = silentMode.state?.mode === 'MODE_SILENT';
+    body += `
+      <span title="${t('devices.silentTitle')}"
+        class="mt-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+        ${silent ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-600'}">
+        ${t(silent ? 'devices.silentOn' : 'devices.silentOff')}
+      </span>`;
+  }
+  const meta = [];
+  if (battery?.state) {
+    const lvl = battery.state.warningLevel || 'OK';
+    // Possible values per the API: OK, LOW_BATTERY, CRITICAL_LOW,
+    // CRITICAL_LOW_BATTERY, INSERT_BATTERY, NOT_AVAILABLE
+    const map = {
+      OK:                    { icon: 'battery-high', cls: 'text-emerald-700', label: t('battery.ok') },
+      LOW_BATTERY:           { icon: 'battery-medium', cls: 'text-amber-700',   label: t('battery.low') },
+      CRITICAL_LOW:          { icon: 'battery-low', cls: 'text-rose-700',    label: t('battery.critical') },
+      CRITICAL_LOW_BATTERY:  { icon: 'battery-low', cls: 'text-rose-700',    label: t('battery.critical') },
+      INSERT_BATTERY:        { icon: 'battery-off-outline',  cls: 'text-rose-700',    label: t('battery.insert') },
+      NOT_AVAILABLE:         { icon: 'cable-data', cls: 'text-slate-500',   label: t('battery.mains') },
+    };
+    const b = map[lvl] || { icon: '🔋', cls: 'text-slate-600', label: lvl };
+    // omit for mains-powered devices, otherwise show
+    if (lvl !== 'NOT_AVAILABLE') {
+      meta.push(`<span class="${b.cls}"><img src="svg/${b.icon}.svg"> ${b.label}</span>`);
+    }
+  }
+  if (valve?.state?.position != null) meta.push(t('devices.valve', valve.state.position));
+
+  let cqHtml = '';
+  if (communicationQuality?.state?.quality) {
+    const cq = commQualityInfo(communicationQuality.state.quality);
+    const url = `svg/${cq.icon}.svg`;
+    const tip = t('devices.commQuality', cq.label, communicationQuality.state.quality);
+    cqHtml = `<span class="icon-mask ${cq.cls}"
+        style="width:18px;height:18px;mask-image:url(${url});-webkit-mask-image:url(${url})"
+        title="${tip}" aria-label="${tip}"></span>`;
+  }
+
+  return `
+    <article class="card bg-white rounded-lg p-4 border border-slate-200">
+      <header class="flex items-start justify-between gap-2">
+        <div class="flex items-start gap-2.5 min-w-0">
+          <div class="text-2xl leading-none mt-0.5 shrink-0" aria-hidden="true"><img src="svg/${deviceIcon(device)}.svg" style="width: 25px; height: 25px;"/></div>
+          <div class="min-w-0">
+            <h3 class="font-medium leading-tight">${device.name || device.id}</h3>
+            <p class="text-xs text-slate-500">${device.deviceModel || device.profile || ''}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          ${cqHtml}
+          <span class="text-[10px] px-1.5 py-0.5 rounded
+            ${device.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700'
+                                            : 'bg-slate-100 text-slate-500'}">${device.status||''}</span>
+        </div>
+      </header>
+      ${body}
+      ${meta.length ? `<div class="mt-2 text-xs text-slate-500 space-x-2">${meta.join(' · ')}</div>` : ''}
+    </article>`;
+}
+
+async function onDeviceAction(e) {
+  const btn = e.currentTarget;
+  const { action, device } = btn.dataset;
+  if (action === 'toggle-power') {
+    const newState = btn.dataset.on === 'true' ? 'OFF' : 'ON';
+    btn.classList.add('pulse');
+    try {
+      await api(`/api/devices/${encodeURIComponent(device)}/services/PowerSwitch/state`, {
+        method: 'PUT',
+        body: { '@type': 'powerSwitchState', switchState: newState },
+      });
+      const svc = serviceOf(device, 'PowerSwitch');
+      if (svc) svc.state.switchState = newState;
+      renderDevices();
+    } catch (err) { alert(t('error.generic', err.message)); }
+  } else if (action === 'toggle-cam') {
+    const svcId = btn.dataset.svc;
+    const def = CAMERA_SERVICE_DEFS[svcId];
+    if (!def) return;
+    const newValue = btn.dataset.on === 'true' ? def.offValue : def.onValue;
+    btn.classList.add('pulse');
+    try {
+      await api(`/api/devices/${encodeURIComponent(device)}/services/${svcId}/state`, {
+        method: 'PUT',
+        body: { '@type': def.type, [def.field]: newValue },
+      });
+      const svc = serviceOf(device, svcId);
+      if (svc) svc.state = { ...(svc.state || {}), '@type': def.type, [def.field]: newValue };
+      renderDevices();
+    } catch (err) { alert(t('error.generic', err.message)); }
+  }
+}
+
+async function onTemperatureChange(e) {
+  const input = e.currentTarget;
+  try {
+    await api(`/api/devices/${encodeURIComponent(input.dataset.device)}/services/RoomClimateControl/state`, {
+      method: 'PUT',
+      body: { '@type': 'climateControlState', setpointTemperature: parseFloat(input.value) },
+    });
+  } catch (err) { alert('Fehler: ' + err.message); }
+}
+
+
+export { DEVICE_CATEGORIES, deviceCategory, deviceSortRank, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange };

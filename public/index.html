@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="app.css" />
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen">
-  <!-- App shell – hidden until /api/auth/status is resolved so unauthenticated
+  <!-- App shell - hidden until /api/auth/status is resolved so unauthenticated
        users never see the dashboard flash before the login overlay. -->
   <div id="app-shell" class="hidden">
   <header class="bg-white border-b sticky top-0 z-10">
@@ -171,7 +171,7 @@
     </div>
   </div>
 
-  <!-- Login overlay – populated and toggled by app.js -->
+  <!-- Login overlay - populated and toggled by app.js -->
   <div id="login-root" class="hidden fixed inset-0 bg-slate-100 z-30 flex items-center justify-center p-4">
     <div class="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 border border-slate-200">
       <h2 id="login-title" class="text-lg font-semibold mb-1"></h2>
@@ -199,6 +199,6 @@
     <div id="modal-card" class="bg-white rounded-lg shadow-xl max-w-md w-full p-5"></div>
   </div>
 
-<script src="app.js"></script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>
