@@ -628,14 +628,25 @@ async function onDeviceAction(e) {
   }
 }
 
-async function onTemperatureChange(e) {
-  const input = e.currentTarget;
-  try {
-    await api(`/api/devices/${encodeURIComponent(input.dataset.device)}/services/RoomClimateControl/state`, {
-      method: 'PUT',
-      body: { '@type': 'climateControlState', setpointTemperature: parseFloat(input.value) },
-    });
-  } catch (err) { alert('Fehler: ' + err.message); }
+// Debounce setpoint PUTs per device: clicking the number-input arrows fires a
+// `change` event each step, which would flood the SHC with one request per
+// click. Wait until the user has settled on a value (~700 ms) and send only the
+// latest. Keyed by device id so two thermostats don't cancel each other.
+const tempDebounce = new Map();
+
+function onTemperatureChange(e) {
+  const deviceId = e.currentTarget.dataset.device;
+  const value = parseFloat(e.currentTarget.value);
+  clearTimeout(tempDebounce.get(deviceId));
+  tempDebounce.set(deviceId, setTimeout(async () => {
+    tempDebounce.delete(deviceId);
+    try {
+      await api(`/api/devices/${encodeURIComponent(deviceId)}/services/RoomClimateControl/state`, {
+        method: 'PUT',
+        body: { '@type': 'climateControlState', setpointTemperature: value },
+      });
+    } catch (err) { alert('Fehler: ' + err.message); }
+  }, 1000));
 }
 
 
