@@ -171,7 +171,7 @@ if (require.main === module) {
 
   (async () => {
     try {
-      console.log('=== Bosch SHC – local UI setup ===\n');
+      console.log('=== Bosch SHC - local UI setup ===\n');
 
       const shcIp = await ask('IP address of your Bosch SHC (e.g. 192.168.1.50): ');
       if (!shcIp) throw new Error('No IP provided.');

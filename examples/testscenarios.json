@@ -1,0 +1,121 @@
+[
+    {
+        "@type": "scenario",
+        "id": "40ea691a-1159-43c9-b33b-1015329bd3dd",
+        "name": "Nach Hause kommen",
+        "iconId": "icon_scenario_coming_home",
+        "actions": [
+            {
+                "deviceId": "intrusionDetectionSystem",
+                "deviceServiceId": "IntrusionDetectionControl",
+                "targetState": {
+                    "@type": "intrusionDetectionControlState",
+                    "value": "SYSTEM_DISARMED",
+                    "activeProfile": "0"
+                }
+            }
+        ]
+    },
+    {
+        "@type": "scenario",
+        "id": "a0425e24-cdcc-4cc3-aa0c-6c8758713aa5",
+        "name": "Bad 20",
+        "iconId": "icon_scenario_shutter_down",
+        "actions": [
+            {
+                "deviceId": "hdm:Cameras:REPLACED_ID",
+                "deviceServiceId": "PrivacyMode",
+                "targetState": {
+                    "@type": "privacyModeState",
+                    "value": "ENABLED"
+                }
+            },
+            {
+                "deviceId": "presenceSimulationService",
+                "deviceServiceId": "PresenceSimulationConfiguration",
+                "targetState": {
+                    "@type": "presenceSimulationConfigurationState",
+                    "enabled": false
+                }
+            },
+            {
+                "deviceId": "hdm:Cameras:REPLACED_ID",
+                "deviceServiceId": "CameraNotification",
+                "targetState": {
+                    "@type": "cameraNotificationState",
+                    "value": "ENABLED"
+                }
+            },
+            {
+                "deviceId": "hdm:ZigBee:REPLACED_ID",
+                "deviceServiceId": "PowerSwitch",
+                "targetState": {
+                    "@type": "powerSwitchState",
+                    "switchState": "OFF"
+                }
+            },
+            {
+                "deviceId": "hdm:ZigBee:REPLACED_ID",
+                "deviceServiceId": "PowerSwitch",
+                "targetState": {
+                    "@type": "powerSwitchState",
+                    "switchState": "ON"
+                }
+            },
+            {
+                "deviceId": "roomClimateControl_hz_4",
+                "deviceServiceId": "RoomClimateControl",
+                "targetState": {
+                    "@type": "climateControlState",
+                    "operationMode": "MANUAL",
+                    "setpointTemperature": 8,
+                    "boostMode": false,
+                    "roomControlMode": "HEATING",
+                    "setPointTemperatureOffset": 0,
+                    "isSetPointTemperatureOffsetActive": false,
+                    "setPointTemperatureOffsetActiveValue": 0
+                }
+            },
+            {
+                "deviceId": "intrusionDetectionSystem",
+                "deviceServiceId": "IntrusionDetectionControl",
+                "targetState": {
+                    "@type": "intrusionDetectionControlState",
+                    "value": "SYSTEM_ARMED",
+                    "activeProfile": "1"
+                }
+            }
+        ]
+    },
+    {
+        "@type": "scenario",
+        "id": "8a81c876-68e0-4124-8135-1418511c455c",
+        "name": "Bad Lüften",
+        "iconId": "icon_scenario_own_scenario",
+        "actions": []
+    },
+    {
+        "@type": "scenario",
+        "id": "d0a0e312-dbd1-4123-bfaf-217a407b057e",
+        "name": "Bad aufheizen",
+        "iconId": "icon_scenario_shutter_up",
+        "actions": []
+    },
+    {
+        "@type": "scenario",
+        "id": "ea2ea4d0-6584-4940-a52e-aea3303ca8b3",
+        "name": "Haus verlassen",
+        "iconId": "icon_scenario_leaving_home",
+        "actions": [
+            {
+                "deviceId": "intrusionDetectionSystem",
+                "deviceServiceId": "IntrusionDetectionControl",
+                "targetState": {
+                    "@type": "intrusionDetectionControlState",
+                    "value": "SYSTEM_ARMED",
+                    "activeProfile": "0"
+                }
+            }
+        ]
+    }
+]

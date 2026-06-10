@@ -1,5 +1,5 @@
 /**
- * Bosch SHC – local proxy + UI server
+ * Bosch SHC - local proxy + UI server
  *  - Holds the client certificate (mTLS) for the SHC connection
  *  - Exposes a small REST API for the browser UI
  *  - Streams live events (long polling -> Server-Sent Events) to the UI
@@ -528,7 +528,7 @@ app.post('/api/setup/complete', wrap(async (req, res) => {
 }));
 
 // =========================================================================
-//  Admin – user management (admin role only)
+//  Admin - user management (admin role only)
 // =========================================================================
 app.get('/api/auth/users', requireAdmin, (req, res) => {
   res.json(authData.users.map(publicUser));
@@ -592,7 +592,7 @@ app.post('/api/auth/users/:username/reset-password', requireAdmin, (req, res) =>
 });
 
 // =========================================================================
-//  Admin – session management (admin role only)
+//  Admin - session management (admin role only)
 // =========================================================================
 app.get('/api/auth/sessions', requireAdmin, (req, res) => {
   const currentToken = req.authCtx.token;
@@ -700,7 +700,7 @@ app.put('/api/devices/:id/services/:service/state', wrap(async (req, res) => {
 }));
 
 // =========================================================================
-//  Admin – devices
+//  Admin - devices
 // =========================================================================
 // Rename device / change properties (body e.g. { name: "New name" })
 app.put('/api/devices/:id', requireAdmin, wrap(async (req, res) => {
@@ -719,7 +719,7 @@ app.delete('/api/devices/:id', requireAdmin, wrap(async (req, res) => {
 }));
 
 // =========================================================================
-//  Admin – rooms (create / rename / change icon)
+//  Admin - rooms (create / rename / change icon)
 // =========================================================================
 // Creating rooms is not part of the documented SHC API (only GET is), but the
 // controller accepts a POST to /smarthome/rooms the same way it accepts the
@@ -744,7 +744,7 @@ app.delete('/api/rooms/:id', requireAdmin, wrap(async (req, res) => {
 }));
 
 // =========================================================================
-//  Admin – clients (registered apps / devices)
+//  Admin - clients (registered apps / devices)
 // =========================================================================
 app.delete('/api/clients/:id', requireAdmin, wrap(async (req, res) => {
   await shcRequest('DELETE', `/smarthome/clients/${encodeURIComponent(req.params.id)}`);
@@ -760,9 +760,38 @@ app.post('/api/scenarios/:id/trigger', wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
+// Create / update / delete scenarios. Undocumented (the spec lists only GET +
+// the trigger POST), but the controller accepts CRUD on /smarthome/scenarios
+// like it does for rooms and automations.
+app.post('/api/scenarios', requireAdmin, wrap(async (req, res) => {
+  const result = await shcRequest('POST', '/smarthome/scenarios', { body: req.body });
+  res.json(result || { ok: true });
+}));
+
+app.put('/api/scenarios/:id', requireAdmin, wrap(async (req, res) => {
+  const result = await shcRequest('PUT',
+    `/smarthome/scenarios/${encodeURIComponent(req.params.id)}`, { body: req.body });
+  res.json(result || { ok: true });
+}));
+
+app.delete('/api/scenarios/:id', requireAdmin, wrap(async (req, res) => {
+  await shcRequest('DELETE', `/smarthome/scenarios/${encodeURIComponent(req.params.id)}`);
+  res.json({ ok: true });
+}));
+
 app.get('/api/automations', wrap(async (_req, res) => {
   const base = await automationsBase();
   res.json(base ? await shcRequest('GET', base) : []);
+}));
+
+// Create an automation. Undocumented (the spec lists only GET + PUT), but the
+// SHC accepts a POST to /automation/rules with the same body shape it returns
+// on GET — minus the `id`, which the controller assigns.
+app.post('/api/automations', requireAdmin, wrap(async (req, res) => {
+  const base = await automationsBase();
+  if (!base) return res.status(404).json({ error: 'automations endpoint not available' });
+  const result = await shcRequest('POST', base, { body: req.body });
+  res.json(result || { ok: true });
 }));
 
 // Enable/disable or update an automation
@@ -775,6 +804,15 @@ app.put('/api/automations/:id', wrap(async (req, res) => {
     { body: req.body }
   );
   res.json(result || { ok: true });
+}));
+
+// Delete an automation. Undocumented (the spec only lists GET + PUT), but the
+// SHC accepts a DELETE on the same /automation/rules/{id} path.
+app.delete('/api/automations/:id', requireAdmin, wrap(async (req, res) => {
+  const base = await automationsBase();
+  if (!base) return res.status(404).json({ error: 'automations endpoint not available' });
+  await shcRequest('DELETE', `${base}/${encodeURIComponent(req.params.id)}`);
+  res.json({ ok: true });
 }));
 
 // Trigger-sub-path also varies by firmware. Probe the common candidates on
@@ -808,6 +846,18 @@ app.put('/api/userdefinedstates/:id/state', wrap(async (req, res) => {
     { body: req.body }
   );
   res.json(result || { ok: true });
+}));
+
+// Create / delete user-defined states. Undocumented (the spec lists GET + the
+// state PUT only), but the controller accepts CRUD like for rooms/scenarios.
+app.post('/api/userdefinedstates', requireAdmin, wrap(async (req, res) => {
+  const result = await shcRequest('POST', '/smarthome/userdefinedstates', { body: req.body });
+  res.json(result || { ok: true });
+}));
+
+app.delete('/api/userdefinedstates/:id', requireAdmin, wrap(async (req, res) => {
+  await shcRequest('DELETE', `/smarthome/userdefinedstates/${encodeURIComponent(req.params.id)}`);
+  res.json({ ok: true });
 }));
 
 // =========================================================================

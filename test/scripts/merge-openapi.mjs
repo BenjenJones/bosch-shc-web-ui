@@ -115,7 +115,7 @@ function merge(bundled, spec, sourceLabel) {
 const bundled = {
   openapi: '3.0.0',
   info: {
-    title: 'Bosch SHC – bundled local API (test mock)',
+    title: 'Bosch SHC - bundled local API (test mock)',
     version: '3.2',
     description: 'Auto-generated bundle of all Bosch SHC OpenAPI specs for Prism mocking. See test/scripts/merge-openapi.mjs.',
   },
@@ -217,6 +217,21 @@ const PATCH_PATHS = {
       responses: { '204': { description: 'Deleted.' } },
     },
   },
+  // Rooms: create (POST /rooms) and delete (DELETE /rooms/{id}) are undocumented
+  // but accepted by real firmware — see project notes. Rename PUT below.
+  '/rooms': {
+    post: {
+      summary: '[patched] Create a room.',
+      requestBody: {
+        required: true,
+        content: { 'application/json': { schema: {
+          type: 'object',
+          properties: { '@type': { type: 'string' }, name: { type: 'string' }, iconId: { type: 'string' } },
+        }}},
+      },
+      responses: { '200': { description: 'Created.', content: { 'application/json': { example: { ok: true } }}}, '201': { description: 'Created.' }, '204': { description: 'Created.' } },
+    },
+  },
   '/rooms/{roomId}': {
     put: {
       summary: '[patched] Rename / update a room.',
@@ -230,12 +245,29 @@ const PATCH_PATHS = {
       },
       responses: { '200': { description: 'OK', content: { 'application/json': { example: { ok: true } }}}, '204': { description: 'OK' } },
     },
+    delete: {
+      summary: '[patched] Delete a room.',
+      parameters: [{ name: 'roomId', in: 'path', required: true, schema: { type: 'string' } }],
+      responses: { '204': { description: 'Deleted.' }, '200': { description: 'Deleted.' } },
+    },
   },
   '/messages/{messageId}': {
     delete: {
       summary: '[patched] Dismiss a message.',
       parameters: [{ name: 'messageId', in: 'path', required: true, schema: { type: 'string' } }],
       responses: { '204': { description: 'Dismissed.' } },
+    },
+  },
+  // Automations: create (POST) and delete (DELETE) — undocumented, accepted by
+  // firmware. The body for create is a full automationRule (kept loose here).
+  '/automation/rules': {
+    post: {
+      summary: '[patched] Create an automation rule.',
+      requestBody: {
+        required: true,
+        content: { 'application/json': { schema: { type: 'object' } } },
+      },
+      responses: { '200': { description: 'Created.', content: { 'application/json': { example: { ok: true } }}}, '201': { description: 'Created.' }, '204': { description: 'Created.' } },
     },
   },
   '/automation/rules/{automationId}': {
@@ -250,6 +282,59 @@ const PATCH_PATHS = {
         }}},
       },
       responses: { '200': { description: 'OK', content: { 'application/json': { example: { ok: true } }}}, '204': { description: 'OK' } },
+    },
+    delete: {
+      summary: '[patched] Delete an automation rule.',
+      parameters: [{ name: 'automationId', in: 'path', required: true, schema: { type: 'string' } }],
+      responses: { '204': { description: 'Deleted.' }, '200': { description: 'Deleted.' } },
+    },
+  },
+  // Scenarios: create (POST), update (PUT), delete (DELETE) — undocumented.
+  '/scenarios': {
+    post: {
+      summary: '[patched] Create a scenario.',
+      requestBody: {
+        required: true,
+        content: { 'application/json': { schema: { type: 'object' } } },
+      },
+      responses: { '200': { description: 'Created.', content: { 'application/json': { example: { ok: true } }}}, '201': { description: 'Created.' }, '204': { description: 'Created.' } },
+    },
+  },
+  '/scenarios/{scenarioId}': {
+    put: {
+      summary: '[patched] Update a scenario.',
+      parameters: [{ name: 'scenarioId', in: 'path', required: true, schema: { type: 'string' } }],
+      requestBody: {
+        required: true,
+        content: { 'application/json': { schema: { type: 'object' } } },
+      },
+      responses: { '200': { description: 'OK', content: { 'application/json': { example: { ok: true } }}}, '204': { description: 'OK' } },
+    },
+    delete: {
+      summary: '[patched] Delete a scenario.',
+      parameters: [{ name: 'scenarioId', in: 'path', required: true, schema: { type: 'string' } }],
+      responses: { '204': { description: 'Deleted.' }, '200': { description: 'Deleted.' } },
+    },
+  },
+  // User-defined states: create (POST) and delete (DELETE) — undocumented.
+  '/userdefinedstates': {
+    post: {
+      summary: '[patched] Create a user-defined state.',
+      requestBody: {
+        required: true,
+        content: { 'application/json': { schema: {
+          type: 'object',
+          properties: { '@type': { type: 'string' }, name: { type: 'string' }, state: { type: 'boolean' } },
+        }}},
+      },
+      responses: { '200': { description: 'Created.', content: { 'application/json': { example: { ok: true } }}}, '201': { description: 'Created.' }, '204': { description: 'Created.' } },
+    },
+  },
+  '/userdefinedstates/{userDefinedStateId}': {
+    delete: {
+      summary: '[patched] Delete a user-defined state.',
+      parameters: [{ name: 'userDefinedStateId', in: 'path', required: true, schema: { type: 'string' } }],
+      responses: { '204': { description: 'Deleted.' }, '200': { description: 'Deleted.' } },
     },
   },
   // server.js POSTs to /automation/rules/{id}/triggers (the trigger-sub-path
