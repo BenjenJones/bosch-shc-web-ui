@@ -309,14 +309,29 @@ function renderRoomClimateBadge(roomId) {
   const humSvc = state.services.find(
     s => s.id === 'HumidityLevel' && roomDeviceIds.includes(s.deviceId)
   );
+  // Window/door contacts in the room — summarised as "all closed" vs "n open".
+  const contactSvcs = state.services.filter(
+    s => s.id === 'ShutterContact' && roomDeviceIds.includes(s.deviceId)
+  );
 
-  const t = tempSvc?.state?.temperature;
-  const h = humSvc?.state?.humidity;
-  if (t == null && h == null) return '';
+  const tVal = tempSvc?.state?.temperature;
+  const hVal = humSvc?.state?.humidity;
+  if (tVal == null && hVal == null && contactSvcs.length === 0) return '';
 
   const parts = [];
-  if (t != null) parts.push(`<span class="tabular-nums">${t.toFixed(1)}°C</span>`);
-  if (h != null) parts.push(`<span class="tabular-nums">${Math.round(h)}% rH</span>`);
+  if (tVal != null) parts.push(`<span class="tabular-nums">${tVal.toFixed(1)}°C</span>`);
+  if (hVal != null) parts.push(`<span class="tabular-nums">${Math.round(hVal)}% rH</span>`);
+  if (contactSvcs.length) {
+    const openCount = contactSvcs.filter(s => s.state?.value === 'OPEN').length;
+    const closed = openCount === 0;
+    const icon  = closed ? 'window-closed' : 'window-open';
+    const label = closed ? t('devices.windowsClosed') : t('devices.windowsOpen', openCount);
+    const cls   = closed ? 'text-slate-600' : 'text-amber-600 font-medium';
+    parts.push(
+      `<span class="flex items-center gap-1 ${cls}" title="${escapeHtml(label)}">` +
+      `<img src="svg/${icon}.svg" style="width:14px;height:14px" aria-hidden="true" />${label}</span>`
+    );
+  }
   return `<div class="text-xs text-slate-600 flex items-center gap-2">${parts.join(' · ')}</div>`;
 }
 
