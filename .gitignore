@@ -4,6 +4,7 @@ autostart/
 .claude
 /config.json
 /auth.json
+/messages-archive.ndjson
 *.log
 .DS_Store
 test/openapi/_bundled.yml

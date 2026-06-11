@@ -1,4 +1,5 @@
 import { state, $, $$, t, api, escapeHtml, roomName, deviceName, serviceOf, deviceUpdateInfo, saveCollapsedRooms } from './core.js';
+import { severityFromMessage, messageTitle } from './messages.js';
 
 // =========================================================================
 //  Tab: Devices
@@ -267,6 +268,7 @@ function renderDeviceList() {
             <span class="chev text-slate-400">▸</span>
             ${roomName(rId)}
             <span class="normal-case text-[11px] text-slate-400">(${devs.length})</span>
+            ${renderRoomMessageBadge(rId)}
           </h2>
           ${renderRoomClimateBadge(rId)}
         </summary>
@@ -285,6 +287,44 @@ function renderDeviceList() {
     else        state.collapsedRooms.add(el.dataset.room);
     saveCollapsedRooms();
   }));
+}
+
+// Which room does a message belong to? `sourceId` is resolved by what it
+// actually matches, not by the (unreliable) `sourceType` field — observed
+// values include a device id while sourceType says SERVICE, and a room id
+// while sourceType says SERVICE too. `sourceName` is the device/source name,
+// never a room. Returns null for sources not tied to a room (e.g. controller).
+function messageRoomId(m) {
+  if (!m.sourceId) return null;
+  const dev = state.devices.find(d => d.id === m.sourceId);
+  if (dev?.roomId) return dev.roomId;                    // device → its room
+  if (state.rooms.some(r => r.id === m.sourceId)) return m.sourceId; // already a room id
+  return null;
+}
+
+function activeMessagesForRoom(roomId) {
+  return state.messages.filter(m => !m.deleted && messageRoomId(m) === roomId);
+}
+
+// Marker shown in the room header when the room has active messages — count +
+// a bell, tinted by the most severe message (error > warning > info). Stays
+// visible while the room is collapsed, so problems are visible at a glance.
+function renderRoomMessageBadge(roomId) {
+  const msgs = activeMessagesForRoom(roomId);
+  if (!msgs.length) return '';
+  const sev = msgs.some(m => severityFromMessage(m) === 'error')   ? 'error'
+            : msgs.some(m => severityFromMessage(m) === 'warning') ? 'warning'
+            : 'info';
+  const cls = {
+    error:   'bg-rose-100 text-rose-700',
+    warning: 'bg-amber-100 text-amber-700',
+    info:    'bg-slate-100 text-slate-600',
+  }[sev];
+  const titles = msgs.map(m => messageTitle(m.messageCode?.name || 'UNKNOWN')).join(', ');
+  return `<span class="normal-case inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded ${cls}"
+      title="${escapeHtml(titles)}">
+      <span class="icon-mask" style="width:11px;height:11px;mask-image:url(svg/bell.svg);-webkit-mask-image:url(svg/bell.svg)"></span>${msgs.length}
+    </span>`;
 }
 
 // Climate summary for a room: prefers the virtual roomClimateControl_*
@@ -665,4 +705,4 @@ function onTemperatureChange(e) {
 }
 
 
-export { DEVICE_CATEGORIES, deviceCategory, deviceSortRank, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange };
+export { DEVICE_CATEGORIES, deviceCategory, deviceSortRank, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange };

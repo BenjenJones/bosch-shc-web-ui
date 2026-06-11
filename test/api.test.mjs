@@ -6,6 +6,8 @@
 // builds a wrong URL or sends a body the SHC wouldn't accept, Prism answers
 // 422 and that bubbles up to the test as a non-2xx response.
 import path from 'node:path';
+import os from 'node:os';
+import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, test, expect, beforeAll } from 'vitest';
 import request from 'supertest';
@@ -15,6 +17,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Must set these BEFORE importing server.js — it reads them at module top.
 process.env.BOSCH_SHC_CONFIG_FILE = path.join(__dirname, 'fixtures', 'config.json');
 process.env.BOSCH_SHC_NO_LISTEN   = '1';
+// Keep the message-archive store out of the repo: point it at a throwaway file
+// in the OS temp dir, removed any time the suite starts.
+const ARCHIVE_FILE = path.join(os.tmpdir(), `bosch-shc-msg-archive-${process.pid}.ndjson`);
+process.env.BOSCH_SHC_MESSAGE_ARCHIVE_FILE = ARCHIVE_FILE;
+try { fs.rmSync(ARCHIVE_FILE, { force: true }); } catch {}
 
 let app;
 beforeAll(async () => {
@@ -166,6 +173,72 @@ describe('DELETE /api/messages/:id', () => {
   test('dismisses a message', async () => {
     const res = await request(app).delete('/api/messages/m1');
     expect(res.status).toBeLessThan(300);
+  });
+});
+
+// =========================================================================
+//  Message archive — server-local JSON store, no SHC/Prism involved.
+// =========================================================================
+describe('message archive', () => {
+  test('lifecycle: empty → add → dedup → delete', async () => {
+    // Start from a clean slate (other tests may have run first).
+    await request(app).delete('/api/messages/archive');
+    let res = await request(app).get('/api/messages/archive');
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+
+    const msg = { id: 'arch-1', '@type': 'message', messageCode: { name: 'LOW_BATTERY' }, timestamp: 123 };
+    res = await request(app).post('/api/messages/archive').send(msg);
+    expect(res.status).toBe(201);
+    expect(res.body.id).toBe('arch-1');
+    expect(typeof res.body.archivedAt).toBe('number');
+
+    res = await request(app).get('/api/messages/archive');
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].id).toBe('arch-1');
+
+    // Re-posting the same id dedups (stays length 1, moves to front).
+    await request(app).post('/api/messages/archive').send({ ...msg });
+    res = await request(app).get('/api/messages/archive');
+    expect(res.body).toHaveLength(1);
+
+    res = await request(app).delete('/api/messages/archive/arch-1');
+    expect(res.status).toBe(200);
+    res = await request(app).get('/api/messages/archive');
+    expect(res.body).toEqual([]);
+  });
+
+  test('a bare deletion stub does not overwrite a richer archived entry', async () => {
+    await request(app).delete('/api/messages/archive');
+    const full = { id: 'arch-2', '@type': 'message', messageCode: { name: 'LOW_BATTERY' }, arguments: { deviceModel: 'TRV' }, timestamp: 999 };
+    await request(app).post('/api/messages/archive').send(full);
+    // Now post the stub the SHC sends on deletion (no messageCode).
+    await request(app).post('/api/messages/archive').send({ id: 'arch-2', '@type': 'message', deleted: true, timestamp: 0 });
+    const res = await request(app).get('/api/messages/archive');
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].messageCode?.name).toBe('LOW_BATTERY');
+    expect(res.body[0].arguments?.deviceModel).toBe('TRV');
+    await request(app).delete('/api/messages/archive');
+  });
+
+  test('POST without an id is rejected with 400', async () => {
+    const res = await request(app).post('/api/messages/archive').send({ foo: 'bar' });
+    expect(res.status).toBe(400);
+  });
+
+  test('DELETE of an unknown archive id is 404', async () => {
+    const res = await request(app).delete('/api/messages/archive/does-not-exist');
+    expect(res.status).toBe(404);
+  });
+
+  test('DELETE /api/messages/archive clears everything', async () => {
+    await request(app).post('/api/messages/archive').send({ id: 'a', timestamp: 1 });
+    await request(app).post('/api/messages/archive').send({ id: 'b', timestamp: 2 });
+    let res = await request(app).get('/api/messages/archive');
+    expect(res.body.length).toBeGreaterThanOrEqual(2);
+    await request(app).delete('/api/messages/archive');
+    res = await request(app).get('/api/messages/archive');
+    expect(res.body).toEqual([]);
   });
 });
 

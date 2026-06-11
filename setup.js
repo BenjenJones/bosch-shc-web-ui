@@ -169,64 +169,107 @@ if (require.main === module) {
     }
   });
 
+  // Prompt for a new password twice (hidden), enforcing the minimum length.
+  // Shared by the full setup and the admin-only flow.
+  const askNewPassword = async (label = 'Admin password') => {
+    while (true) {
+      const p1 = await ask(`${label}: `, { hidden: true });
+      process.stdout.write('\n');
+      if (!p1)            { console.log('  Password may not be empty.'); continue; }
+      if (p1.length < 4)  { console.log('  Please use at least 4 characters.'); continue; }
+      const p2 = await ask(`Repeat ${label.toLowerCase()}: `, { hidden: true });
+      process.stdout.write('\n');
+      if (p1 !== p2)      { console.log('  Passwords did not match — try again.'); continue; }
+      return p1;
+    }
+  };
+
+  // --- Full setup: pair with the SHC, optionally enable a login. ---
+  async function runFullSetup() {
+    console.log('=== Bosch SHC - local UI setup ===\n');
+
+    const shcIp = await ask('IP address of your Bosch SHC (e.g. 192.168.1.50): ');
+    if (!shcIp) throw new Error('No IP provided.');
+
+    const { generated } = ensureCerts();
+    console.log(generated ? '✔ Certificates generated.' : '✔ Certificates already exist in ./certs');
+    const certPem = fs.readFileSync(CERT_FILE, 'utf8');
+
+    console.log('\n⚠  Now press the front button on the SHC until the LED blinks');
+    console.log('   (pairing mode). Then continue here.\n');
+    await ask('   Ready? Press Enter … ');
+
+    const password = await ask('SHC system password: ', { hidden: true });
+    process.stdout.write('\n');
+
+    console.log('⏳ Registering client with the SHC …');
+    const result = await registerClient(shcIp, password, certPem);
+    console.log(`✔ Registration successful (HTTP ${result.status}).`);
+
+    console.log('\n--- Optional: protect the UI with a login ---');
+    const authAnswer = (await ask('Require a user login to access the UI? (y/N): ')).toLowerCase();
+    const authEnabled = ['y','yes','j','ja'].includes(authAnswer);
+
+    let adminUsername = null, adminPassword = null;
+    if (authEnabled) {
+      adminUsername = (await ask('Admin username [admin]: ')) || 'admin';
+      adminPassword = await askNewPassword();
+    }
+
+    writeConfig({ shcIp, authEnabled });
+    console.log('✔ config.json saved.');
+
+    if (authEnabled) {
+      const { keptUsers } = writeAuth({ adminUsername, adminPassword });
+      console.log(`✔ auth.json saved (admin: ${adminUsername}, kept ${keptUsers} non-admin user(s), all sessions cleared).`);
+    } else {
+      removeAuthFile();
+    }
+    console.log('\nDone! Start the UI with:  npm start');
+    console.log('   → http://localhost:3000');
+  }
+
+  // --- Admin-only: rewrite the admin login without re-pairing the SHC. ---
+  // Touches auth.json (+ flips authEnabled on in config.json) only; never
+  // generates certs or talks to the controller. Use this to (re)set the admin
+  // username/password or to recover access after a forgotten password.
+  async function runAuthOnly() {
+    console.log('=== Bosch SHC - admin login setup (no SHC re-pairing) ===\n');
+    if (!fs.existsSync(CONFIG_FILE)) {
+      throw new Error('config.json not found — run `npm run setup` first to pair with the SHC.');
+    }
+    const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+
+    const adminUsername = (await ask('Admin username [admin]: ')) || 'admin';
+    const adminPassword = await askNewPassword();
+
+    const { keptUsers } = writeAuth({ adminUsername, adminPassword });
+    console.log(`✔ auth.json saved (admin: ${adminUsername}, kept ${keptUsers} non-admin user(s), all sessions cleared).`);
+
+    // Patch the existing config in place (preserving uiPort/shcProtocol/etc.)
+    // so the login is actually enforced even if auth was previously off.
+    if (!config.authEnabled) {
+      config.authEnabled = true;
+      fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
+      console.log('✔ config.json updated (authEnabled: true).');
+    }
+    console.log('\nDone! Restart the UI if it is running:  npm start');
+  }
+
+  const authOnly = process.argv.slice(2).some(a => ['--auth-only', '--admin', 'auth'].includes(a));
+
   (async () => {
     try {
-      console.log('=== Bosch SHC - local UI setup ===\n');
-
-      const shcIp = await ask('IP address of your Bosch SHC (e.g. 192.168.1.50): ');
-      if (!shcIp) throw new Error('No IP provided.');
-
-      const { generated } = ensureCerts();
-      console.log(generated ? '✔ Certificates generated.' : '✔ Certificates already exist in ./certs');
-      const certPem = fs.readFileSync(CERT_FILE, 'utf8');
-
-      console.log('\n⚠  Now press the front button on the SHC until the LED blinks');
-      console.log('   (pairing mode). Then continue here.\n');
-      await ask('   Ready? Press Enter … ');
-
-      const password = await ask('SHC system password: ', { hidden: true });
-      process.stdout.write('\n');
-
-      console.log('⏳ Registering client with the SHC …');
-      const result = await registerClient(shcIp, password, certPem);
-      console.log(`✔ Registration successful (HTTP ${result.status}).`);
-
-      console.log('\n--- Optional: protect the UI with a login ---');
-      const authAnswer = (await ask('Require a user login to access the UI? (y/N): ')).toLowerCase();
-      const authEnabled = ['y','yes','j','ja'].includes(authAnswer);
-
-      let adminUsername = null, adminPassword = null;
-      if (authEnabled) {
-        adminUsername = (await ask('Admin username [admin]: ')) || 'admin';
-        while (!adminPassword) {
-          const p1 = await ask('Admin password: ', { hidden: true });
-          process.stdout.write('\n');
-          if (!p1) { console.log('  Password may not be empty.'); continue; }
-          if (p1.length < 4) { console.log('  Please use at least 4 characters.'); continue; }
-          const p2 = await ask('Repeat admin password: ', { hidden: true });
-          process.stdout.write('\n');
-          if (p1 !== p2) { console.log('  Passwords did not match — try again.'); continue; }
-          adminPassword = p1;
-        }
-      }
-
-      writeConfig({ shcIp, authEnabled });
-      console.log('✔ config.json saved.');
-
-      if (authEnabled) {
-        const { keptUsers } = writeAuth({ adminUsername, adminPassword });
-        console.log(`✔ auth.json saved (admin: ${adminUsername}, kept ${keptUsers} non-admin user(s), all sessions cleared).`);
-      } else {
-        removeAuthFile();
-      }
-      console.log('\nDone! Start the UI with:  npm start');
-      console.log('   → http://localhost:3000');
+      if (authOnly) await runAuthOnly();
+      else          await runFullSetup();
     } catch (err) {
       console.error('\n✖ Setup failed:', err.message);
-      console.error('\nTips:');
-      console.error('  • Is the SHC in pairing mode (LED blinking)?');
-      console.error('  • Correct system password (the one from the app during initial setup)?');
-      console.error('  • SHC IP correct and on the same network?');
+      if (!authOnly) {
+        console.error('\nTips:');
+        console.error('  • Is the SHC in pairing mode (LED blinking)?');
+        console.error('  • Correct system password (the one from the app during initial setup)?');
+        console.error('  • SHC IP correct and on the same network?');
+      }
       process.exit(1);
     }
   })();

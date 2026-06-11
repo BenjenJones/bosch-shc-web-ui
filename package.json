@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "setup": "node setup.js",
+    "setup:auth": "node setup.js --auth-only",
     "prestart": "npm run build:css",
     "start": "node server.js",
     "build:css": "tailwindcss -i public/tailwind.src.css -o public/tailwind.css --minify",

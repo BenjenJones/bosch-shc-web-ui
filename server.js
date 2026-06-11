@@ -17,6 +17,12 @@ const setupLib = require('./setup.js');
 // it doesn't have to touch the real config.json sitting next to the source).
 const CONFIG_FILE = process.env.BOSCH_SHC_CONFIG_FILE || path.join(__dirname, 'config.json');
 const AUTH_FILE   = process.env.BOSCH_SHC_AUTH_FILE   || path.join(__dirname, 'auth.json');
+// Server-local archive of dismissed / no-longer-active messages. The SHC drops
+// a message the moment it is resolved or dismissed, so we keep our own copy
+// here to give the UI a browsable history. Plain JSON file — no SHC connection
+// or auth state involved, so it loads at boot regardless of setup status.
+const MESSAGE_ARCHIVE_FILE = process.env.BOSCH_SHC_MESSAGE_ARCHIVE_FILE || path.join(__dirname, 'messages-archive.ndjson');
+const MESSAGE_ARCHIVE_MAX  = 500; // cap so a chatty SHC can't grow the file forever
 
 // =========================================================================
 //  Runtime state — populated by initRuntime() once config.json exists. The
@@ -76,6 +82,39 @@ function initRuntime() {
 function saveAuth() {
   if (!AUTH_ENABLED) return;
   fs.writeFileSync(AUTH_FILE, JSON.stringify(authData, null, 2));
+}
+
+// =========================================================================
+//  Message archive (server-local JSON store)
+// =========================================================================
+let messageArchive = [];
+
+function loadMessageArchive() {
+  try {
+    if (!fs.existsSync(MESSAGE_ARCHIVE_FILE)) return;
+    // NDJSON: one object per line. Skip a corrupt line rather than losing the
+    // entire archive over it.
+    messageArchive = fs.readFileSync(MESSAGE_ARCHIVE_FILE, 'utf8')
+      .split('\n').map(l => l.trim()).filter(Boolean)
+      .reduce((acc, l) => {
+        try { acc.push(JSON.parse(l)); } catch { /* skip corrupt line */ }
+        return acc;
+      }, []);
+  } catch (err) {
+    console.warn('Could not read message archive:', err.message);
+  }
+}
+
+function saveMessageArchive() {
+  try {
+    // NDJSON — one compact JSON object per line. Much smaller than a
+    // pretty-printed file, append-friendly, and still line-readable. The
+    // frontend re-formats each message for its technical-details view anyway.
+    const body = messageArchive.map(m => JSON.stringify(m)).join('\n');
+    fs.writeFileSync(MESSAGE_ARCHIVE_FILE, body ? body + '\n' : '');
+  } catch (err) {
+    console.warn('Could not write message archive:', err.message);
+  }
 }
 
 function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
@@ -920,6 +959,53 @@ app.put('/api/intrusion/state', wrap(async (req, res) => {
 }));
 
 // =========================================================================
+//  Message archive — history of no-longer-active messages, stored locally.
+//  Declared BEFORE the `/api/messages/:id` dismiss route below so the exact
+//  `/archive` paths match first instead of being captured as `:id=archive`.
+// =========================================================================
+app.get('/api/messages/archive', (_req, res) => {
+  res.json(messageArchive);
+});
+
+// The UI posts the full message object when it dismisses an active message, or
+// when the SHC marks one deleted via the live stream. Deduped by id: a repeat
+// post moves the entry to the front and refreshes archivedAt.
+app.post('/api/messages/archive', (req, res) => {
+  const msg = req.body;
+  if (!msg || typeof msg !== 'object' || Array.isArray(msg) || !msg.id) {
+    return res.status(400).json({ error: 'message object with an id required' });
+  }
+  const existing = messageArchive.find(m => m.id === msg.id);
+  // The SHC's deletion event is a bare stub (id + `deleted: true`, no
+  // messageCode). If a richer copy is already archived, don't let the stub
+  // overwrite it — keep the original content, just refresh archivedAt.
+  const incomingIsStub = !msg.messageCode;
+  const entry = (existing && incomingIsStub && existing.messageCode)
+    ? { ...existing, archivedAt: msg.archivedAt || Date.now() }
+    : { ...msg, archivedAt: msg.archivedAt || Date.now() };
+  messageArchive = messageArchive.filter(m => m.id !== entry.id);
+  messageArchive.unshift(entry);
+  if (messageArchive.length > MESSAGE_ARCHIVE_MAX) messageArchive.length = MESSAGE_ARCHIVE_MAX;
+  saveMessageArchive();
+  res.status(201).json(entry);
+});
+
+// Clear the whole archive. Exact path, so it must precede the `:id` variant.
+app.delete('/api/messages/archive', (_req, res) => {
+  messageArchive = [];
+  saveMessageArchive();
+  res.json({ ok: true });
+});
+
+app.delete('/api/messages/archive/:id', (req, res) => {
+  const before = messageArchive.length;
+  messageArchive = messageArchive.filter(m => m.id !== req.params.id);
+  if (messageArchive.length === before) return res.status(404).json({ error: 'not in archive' });
+  saveMessageArchive();
+  res.json({ ok: true });
+});
+
+// =========================================================================
 //  Dismiss messages
 // =========================================================================
 app.delete('/api/messages/:id', wrap(async (req, res) => {
@@ -1003,6 +1089,10 @@ app.get('/api/events', (req, res) => {
 // wizard at /api/setup/*.
 try { initRuntime(); }
 catch (err) { console.error('✖ initRuntime:', err.message); process.exit(1); }
+
+// Archive is independent of SHC config — load it unconditionally so the
+// history survives restarts in both setup-mode and normal mode.
+loadMessageArchive();
 
 // When loaded by the test harness we want the express app but no listener
 // and no long-polling loop. The harness sets BOSCH_SHC_NO_LISTEN=1.

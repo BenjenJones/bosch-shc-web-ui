@@ -41,6 +41,10 @@ const state = {
   services: [],
   scenarios: [],
   messages: [],
+  // History of dismissed / no-longer-active messages, persisted server-side
+  // (see /api/messages/archive). Rendered as a second list under the active
+  // messages on the Messages tab.
+  messageArchive: [],
   clients: [],
   automations: [],
   userdefinedstates: [],
@@ -239,7 +243,7 @@ const safeApi = (p, o) => api(p, o).catch(() => null);
 async function loadAll() {
   // /api/clients is admin-only; non-admins skip it (the server would return 403)
   const [info, rooms, devices, services, scenarios, messages,
-         clients, automations, userdefinedstates, intrusion] = await Promise.all([
+         clients, automations, userdefinedstates, intrusion, messageArchive] = await Promise.all([
     safeApi('/api/info'),
     safeApi('/api/rooms'),
     safeApi('/api/devices'),
@@ -250,6 +254,7 @@ async function loadAll() {
     safeApi('/api/automations'),
     safeApi('/api/userdefinedstates'),
     safeApi('/api/intrusion'),
+    safeApi('/api/messages/archive'),
   ]);
   state.info        = info || {};
   state.rooms       = rooms || [];
@@ -262,6 +267,7 @@ async function loadAll() {
   state.automations = automations || [];
   state.userdefinedstates = userdefinedstates || [];
   state.intrusion   = intrusion;
+  state.messageArchive = messageArchive || [];
 
   applyStaticTexts();
   renderAll();

@@ -98,7 +98,9 @@ On first run the server has no `config.json` yet and boots into **setup-mode**: 
 
 The wizard writes `certs/client-cert.pem`, `certs/client-key.pem`, `config.json` and (if auth was enabled) `auth.json`. After completion the page reloads and you're in the normal UI.
 
-Prefer the CLI? `npm run setup` runs the same flow interactively in a terminal and is the way to **change the admin password later** (since the web wizard only appears on a fresh install).
+Prefer the CLI? `npm run setup` runs the same flow interactively in a terminal (since the web wizard only appears on a fresh install).
+
+To change **only the admin login** later — without re-pairing the SHC — run `npm run setup:auth`. It prompts for a new admin username and password, rewrites `auth.json` (keeping non-admin users and clearing all sessions) and enables auth in `config.json` if it wasn't already. It never generates certificates or talks to the controller, so it's also the quickest way to **recover from a forgotten admin password**. (It requires an existing `config.json` — pair via `npm run setup` first.)
 
 `npm start` runs a `prestart` hook that compiles Tailwind CSS from `public/tailwind.src.css` into `public/tailwind.css` (gitignored). The CSS is fully self-hosted — no CDN — and tree-shaken to only the utilities the UI actually uses (~16 KB minified). If you ever serve `public/` without going through `npm start`, run `npm run build:css` first.
 
@@ -147,7 +149,7 @@ For frontend iteration, `npm run watch:css` rebuilds `public/tailwind.css` on ev
 | Server start: `auth.json is missing` | `authEnabled` is true in `config.json` but `auth.json` was deleted — re-run `npm run setup`                |
 | UI loads but no devices              | inspect `/api/devices` in the browser DevTools → Network                                                   |
 | Live indicator red                   | long-polling broke — or the session was revoked; check the server logs / refresh and re-login              |
-| Forgot the admin password            | re-run `npm run setup` — it rewrites the admin in `auth.json`, keeps existing regular users, and clears all sessions |
+| Forgot the admin password            | run `npm run setup:auth` — it rewrites the admin in `auth.json`, keeps existing regular users, and clears all sessions, without re-pairing the SHC |
 | `503` from SHC on a `PUT`            | usually a wrong payload schema — open the device's *info* (ⓘ) in **Admin** to see the actual service state |
 
 ## License
