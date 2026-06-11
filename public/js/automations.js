@@ -25,7 +25,10 @@ const thr = (def) => ({ key: 'threshold', kind: 'number', default: def });
 const SC = { key: 'shutterContactId', kind: 'device', services: ['ShutterContact'] };
 const PLUG = (key) => ({ key, kind: 'device', services: ['PowerMeter'] });
 const CAM = (key) => ({ key, kind: 'device', services: ['PrivacyMode', 'CameraNotification'] });
-const WALL = { key: 'deviceId', kind: 'device', models: ['RTH2', 'THB', 'RTH', 'RT2'] };
+const WALL = { key: 'deviceId', kind: 'device', models: ['RTH2', 'RTH2_BAT', 'THB', 'RTH', 'RT2'] };
+const HUE = (key) => ({ key, kind: 'device', services: ['HueLight'] });
+const LIGHT_CHILD = (key) => ({ key, kind: 'device', models: ['MICROMODULE_LIGHT_ATTACHED'] });
+const SHC = (key) => ({ key, kind: 'device', services: ['ShutterControl'] });
 const RCC = (key) => ({ key, kind: 'device', idPrefix: 'roomClimateControl_',
   itemLabel: (d) => roomName(d.roomId || (d.id || '').replace('roomClimateControl_', '')) });
 // Intrusion config profiles share the names the security tab already uses.
@@ -37,7 +40,7 @@ const PROFILE_OPTS = ['0', '1', '2'];
 
 const AUTOMATION_TRIGGER_TYPES = {
   ShutterContactTrigger: { group: 'device', fields: [
-    SC, { key: 'triggerState', kind: 'select', options: ['ON_OPEN', 'ON_CLOSED'], default: 'ON_OPEN' },
+    SC, { key: 'triggerState', kind: 'select', options: ['ON_OPEN', 'ON_CLOSE'], default: 'ON_OPEN' },
   ] },
   ShutterContactReminderTrigger: { group: 'device', fields: [
     SC, { key: 'triggerState', kind: 'select', options: ['OPEN', 'CLOSED'], default: 'OPEN' },
@@ -80,6 +83,15 @@ const AUTOMATION_TRIGGER_TYPES = {
     { key: 'stateId', kind: 'uds' },
     { key: 'stateChange', kind: 'select', options: ['TO_ACTIVE', 'TO_INACTIVE'], default: 'TO_ACTIVE' },
   ] },
+  PhilipsHueOnOffTrigger: { group: 'device', fields: [
+    HUE('deviceId'),
+    { key: 'onOffState', kind: 'select', options: ['ON', 'OFF'], default: 'ON' },
+  ] },
+  LightControlOnOffTrigger: { group: 'device', fields: [
+    LIGHT_CHILD('deviceId'),
+    { key: 'onOffState', kind: 'select', options: ['ON', 'OFF'], default: 'ON' },
+  ] },
+  WallThermostatExternalSensorTemperatureThresholdTrigger: { group: 'device', fields: [WALL, thr(20), CMP] },
 };
 
 const AUTOMATION_CONDITION_TYPES = {
@@ -120,6 +132,15 @@ const AUTOMATION_CONDITION_TYPES = {
     { key: 'stateId', kind: 'uds' },
     { key: 'state', kind: 'select', options: ['ACTIVE', 'INACTIVE'], default: 'ACTIVE' },
   ] },
+  PhilipsHueOnOffCondition: { group: 'device', fields: [
+    HUE('philipsHueId'),
+    { key: 'conditionState', kind: 'select', options: ['ON', 'OFF'], default: 'ON' },
+  ] },
+  ShutterControlRangeCondition: { group: 'device', fields: [
+    SHC('shutterControlId'),
+    { key: 'minLevelPercent', kind: 'number', default: 0,   min: 0 },
+    { key: 'maxLevelPercent', kind: 'number', default: 100, min: 0 },
+  ] },
 };
 
 const AUTOMATION_ACTION_TYPES = {
@@ -156,6 +177,34 @@ const AUTOMATION_ACTION_TYPES = {
     { key: 'state', kind: 'select', options: ['ACTIVE', 'INACTIVE'], default: 'ACTIVE' },
   ] },
   ScenarioAction: { group: 'scenario', top: [DELAY_TOP], fields: [{ key: 'scenarioId', kind: 'scenario' }] },
+  ShutterControlAction: { group: 'device', top: [DELAY_TOP], fields: [
+    SHC('deviceId'),
+    { key: 'positionInPercent', kind: 'number', default: 50, min: 0 },
+  ] },
+  WallThermostatDisplayConfigurationAction: { group: 'device', top: [DELAY_TOP], fields: [
+    WALL, { key: 'displayBrightness', kind: 'number', default: 100, min: 0 },
+  ] },
+  PhilipsHue: { group: 'device', top: [DELAY_TOP], fields: [
+    HUE('philipsHueId'),
+    { key: 'onOffAction', kind: 'select', options: ['TURN_ON', 'TURN_OFF'], default: 'TURN_ON', rerenderOnChange: true },
+    { key: 'brightness', kind: 'number', default: 100, min: 0, showIf: (v) => v.onOffAction === 'TURN_ON' },
+    { key: 'color',      kind: 'number', default: 16777215, min: 0, showIf: (v) => v.onOffAction === 'TURN_ON' },
+  ], toConfig: (v) => v.onOffAction === 'TURN_ON'
+    ? { philipsHueId: v.philipsHueId, onOffAction: 'TURN_ON',
+        brightness: Number(v.brightness) || 0, color: Number(v.color) || 0 }
+    : { philipsHueId: v.philipsHueId, onOffAction: 'TURN_OFF' } },
+  WallMountedSwitchOnOffAction: { group: 'device', top: [DELAY_TOP], fields: [
+    LIGHT_CHILD('lightId'),
+    { key: 'onOffAction', kind: 'select', options: ['TURN_ON', 'TURN_OFF'], default: 'TURN_ON' },
+  ], toConfig: (v) => ({
+    wallMountedSwitchId: v.lightId, lightId: v.lightId,
+    action: v.onOffAction, onOffAction: v.onOffAction,
+    // Plain light-switch channels never carry these — Bosch sends explicit nulls.
+    brightness: null, color: null, colorTemperature: null,
+  }), fromConfig: (c) => ({
+    lightId: c.lightId || c.wallMountedSwitchId || '',
+    onOffAction: c.onOffAction || c.action || 'TURN_ON',
+  }) },
 };
 
 // Working copy while the editor modal is open.

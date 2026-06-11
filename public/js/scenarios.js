@@ -85,6 +85,15 @@ const SCENARIO_ACTION_TYPES = {
     build: (v) => ({ deviceId: 'presenceSimulationService', deviceServiceId: 'PresenceSimulationConfiguration',
       targetState: { '@type': 'presenceSimulationConfigurationState', enabled: v.enabled === 'true' } }),
   },
+  // Momentary relay (e.g. Haustüröffner). The Bosch app always fires impulseState:true;
+  // the SHC self-resets after the relay's configured pulse length.
+  impulse: {
+    match: (a) => a.deviceServiceId === 'ImpulseSwitch',
+    fields: [{ key: 'deviceId', kind: 'device', services: ['ImpulseSwitch'] }],
+    parse: (a) => ({ deviceId: a.deviceId }),
+    build: (v) => ({ deviceId: v.deviceId, deviceServiceId: 'ImpulseSwitch',
+      targetState: { '@type': 'ImpulseSwitchState', impulseState: true } }),
+  },
 };
 // The SHC's scenario icon set, each mapped to a matching MDI svg in public/svg/
 // (no Bosch icon assets ship). Order mirrors the Bosch app's icon grid.
