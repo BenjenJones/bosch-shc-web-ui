@@ -140,20 +140,12 @@ By default the UI is served over plain HTTP. There are two ways to add TLS:
 }
 ```
 
-Paths are relative to the project directory. When the block is present (and both paths are set) the server starts on `https://`; remove it to fall back to plain HTTP. The `/api/events` SSE stream works without any extra configuration since there's no proxy buffering in the way.
+Paths may be relative (resolved against the project directory) or absolute — both Windows (`C:\\certs\\ui-cert.pem`) and Linux (`/etc/ssl/shc/cert.pem`) absolute paths work. When the block is present (and both paths are set) the server starts on `https://`; remove it to fall back to plain HTTP. The `/api/events` SSE stream works without any extra configuration since there's no proxy buffering in the way.
 
-Generate a locally-trusted cert with [mkcert](https://github.com/FiloSottile/mkcert) (no browser warning on your own devices):
-
-```bash
-mkcert -install
-mkcert -cert-file certs/ui-cert.pem -key-file certs/ui-key.pem shc.home.lan localhost 192.168.1.x
-```
-
-…or a self-signed one with OpenSSL (browser will warn):
+Generate a self-signed one with OpenSSL (browser will warn):
 
 ```bash
-openssl req -x509 -newkey rsa:2048 -nodes -days 825 \
-  -keyout certs/ui-key.pem -out certs/ui-cert.pem -subj "/CN=shc.home.lan"
+openssl req -x509 -newkey rsa:2048 -nodes -days 825 -keyout certs/ui-key.pem -out certs/ui-cert.pem -subj "/CN=shc.home.lan"
 ```
 
 Note: `uiTls` is independent of the `certPath`/`keyPath` used for the SHC mTLS client cert — don't reuse those here.

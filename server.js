@@ -1101,14 +1101,16 @@ if (!process.env.BOSCH_SHC_NO_LISTEN) {
   const PORT = (isReady() && config.uiPort) || 3000;
 
   // Optional native TLS for the UI itself (separate from the SHC client cert).
-  // Set config.uiTls = { certPath, keyPath } (paths relative to this dir) to
-  // serve HTTPS directly; otherwise fall back to plain HTTP as before. A
-  // reverse proxy (Caddy/Apache) terminating TLS remains a valid alternative.
+  // Set config.uiTls = { certPath, keyPath } to serve HTTPS directly; otherwise
+  // fall back to plain HTTP as before. A reverse proxy (Caddy/Apache)
+  // terminating TLS remains a valid alternative. Paths may be relative (to this
+  // dir) or absolute — path.resolve keeps an absolute path as-is on both
+  // Windows (C:\...) and Linux (/...).
   const uiTls = isReady() && config.uiTls;
   const server = (uiTls && uiTls.certPath && uiTls.keyPath)
     ? https.createServer({
-        cert: fs.readFileSync(path.join(__dirname, uiTls.certPath)),
-        key:  fs.readFileSync(path.join(__dirname, uiTls.keyPath)),
+        cert: fs.readFileSync(path.resolve(__dirname, uiTls.certPath)),
+        key:  fs.readFileSync(path.resolve(__dirname, uiTls.keyPath)),
       }, app)
     : app;
   const scheme = server === app ? 'http' : 'https';
