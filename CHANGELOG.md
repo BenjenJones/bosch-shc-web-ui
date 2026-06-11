@@ -2,6 +2,7 @@
 
 ## 2026-06-11
 
+- (Server) Optional native HTTPS via `config.json` → `uiTls` (`certPath`/`keyPath`); falls back to HTTP when unset.
 - (Font) Include "Cascadia Code" as FontFace
 - (Messages) Add archived messages.
 - (Dashboard) Show a marker on rooms that have active messages.

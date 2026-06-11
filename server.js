@@ -1099,12 +1099,26 @@ loadMessageArchive();
 if (!process.env.BOSCH_SHC_NO_LISTEN) {
   // Default to 3000 for setup-mode boots where there's no config yet.
   const PORT = (isReady() && config.uiPort) || 3000;
-  app.listen(PORT, () => {
+
+  // Optional native TLS for the UI itself (separate from the SHC client cert).
+  // Set config.uiTls = { certPath, keyPath } (paths relative to this dir) to
+  // serve HTTPS directly; otherwise fall back to plain HTTP as before. A
+  // reverse proxy (Caddy/Apache) terminating TLS remains a valid alternative.
+  const uiTls = isReady() && config.uiTls;
+  const server = (uiTls && uiTls.certPath && uiTls.keyPath)
+    ? https.createServer({
+        cert: fs.readFileSync(path.join(__dirname, uiTls.certPath)),
+        key:  fs.readFileSync(path.join(__dirname, uiTls.keyPath)),
+      }, app)
+    : app;
+  const scheme = server === app ? 'http' : 'https';
+
+  server.listen(PORT, () => {
     if (isReady()) {
-      console.log(`▶ Bosch SHC UI running on http://localhost:${PORT}`);
+      console.log(`▶ Bosch SHC UI running on ${scheme}://localhost:${PORT}`);
       console.log(`  SHC: ${config.shcIp}  (client: ${config.clientId})`);
     } else {
-      console.log(`▶ Bosch SHC UI running on http://localhost:${PORT}  (SETUP MODE — visit it to pair)`);
+      console.log(`▶ Bosch SHC UI running on ${scheme}://localhost:${PORT}  (SETUP MODE — visit it to pair)`);
     }
     kickPollLoop();
   });

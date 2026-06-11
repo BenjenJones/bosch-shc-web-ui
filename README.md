@@ -127,6 +127,39 @@ Regular users see only the Dashboard, Scenarios, Security and Messages tabs and 
 - The UI server listens on `0.0.0.0:3000` by default (port configurable via `config.json` → `uiPort`). If you don't want it reachable from the LAN, bind it to `127.0.0.1` instead.
 - `auth.json` contains password hashes (scrypt, per-user salt) and active session tokens. Treat it like a secret — it's already gitignored. Sessions are persisted so they survive server restarts; revoke a session from the **Sessions** tab to force a device to sign in again.
 
+## Serving over HTTPS
+
+By default the UI is served over plain HTTP. There are two ways to add TLS:
+
+**1. Native HTTPS (no extra software).** Generate a certificate for the UI and point `config.json` at it:
+
+```json
+"uiTls": {
+  "certPath": "certs/ui-cert.pem",
+  "keyPath":  "certs/ui-key.pem"
+}
+```
+
+Paths are relative to the project directory. When the block is present (and both paths are set) the server starts on `https://`; remove it to fall back to plain HTTP. The `/api/events` SSE stream works without any extra configuration since there's no proxy buffering in the way.
+
+Generate a locally-trusted cert with [mkcert](https://github.com/FiloSottile/mkcert) (no browser warning on your own devices):
+
+```bash
+mkcert -install
+mkcert -cert-file certs/ui-cert.pem -key-file certs/ui-key.pem shc.home.lan localhost 192.168.1.x
+```
+
+…or a self-signed one with OpenSSL (browser will warn):
+
+```bash
+openssl req -x509 -newkey rsa:2048 -nodes -days 825 \
+  -keyout certs/ui-key.pem -out certs/ui-cert.pem -subj "/CN=shc.home.lan"
+```
+
+Note: `uiTls` is independent of the `certPath`/`keyPath` used for the SHC mTLS client cert — don't reuse those here.
+
+**2. Reverse proxy.** Keep the server on `127.0.0.1:3000` and terminate TLS in front. Caddy is the simplest (`reverse_proxy 127.0.0.1:3000` + `tls internal`). With Apache/nginx make sure the `/api/events` SSE endpoint isn't buffered and the proxy timeout is high (e.g. Apache: `ProxyPass / http://127.0.0.1:3000/ flushpackets=on` + `ProxyTimeout 3600`).
+
 ## Bosch licensing
 
 The client id `oss_bosch_shc_web_ui` follows the `oss_…` naming convention required by Bosch's terms. Per Bosch, the SHC API may only be used for **private, non-commercial purposes**.
