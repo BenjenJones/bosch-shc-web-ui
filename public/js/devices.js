@@ -8,17 +8,21 @@ import { severityFromMessage, messageTitle } from './messages.js';
 // Lower number = higher up. Unknown models end up at the bottom.
 const DEVICE_TYPE_ORDER = [
   ['ROOM_CLIMATE_CONTROL'],                                         // virtual room climate control
-  ['THB', 'RTH', 'RTH2', 'RT2'],                                    // room thermostat
+  ['THB', 'RTH', 'RTH2', 'RTH2_BAT', 'RT2'],                        // room thermostat
   ['TRV', 'TRV_GEN2'],                                              // radiator thermostat
+  ['BOILER'],                                                       // central heating control
   ['SWD', 'SWD2'],                                                  // door/window contact
   ['BBL', 'BBL_2', 'MICROMODULE_SHUTTER', 'SHUTTER_CONTROL'],       // shutter
   ['BSM', 'MICROMODULE_LIGHT_CONTROL', 'LIGHT_CONTROL_2',
-   'HUE_LIGHT', 'LEDVANCE_LIGHT', 'SMART_BULB'],                    // light
+   'HUE_LIGHT', 'HUE_LIGHT_ROOM_CONTROL',
+   'LEDVANCE_LIGHT', 'SMART_BULB'],                                 // light
   ['PSM', 'PLUG', 'PLUG_COMPACT'],                                  // smart plug
+  ['MICROMODULE_RELAY'],                                            // relay (impulse)
   ['SD', 'SMOKE_DETECTOR', 'SMOKE_DETECTOR_2', 'TWINGUARD'],        // smoke detector
   ['MD', 'MOTION_DETECTOR'],                                        // motion detector
   ['WLS', 'WATER_LEAKAGE_SENSOR'],                                  // water leakage sensor
-  ['UNIVERSAL_SWITCH', 'UNIVERSAL_SWITCH_2', 'WRC2'],               // universal switch
+  ['UNIVERSAL_SWITCH', 'UNIVERSAL_SWITCH_2', 'WRC2', 'MULTISWITCH'],// universal switch / twist
+  ['HOMECONNECT_WASHER'],                                           // home connect appliances
   ['HUE_BRIDGE'],                                                   // bridges
 ];
 const DEVICE_MODEL_RANK = (() => {
@@ -32,15 +36,18 @@ const DEVICE_MODEL_RANK = (() => {
 // are matched exactly; prefixes match `${prefix}` or `${prefix}_…` (catches
 // e.g. CAMERA_360, TRV_GEN2_FOO).
 const DEVICE_CATEGORIES = [
-  { id: 'thermostat', icon: 'home-thermometer', models: ['THB','RTH','RTH2','RT2','TRV','TRV_GEN2','ROOM_CLIMATE_CONTROL'], prefixes: ['TRV'] },
+  { id: 'thermostat', icon: 'home-thermometer', models: ['THB','RTH','RTH2','RTH2_BAT','RT2','TRV','TRV_GEN2','ROOM_CLIMATE_CONTROL'], prefixes: ['TRV'] },
+  { id: 'boiler',     icon: 'water-boiler',     models: ['BOILER'] },
   { id: 'contact',    icon: 'window-closed',    models: ['SWD','SWD2'], prefixes: ['SWD', 'SWD2'] },
   { id: 'shutter',    icon: 'window-shutter',   models: ['BBL','BBL_2','MICROMODULE_SHUTTER','SHUTTER_CONTROL'] },
-  { id: 'light',      icon: 'lightbulb-on',     models: ['BSM','MICROMODULE_LIGHT_CONTROL','LIGHT_CONTROL_2','HUE_LIGHT','LEDVANCE_LIGHT','SMART_BULB'] },
+  { id: 'light',      icon: 'lightbulb-on',     models: ['BSM','MICROMODULE_LIGHT_CONTROL','LIGHT_CONTROL_2','HUE_LIGHT','HUE_LIGHT_ROOM_CONTROL','LEDVANCE_LIGHT','SMART_BULB'] },
   { id: 'plug',       icon: 'power-plug',       models: ['PSM','PLUG','PLUG_COMPACT'] },
+  { id: 'relay',      icon: 'electric-switch',  models: ['MICROMODULE_RELAY'] },
   { id: 'smoke',      icon: 'smoke-detector',   models: ['SD','SMOKE_DETECTOR','SMOKE_DETECTOR_2','TWINGUARD'] },
   { id: 'motion',     icon: 'motion-sensor',    models: ['MD','MOTION_DETECTOR'] },
   { id: 'water',      icon: 'water-alert',      models: ['WLS','WATER_LEAKAGE_SENSOR', 'WATER_DETECTOR'] },
-  { id: 'switch',     icon: 'light-switch-off', models: ['UNIVERSAL_SWITCH','UNIVERSAL_SWITCH_2','WRC2'] },
+  { id: 'switch',     icon: 'light-switch-off', models: ['UNIVERSAL_SWITCH','UNIVERSAL_SWITCH_2','WRC2','MULTISWITCH'] },
+  { id: 'washer',     icon: 'washing-machine',  models: ['HOMECONNECT_WASHER'] },
   { id: 'camera',     icon: 'cctv',             models: ['EYES_OUTDOOR'], prefixes: ['CAMERA'] },
   { id: 'bridge',     icon: 'router-network',   models: ['HUE_BRIDGE'] },
 ];
@@ -404,8 +411,18 @@ function deviceIcon(device) {
     return (valve?.state?.position ?? 0) > 0 ? 'radiator' : 'radiator-disabled';
   }
   // Room thermostat / virtual room climate control
-  if (m === 'THB' || m === 'RTH' || m === 'RTH2' || m === 'RT2'
+  if (m === 'THB' || m === 'RTH' || m === 'RTH2' || m === 'RTH2_BAT' || m === 'RT2'
       || m === 'ROOM_CLIMATE_CONTROL') return 'home-thermometer';
+  // Central heating control (virtual)
+  if (m === 'BOILER') return 'water-boiler';
+  // Home Connect washing machine
+  if (m === 'HOMECONNECT_WASHER') return 'washing-machine';
+  // Hue room light virtual device
+  if (m === 'HUE_LIGHT_ROOM_CONTROL') return 'lightbulb-multiple';
+  // Micromodule relay (impulse mode)
+  if (m === 'MICROMODULE_RELAY') return 'electric-switch';
+  // Twist rotary remote
+  if (m === 'MULTISWITCH') return 'knob';
   // Door/window contact
   if (m === 'SWD' || m === 'SWD2' || m.startsWith('SWD')) {
     const sc = services.find(s => s.id === 'ShutterContact');
