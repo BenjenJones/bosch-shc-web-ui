@@ -1,16 +1,16 @@
+/* Bundled font so users don't need it installed. Variable woff2 (Cascadia
+   Code, SIL OFL 1.1 — see fonts/LICENSE). Locally installed Nerd Font variants
+   below still win; this is the guaranteed fallback before plain monospace. */
+@font-face {
+    font-family: "Cascadia Code";
+    src: url("fonts/CascadiaCode.woff2") format("woff2");
+    font-weight: 200 700;
+    font-style: normal;
+    font-display: swap;
+}
+
 body {
-    font-family:
-        "CaskaydiaCove NFM",
-        "CascadyaCove NFM",
-        "CaskaydiaCove Nerd Font Mono",
-        "CaskaydiaMono Nerd Font",
-        "JetBrainsMono Nerd Font Mono",
-        "JetBrainsMono NFM",
-        "FiraCode Nerd Font Mono",
-        "FiraCode NFM",
-        "Hack Nerd Font Mono",
-        "Hack NFM",
-        monospace;
+    font-family: "Cascadia Code", monospace;
     transition: background-color .2s ease, color .2s ease;
 }
 

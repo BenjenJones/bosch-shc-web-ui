@@ -57,6 +57,7 @@
     "devices.closed":      "Closed",
     "devices.windowsClosed": "Windows closed",
     "devices.windowsOpen":   "{0} window(s) open",
+    "devices.devicesOn":     "{0} on",
     "devices.valve":       "Valve {0}%",
     "devices.commQuality": "Communication quality: {0} ({1})",
     "commQuality.good":       "good",

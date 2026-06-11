@@ -263,7 +263,7 @@ function renderDeviceList() {
       const open = filtering ? true : !state.collapsedRooms.has(rId);
       return `
       <details class="room mb-4" data-room="${rId}" ${open ? 'open' : ''}>
-        <summary class="flex items-end justify-between mb-2 px-1 gap-3">
+        <summary class="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-y-1.5 sm:gap-x-3 mb-2 px-1">
           <h2 class="text-sm uppercase tracking-wide text-slate-500 flex items-center gap-1.5">
             <span class="chev text-slate-400">▸</span>
             ${roomName(rId)}
@@ -353,14 +353,26 @@ function renderRoomClimateBadge(roomId) {
   const contactSvcs = state.services.filter(
     s => s.id === 'ShutterContact' && roomDeviceIds.includes(s.deviceId)
   );
+  // Switched-on devices in the room (plugs + lights expose PowerSwitch).
+  const onCount = state.services.filter(
+    s => s.id === 'PowerSwitch' && roomDeviceIds.includes(s.deviceId)
+         && s.state?.switchState === 'ON'
+  ).length;
 
   const tVal = tempSvc?.state?.temperature;
   const hVal = humSvc?.state?.humidity;
-  if (tVal == null && hVal == null && contactSvcs.length === 0) return '';
+  if (tVal == null && hVal == null && contactSvcs.length === 0 && onCount === 0) return '';
 
   const parts = [];
   if (tVal != null) parts.push(`<span class="tabular-nums">${tVal.toFixed(1)}°C</span>`);
   if (hVal != null) parts.push(`<span class="tabular-nums">${Math.round(hVal)}% rH</span>`);
+  if (onCount) {
+    const label = t('devices.devicesOn', onCount);
+    parts.push(
+      `<span class="flex items-center gap-1 text-amber-600 font-medium" title="${escapeHtml(label)}">` +
+      `<span class="icon-mask" style="width:14px;height:14px;mask-image:url(svg/power.svg);-webkit-mask-image:url(svg/power.svg)" aria-hidden="true"></span>${label}</span>`
+    );
+  }
   if (contactSvcs.length) {
     const openCount = contactSvcs.filter(s => s.state?.value === 'OPEN').length;
     const closed = openCount === 0;
@@ -372,7 +384,10 @@ function renderRoomClimateBadge(roomId) {
       `<img src="svg/${icon}.svg" style="width:14px;height:14px" aria-hidden="true" />${label}</span>`
     );
   }
-  return `<div class="text-xs text-slate-600 flex items-center gap-2">${parts.join(' · ')}</div>`;
+  // Mobile: wrap parts onto multiple lines and drop the dot separators so they
+  // don't crowd. Desktop (sm+) keeps the original single-line · separated look.
+  const sep = '<span class="hidden sm:inline" aria-hidden="true">·</span>';
+  return `<div class="text-xs text-slate-600 flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1 sm:gap-2">${parts.join(sep)}</div>`;
 }
 
 // Returns an icon name for a device. Primary lookup is by deviceModel
