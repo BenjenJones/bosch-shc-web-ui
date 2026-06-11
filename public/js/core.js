@@ -261,11 +261,12 @@ async function loadAll() {
   state.devices     = devices || [];
   state.info.macAddress = state.devices.find(d => d.rootDeviceId)?.rootDeviceId;
   state.services    = services || [];
-  state.scenarios   = scenarios || [];
+  const byName = (a, b) => (a.name || a.id || '').localeCompare(b.name || b.id || '');
+  state.scenarios   = (scenarios || []).sort(byName);
   state.messages    = messages || [];
   state.clients     = clients || [];
-  state.automations = automations || [];
-  state.userdefinedstates = userdefinedstates || [];
+  state.automations = (automations || []).sort(byName);
+  state.userdefinedstates = (userdefinedstates || []).sort(byName);
   state.intrusion   = intrusion;
   state.messageArchive = messageArchive || [];
 
