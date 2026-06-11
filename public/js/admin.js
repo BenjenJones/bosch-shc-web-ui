@@ -56,7 +56,7 @@ function renderAdmin() {
             return `<li class="flex items-center justify-between py-2">
               <div>
                 <div>${r.name}</div>
-                <div class="text-xs text-slate-500">${countLabel}</div>
+                <div class="text-xs text-slate-500">${r.id} - ${countLabel}</div>
               </div>
               <div class="flex gap-1 shrink-0">
                 <button data-room-rename="${r.id}" data-name="${r.name.replace(/"/g,'')}"
