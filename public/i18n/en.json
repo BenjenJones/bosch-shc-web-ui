@@ -53,7 +53,7 @@
     "devices.lightOff":    "● Light off",
     "devices.silentOn":    "● Silent on",
     "devices.silentOff":   "○ Silent off",
-    "devices.silentTitle": "Silent mode (display only)",
+    "devices.silentTitle": "Toggle silent mode",
     "devices.current":     "current",
     "devices.target":      "°C target",
     "devices.opened":      "Open",

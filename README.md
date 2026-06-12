@@ -110,6 +110,30 @@ To change **only the admin login** later — without re-pairing the SHC — run 
 | Wizard step 2: *"certificate generation failed"* | OpenSSL isn't on the server's PATH. Install it (built-in on macOS/Linux; on Windows e.g. via Git Bash) and retry. |
 | Wizard never appears | `config.json` already exists. To re-pair, stop the server, delete `config.json`, `auth.json`, and `certs/`, then `npm start` again. |
 
+## Demo mode
+
+Want to explore the UI without owning a Smart Home Controller (or any devices)? Run:
+
+```
+npm run demo
+```
+
+This starts the server on a **separate port (3001 by default, override with `BOSCH_SHC_DEMO_PORT`)** so it can run alongside a real instance on 3000. No `config.json`, no certificates and no login are required — instead the server serves an in-memory dataset that covers **one of every device model** (thermostats, contacts, shutters, lights, plugs, smoke/motion/water sensors, Twinguard, intrusion system, …) plus automations spanning every trigger/condition/action type, scenarios and user-defined states.
+
+Everything is interactive: toggling a plug, moving a setpoint, arming the alarm or renaming a room all persist **in memory** for the lifetime of the process (a restart resets to the dataset on disk, which is never modified). It's a self-contained playground for screenshots, UI development and trying things out.
+
+### The demo dataset
+
+The committed dataset lives in [`demo/dataset/`](demo/dataset/) (`devices.json`, `services.json`, `rooms.json`, `scenarios.json`, `automations.json`, `userdefinedstates.json`) and is what `npm run demo` loads. It is **anonymized and curated** — one device per `deviceModel`, real device/state IDs replaced with deterministic placeholders, device names genericized, free-text push messages scrubbed.
+
+It is generated from real SHC exports placed under `examples/` (which are **gitignored** — they come from a real system and are never committed):
+
+```
+node demo/build-dataset.js   # or: npm run demo:build
+```
+
+Drop your own `examples/devices.json` + `examples/services.json` (and optionally `automations.json` / `scenarios.json`, or the `02_*`-prefixed variants) there, re-run the build, and the dataset regenerates. The service states are borrowed from the real `services.json` as per-service-id templates; `BatteryLevel` carries no state — exactly like a real SHC, which reports low battery only via `faults` — so battery-powered devices show "OK" without inventing a level.
+
 ### Managing users (when auth is enabled)
 
 After signing in as the admin you'll see three additional tabs:

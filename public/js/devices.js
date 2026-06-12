@@ -618,35 +618,43 @@ function renderDeviceCard(device) {
     </div>`;
   }
   if (silentMode) {
-    // Display-only: PUTting to SilentMode triggers SERVICE_INVOCATION_FAILED
-    // on some TRV models and pushes the device to UNAVAILABLE. Writing is
-    // disabled until the correct payload format is confirmed.
     const silent = silentMode.state?.mode === 'MODE_SILENT';
     body += `
-      <span title="${t('devices.silentTitle')}"
+      <button data-action="toggle-silent" data-device="${device.id}" data-on="${silent}"
+        title="${t('devices.silentTitle')}"
         class="mt-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
-        ${silent ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-600'}">
+        ${silent ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200'
+                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
         ${t(silent ? 'devices.silentOn' : 'devices.silentOff')}
-      </span>`;
+      </button>`;
   }
   const meta = [];
-  if (battery?.state) {
-    const lvl = battery.state.warningLevel || 'OK';
-    // Possible values per the API: OK, LOW_BATTERY, CRITICAL_LOW,
-    // CRITICAL_LOW_BATTERY, INSERT_BATTERY, NOT_AVAILABLE
+  // Battery status. The real SHC only reports a *problem* — a low/critical
+  // battery surfaces as an entry in the device's `faults`; a healthy battery
+  // sends no level at all. So we treat the presence of a BatteryLevel service
+  // as "this device is battery-powered" and show OK unless a fault says
+  // otherwise. The demo (and some devices like the Outdoor Siren) instead
+  // expose BatteryLevel.state.warningLevel, which we honour as a fallback.
+  // Possible levels: OK, LOW_BATTERY, CRITICAL_LOW, CRITICAL_LOW_BATTERY,
+  // INSERT_BATTERY, NOT_AVAILABLE.
+  const faultEntries = Array.isArray(device.faults)
+    ? device.faults : (device.faults?.entries || []);
+  const batteryFault = faultEntries.find(f =>
+    f.type === 'LOW_BATTERY' || f.type === 'CRITICAL_LOW_BATTERY');
+  const batteryLevel =
+    batteryFault              ? batteryFault.type :
+    battery?.state?.warningLevel ? battery.state.warningLevel :
+    battery                   ? 'OK' : null;
+  if (batteryLevel && batteryLevel !== 'NOT_AVAILABLE') {
     const map = {
       OK:                    { icon: 'battery-high', cls: 'text-emerald-700', label: t('battery.ok') },
       LOW_BATTERY:           { icon: 'battery-medium', cls: 'text-amber-700',   label: t('battery.low') },
       CRITICAL_LOW:          { icon: 'battery-low', cls: 'text-rose-700',    label: t('battery.critical') },
       CRITICAL_LOW_BATTERY:  { icon: 'battery-low', cls: 'text-rose-700',    label: t('battery.critical') },
       INSERT_BATTERY:        { icon: 'battery-off-outline',  cls: 'text-rose-700',    label: t('battery.insert') },
-      NOT_AVAILABLE:         { icon: 'cable-data', cls: 'text-slate-500',   label: t('battery.mains') },
     };
-    const b = map[lvl] || { icon: '🔋', cls: 'text-slate-600', label: lvl };
-    // omit for mains-powered devices, otherwise show
-    if (lvl !== 'NOT_AVAILABLE') {
-      meta.push(`<span class="${b.cls}"><img src="svg/${b.icon}.svg"> ${b.label}</span>`);
-    }
+    const b = map[batteryLevel] || { icon: 'battery-high', cls: 'text-slate-600', label: batteryLevel };
+    meta.push(`<span class="${b.cls} inline-flex items-center gap-1"><img src="svg/${b.icon}.svg" style="width:16px;height:16px" alt="" /> ${b.label}</span>`);
   }
   if (valve?.state?.position != null) meta.push(t('devices.valve', valve.state.position));
 
@@ -695,6 +703,18 @@ async function onDeviceAction(e) {
       });
       const svc = serviceOf(device, 'PowerSwitch');
       if (svc) svc.state.switchState = newState;
+      renderDevices();
+    } catch (err) { alert(t('error.generic', err.message)); }
+  } else if (action === 'toggle-silent') {
+    const newMode = btn.dataset.on === 'true' ? 'MODE_NORMAL' : 'MODE_SILENT';
+    btn.classList.add('pulse');
+    try {
+      await api(`/api/devices/${encodeURIComponent(device)}/services/SilentMode/state`, {
+        method: 'PUT',
+        body: { '@type': 'silentModeState', mode: newMode },
+      });
+      const svc = serviceOf(device, 'SilentMode');
+      if (svc) svc.state = { ...(svc.state || {}), '@type': 'silentModeState', mode: newMode };
       renderDevices();
     } catch (err) { alert(t('error.generic', err.message)); }
   } else if (action === 'toggle-cam') {

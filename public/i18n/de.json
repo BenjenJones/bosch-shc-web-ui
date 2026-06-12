@@ -53,7 +53,7 @@
     "devices.lightOff": "● Licht aus",
     "devices.silentOn": "● Silent ein",
     "devices.silentOff": "○ Silent aus",
-    "devices.silentTitle": "Leise-Modus (nur Anzeige)",
+    "devices.silentTitle": "Leise-Modus umschalten",
     "devices.current": "aktuell",
     "devices.target": "°C Ziel",
     "devices.opened": "Geöffnet",
