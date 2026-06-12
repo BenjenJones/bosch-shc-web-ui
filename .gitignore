@@ -1,6 +1,7 @@
 node_modules/
 certs/
 autostart/
+examples/
 .claude
 /config.json
 /auth.json

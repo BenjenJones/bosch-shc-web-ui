@@ -8,17 +8,21 @@ import { severityFromMessage, messageTitle } from './messages.js';
 // Lower number = higher up. Unknown models end up at the bottom.
 const DEVICE_TYPE_ORDER = [
   ['ROOM_CLIMATE_CONTROL'],                                         // virtual room climate control
-  ['THB', 'RTH', 'RTH2', 'RT2'],                                    // room thermostat
+  ['THB', 'RTH', 'RTH2', 'RTH2_BAT', 'RT2'],                        // room thermostat
   ['TRV', 'TRV_GEN2'],                                              // radiator thermostat
+  ['BOILER'],                                                       // central heating control
   ['SWD', 'SWD2'],                                                  // door/window contact
   ['BBL', 'BBL_2', 'MICROMODULE_SHUTTER', 'SHUTTER_CONTROL'],       // shutter
   ['BSM', 'MICROMODULE_LIGHT_CONTROL', 'LIGHT_CONTROL_2',
-   'HUE_LIGHT', 'LEDVANCE_LIGHT', 'SMART_BULB'],                    // light
+   'HUE_LIGHT', 'HUE_LIGHT_ROOM_CONTROL',
+   'LEDVANCE_LIGHT', 'SMART_BULB'],                                 // light
   ['PSM', 'PLUG', 'PLUG_COMPACT'],                                  // smart plug
+  ['MICROMODULE_RELAY'],                                            // relay (impulse)
   ['SD', 'SMOKE_DETECTOR', 'SMOKE_DETECTOR_2', 'TWINGUARD'],        // smoke detector
   ['MD', 'MOTION_DETECTOR'],                                        // motion detector
   ['WLS', 'WATER_LEAKAGE_SENSOR'],                                  // water leakage sensor
-  ['UNIVERSAL_SWITCH', 'UNIVERSAL_SWITCH_2', 'WRC2'],               // universal switch
+  ['UNIVERSAL_SWITCH', 'UNIVERSAL_SWITCH_2', 'WRC2', 'MULTISWITCH'],// universal switch / twist
+  ['HOMECONNECT_WASHER'],                                           // home connect appliances
   ['HUE_BRIDGE'],                                                   // bridges
 ];
 const DEVICE_MODEL_RANK = (() => {
@@ -32,15 +36,18 @@ const DEVICE_MODEL_RANK = (() => {
 // are matched exactly; prefixes match `${prefix}` or `${prefix}_…` (catches
 // e.g. CAMERA_360, TRV_GEN2_FOO).
 const DEVICE_CATEGORIES = [
-  { id: 'thermostat', icon: 'home-thermometer', models: ['THB','RTH','RTH2','RT2','TRV','TRV_GEN2','ROOM_CLIMATE_CONTROL'], prefixes: ['TRV'] },
+  { id: 'thermostat', icon: 'home-thermometer', models: ['THB','RTH','RTH2','RTH2_BAT','RT2','TRV','TRV_GEN2','ROOM_CLIMATE_CONTROL'], prefixes: ['TRV'] },
+  { id: 'boiler',     icon: 'water-boiler',     models: ['BOILER'] },
   { id: 'contact',    icon: 'window-closed',    models: ['SWD','SWD2'], prefixes: ['SWD', 'SWD2'] },
   { id: 'shutter',    icon: 'window-shutter',   models: ['BBL','BBL_2','MICROMODULE_SHUTTER','SHUTTER_CONTROL'] },
-  { id: 'light',      icon: 'lightbulb-on',     models: ['BSM','MICROMODULE_LIGHT_CONTROL','LIGHT_CONTROL_2','HUE_LIGHT','LEDVANCE_LIGHT','SMART_BULB'] },
+  { id: 'light',      icon: 'lightbulb-on',     models: ['BSM','MICROMODULE_LIGHT_CONTROL','LIGHT_CONTROL_2','HUE_LIGHT','HUE_LIGHT_ROOM_CONTROL','LEDVANCE_LIGHT','SMART_BULB'] },
   { id: 'plug',       icon: 'power-plug',       models: ['PSM','PLUG','PLUG_COMPACT'] },
+  { id: 'relay',      icon: 'electric-switch',  models: ['MICROMODULE_RELAY'] },
   { id: 'smoke',      icon: 'smoke-detector',   models: ['SD','SMOKE_DETECTOR','SMOKE_DETECTOR_2','TWINGUARD'] },
   { id: 'motion',     icon: 'motion-sensor',    models: ['MD','MOTION_DETECTOR'] },
   { id: 'water',      icon: 'water-alert',      models: ['WLS','WATER_LEAKAGE_SENSOR', 'WATER_DETECTOR'] },
-  { id: 'switch',     icon: 'light-switch-off', models: ['UNIVERSAL_SWITCH','UNIVERSAL_SWITCH_2','WRC2'] },
+  { id: 'switch',     icon: 'light-switch-off', models: ['UNIVERSAL_SWITCH','UNIVERSAL_SWITCH_2','WRC2','MULTISWITCH'] },
+  { id: 'washer',     icon: 'washing-machine',  models: ['HOMECONNECT_WASHER'] },
   { id: 'camera',     icon: 'cctv',             models: ['EYES_OUTDOOR'], prefixes: ['CAMERA'] },
   { id: 'bridge',     icon: 'router-network',   models: ['HUE_BRIDGE'] },
 ];
@@ -404,8 +411,18 @@ function deviceIcon(device) {
     return (valve?.state?.position ?? 0) > 0 ? 'radiator' : 'radiator-disabled';
   }
   // Room thermostat / virtual room climate control
-  if (m === 'THB' || m === 'RTH' || m === 'RTH2' || m === 'RT2'
+  if (m === 'THB' || m === 'RTH' || m === 'RTH2' || m === 'RTH2_BAT' || m === 'RT2'
       || m === 'ROOM_CLIMATE_CONTROL') return 'home-thermometer';
+  // Central heating control (virtual)
+  if (m === 'BOILER') return 'water-boiler';
+  // Home Connect washing machine
+  if (m === 'HOMECONNECT_WASHER') return 'washing-machine';
+  // Hue room light virtual device
+  if (m === 'HUE_LIGHT_ROOM_CONTROL') return 'lightbulb-multiple';
+  // Micromodule relay (impulse mode)
+  if (m === 'MICROMODULE_RELAY') return 'electric-switch';
+  // Twist rotary remote
+  if (m === 'MULTISWITCH') return 'knob';
   // Door/window contact
   if (m === 'SWD' || m === 'SWD2' || m.startsWith('SWD')) {
     const sc = services.find(s => s.id === 'ShutterContact');
@@ -601,35 +618,43 @@ function renderDeviceCard(device) {
     </div>`;
   }
   if (silentMode) {
-    // Display-only: PUTting to SilentMode triggers SERVICE_INVOCATION_FAILED
-    // on some TRV models and pushes the device to UNAVAILABLE. Writing is
-    // disabled until the correct payload format is confirmed.
     const silent = silentMode.state?.mode === 'MODE_SILENT';
     body += `
-      <span title="${t('devices.silentTitle')}"
+      <button data-action="toggle-silent" data-device="${device.id}" data-on="${silent}"
+        title="${t('devices.silentTitle')}"
         class="mt-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
-        ${silent ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-600'}">
+        ${silent ? 'bg-indigo-100 text-indigo-800 hover:bg-indigo-200'
+                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
         ${t(silent ? 'devices.silentOn' : 'devices.silentOff')}
-      </span>`;
+      </button>`;
   }
   const meta = [];
-  if (battery?.state) {
-    const lvl = battery.state.warningLevel || 'OK';
-    // Possible values per the API: OK, LOW_BATTERY, CRITICAL_LOW,
-    // CRITICAL_LOW_BATTERY, INSERT_BATTERY, NOT_AVAILABLE
+  // Battery status. The real SHC only reports a *problem* — a low/critical
+  // battery surfaces as an entry in the device's `faults`; a healthy battery
+  // sends no level at all. So we treat the presence of a BatteryLevel service
+  // as "this device is battery-powered" and show OK unless a fault says
+  // otherwise. The demo (and some devices like the Outdoor Siren) instead
+  // expose BatteryLevel.state.warningLevel, which we honour as a fallback.
+  // Possible levels: OK, LOW_BATTERY, CRITICAL_LOW, CRITICAL_LOW_BATTERY,
+  // INSERT_BATTERY, NOT_AVAILABLE.
+  const faultEntries = Array.isArray(device.faults)
+    ? device.faults : (device.faults?.entries || []);
+  const batteryFault = faultEntries.find(f =>
+    f.type === 'LOW_BATTERY' || f.type === 'CRITICAL_LOW_BATTERY');
+  const batteryLevel =
+    batteryFault              ? batteryFault.type :
+    battery?.state?.warningLevel ? battery.state.warningLevel :
+    battery                   ? 'OK' : null;
+  if (batteryLevel && batteryLevel !== 'NOT_AVAILABLE') {
     const map = {
       OK:                    { icon: 'battery-high', cls: 'text-emerald-700', label: t('battery.ok') },
       LOW_BATTERY:           { icon: 'battery-medium', cls: 'text-amber-700',   label: t('battery.low') },
       CRITICAL_LOW:          { icon: 'battery-low', cls: 'text-rose-700',    label: t('battery.critical') },
       CRITICAL_LOW_BATTERY:  { icon: 'battery-low', cls: 'text-rose-700',    label: t('battery.critical') },
       INSERT_BATTERY:        { icon: 'battery-off-outline',  cls: 'text-rose-700',    label: t('battery.insert') },
-      NOT_AVAILABLE:         { icon: 'cable-data', cls: 'text-slate-500',   label: t('battery.mains') },
     };
-    const b = map[lvl] || { icon: '🔋', cls: 'text-slate-600', label: lvl };
-    // omit for mains-powered devices, otherwise show
-    if (lvl !== 'NOT_AVAILABLE') {
-      meta.push(`<span class="${b.cls}"><img src="svg/${b.icon}.svg"> ${b.label}</span>`);
-    }
+    const b = map[batteryLevel] || { icon: 'battery-high', cls: 'text-slate-600', label: batteryLevel };
+    meta.push(`<span class="${b.cls} inline-flex items-center gap-1"><img src="svg/${b.icon}.svg" style="width:16px;height:16px" alt="" /> ${b.label}</span>`);
   }
   if (valve?.state?.position != null) meta.push(t('devices.valve', valve.state.position));
 
@@ -678,6 +703,18 @@ async function onDeviceAction(e) {
       });
       const svc = serviceOf(device, 'PowerSwitch');
       if (svc) svc.state.switchState = newState;
+      renderDevices();
+    } catch (err) { alert(t('error.generic', err.message)); }
+  } else if (action === 'toggle-silent') {
+    const newMode = btn.dataset.on === 'true' ? 'MODE_NORMAL' : 'MODE_SILENT';
+    btn.classList.add('pulse');
+    try {
+      await api(`/api/devices/${encodeURIComponent(device)}/services/SilentMode/state`, {
+        method: 'PUT',
+        body: { '@type': 'silentModeState', mode: newMode },
+      });
+      const svc = serviceOf(device, 'SilentMode');
+      if (svc) svc.state = { ...(svc.state || {}), '@type': 'silentModeState', mode: newMode };
       renderDevices();
     } catch (err) { alert(t('error.generic', err.message)); }
   } else if (action === 'toggle-cam') {

@@ -13,6 +13,12 @@ const crypto = require('crypto');
 const express = require('express');
 const setupLib = require('./setup.js');
 
+// Demo-Modus: kein echter SHC, alles aus dem in-memory Beispielhaushalt
+// (siehe demo/demo-data.js, gestartet via `npm run demo`). Wird hier nur
+// geladen wenn aktiv, damit der Normalbetrieb das Modul nie anfasst.
+const DEMO = process.env.BOSCH_SHC_DEMO === '1';
+const demo = DEMO ? require('./demo/demo-data.js') : null;
+
 // Config & auth paths can be overridden via env (used by the test harness so
 // it doesn't have to touch the real config.json sitting next to the source).
 const CONFIG_FILE = process.env.BOSCH_SHC_CONFIG_FILE || path.join(__dirname, 'config.json');
@@ -76,6 +82,26 @@ function initRuntime() {
   } else {
     authData = { users: [], sessions: [] };
   }
+  return true;
+}
+
+// Demo-Variante von initRuntime(): füllt die Runtime mit einem Stub-Config,
+// ohne config.json/Zertifikate zu lesen. isReady() wird dadurch true (die
+// Setup-Gate lässt /api/* durch), Auth bleibt aus (kein Login), und
+// SHC_PROTOCOL='http' sorgt dafür, dass kickPollLoop() die Longpoll-Schleife
+// gar nicht erst startet. shcRequest() wird in diesem Modus auf demo.handle()
+// umgeleitet, agent/cert werden nie benutzt.
+function initDemoRuntime() {
+  // Eigener Port (Default 3001), damit der Demo-Server parallel zum echten
+  // Server (3000) laufen kann. Override via BOSCH_SHC_DEMO_PORT.
+  const demoPort = parseInt(process.env.BOSCH_SHC_DEMO_PORT, 10) || 3001;
+  config = { shcIp: 'demo (kein Controller)', authEnabled: false, uiPort: demoPort, clientId: 'oss_bosch_shc_web_ui' };
+  SHC_PROTOCOL = 'http';
+  SHC_PORT = 80;
+  cert = key = agent = null;
+  transport = http;
+  AUTH_ENABLED = false;
+  authData = { users: [], sessions: [] };
   return true;
 }
 
@@ -201,6 +227,9 @@ function requireAdmin(req, res, next) {
  *  it can get here, so in practice that only happens if you call shcRequest
  *  directly. */
 function shcRequest(method, urlPath, { body, port = SHC_PORT, timeoutMs = 35000 } = {}) {
+  // Demo-Modus: an den in-memory Store statt an die echte Box. Gleicher
+  // Resolve-/Reject-Vertrag (reject mit err.status für 4xx).
+  if (DEMO) return demo.handle(method, urlPath, body);
   return new Promise((resolve, reject) => {
     const data = body !== undefined && body !== null
       ? (typeof body === 'string' ? body : JSON.stringify(body))
@@ -1087,7 +1116,7 @@ app.get('/api/events', (req, res) => {
 // Populate runtime from disk if config.json exists. Missing config is not
 // fatal — the server boots in setup-mode and lets the user pair via the
 // wizard at /api/setup/*.
-try { initRuntime(); }
+try { DEMO ? initDemoRuntime() : initRuntime(); }
 catch (err) { console.error('✖ initRuntime:', err.message); process.exit(1); }
 
 // Archive is independent of SHC config — load it unconditionally so the
@@ -1116,7 +1145,9 @@ if (!process.env.BOSCH_SHC_NO_LISTEN) {
   const scheme = server === app ? 'http' : 'https';
 
   server.listen(PORT, () => {
-    if (isReady()) {
+    if (DEMO) {
+      console.log(`▶ Bosch SHC UI running on ${scheme}://localhost:${PORT}  (DEMO-MODUS — Beispielhaushalt, keine echte SHC)`);
+    } else if (isReady()) {
       console.log(`▶ Bosch SHC UI running on ${scheme}://localhost:${PORT}`);
       console.log(`  SHC: ${config.shcIp}  (client: ${config.clientId})`);
     } else {
