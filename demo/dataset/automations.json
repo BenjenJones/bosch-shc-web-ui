@@ -1,0 +1,788 @@
+[
+  {
+    "@type": "automationRule",
+    "id": "d3f5cff1-dce7-40fb-89d5-3fdb04ef1235",
+    "name": "Taster 2 kurz, Markise 76%",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "KeypadButtonPressTrigger",
+        "configuration": "{\"deviceId\":\"hdm:HomeMaticIP:3014F711A57CCA0AD0E1B3B5\",\"keyName\":\"LOWER_BUTTON\",\"keyCode\":2,\"buttonEvent\":\"PRESS_SHORT\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "TimePeriodCondition",
+        "configuration": "{\"startTime\":\"17:15\",\"endTime\":\"17:45\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "ShutterControlAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"deviceId\":\"hdm:HomeMaticIP:3014F711AEEE5B597C270A80\",\"positionInPercent\":24}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "fa5d9846-e343-4313-8cdc-42107f760d82",
+    "name": "Raumlicht Schlafzimmer nachts aktiviert, \"Relax\"",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "UserDefinedStateTrigger",
+        "configuration": "{\"stateId\":\"3ab4766c-b60c-49fb-8344-3a1fd05e7608\",\"stateChange\":\"TO_ACTIVE\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "PhilipsHueOnOffCondition",
+        "configuration": "{\"philipsHueId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"conditionState\":\"OFF\"}"
+      },
+      {
+        "type": "PhilipsHueOnOffCondition",
+        "configuration": "{\"philipsHueId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"conditionState\":\"OFF\"}"
+      },
+      {
+        "type": "PhilipsHueOnOffCondition",
+        "configuration": "{\"philipsHueId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"conditionState\":\"OFF\"}"
+      },
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"1119488b-40ac-453c-8350-5cde7aff1be7\",\"state\":\"ACTIVE\"}"
+      },
+      {
+        "type": "PhilipsHueOnOffCondition",
+        "configuration": "{\"philipsHueId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"conditionState\":\"OFF\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "PhilipsHue",
+        "delayInSeconds": 0,
+        "configuration": "{\"philipsHueId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"onOffAction\":\"TURN_ON\",\"brightness\":57,\"color\":16760404}"
+      },
+      {
+        "type": "PhilipsHue",
+        "delayInSeconds": 0,
+        "configuration": "{\"philipsHueId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"onOffAction\":\"TURN_ON\",\"brightness\":57,\"color\":16760404}"
+      },
+      {
+        "type": "PhilipsHue",
+        "delayInSeconds": 0,
+        "configuration": "{\"philipsHueId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"onOffAction\":\"TURN_ON\",\"brightness\":57,\"color\":16760404}"
+      },
+      {
+        "type": "PhilipsHue",
+        "delayInSeconds": 0,
+        "configuration": "{\"philipsHueId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"onOffAction\":\"TURN_ON\",\"brightness\":57,\"color\":16760404}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "e22c2039-8161-487d-8d2b-74a653e1ca63",
+    "name": "ℹ️ \"Innentüren geschlossen\" set",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "ShutterContactTrigger",
+        "configuration": "{\"shutterContactId\":\"hdm:ZigBee:dff9b75e257c4de4\",\"triggerState\":\"ON_CLOSE\"}"
+      },
+      {
+        "type": "ShutterContactTrigger",
+        "configuration": "{\"shutterContactId\":\"hdm:ZigBee:dff9b75e257c4de4\",\"triggerState\":\"ON_CLOSE\"}"
+      },
+      {
+        "type": "ShutterContactTrigger",
+        "configuration": "{\"shutterContactId\":\"hdm:ZigBee:951592a0459a8bf5\",\"triggerState\":\"ON_OPEN\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "ShutterContactCondition",
+        "configuration": "{\"shutterContactId\":\"hdm:ZigBee:dff9b75e257c4de4\",\"conditionState\":\"CLOSED\"}"
+      },
+      {
+        "type": "ShutterContactCondition",
+        "configuration": "{\"shutterContactId\":\"hdm:ZigBee:dff9b75e257c4de4\",\"conditionState\":\"CLOSED\"}"
+      },
+      {
+        "type": "ShutterContactCondition",
+        "configuration": "{\"shutterContactId\":\"hdm:ZigBee:951592a0459a8bf5\",\"conditionState\":\"OPEN\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"stateId\":\"010292f6-0509-42c5-816d-615e90b7c61b\",\"state\":\"ACTIVE\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "67fdaf96-a75b-4ea1-8341-5da665ed72b5",
+    "name": "ℹ️ \"Spülmaschine\" set",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "SmartPlugPowerConsumptionTrigger_v2",
+        "configuration": "{\"deviceId\":\"hdm:ZigBee:b3a8becd45da547f\",\"thresholdWatt\":10,\"durationSeconds\":10,\"comparisonMode\":\"GREATER_THAN\"}"
+      }
+    ],
+    "automationConditions": [],
+    "automationActions": [
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"stateId\":\"6cfbcd06-f54d-4ea5-88be-623c498d8a25\",\"state\":\"ACTIVE\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "f4cb9c72-c90c-4e84-857c-9dc5bc3421a1",
+    "name": "Schlaf- / Wohnzimmertür tags auf, Wohnraumlicht an",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "ShutterContactTrigger",
+        "configuration": "{\"shutterContactId\":\"hdm:ZigBee:dff9b75e257c4de4\",\"triggerState\":\"ON_OPEN\"}"
+      },
+      {
+        "type": "ShutterContactTrigger",
+        "configuration": "{\"shutterContactId\":\"hdm:ZigBee:dff9b75e257c4de4\",\"triggerState\":\"ON_OPEN\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"49966c66-9f26-48db-8d46-c713232118d3\",\"state\":\"INACTIVE\"}"
+      },
+      {
+        "type": "ShutterContactCondition",
+        "configuration": "{\"shutterContactId\":\"hdm:ZigBee:951592a0459a8bf5\",\"conditionState\":\"OPEN\"}"
+      },
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"e2e7dbb5-9e52-41bd-8e07-903e5ccbe28c\",\"state\":\"ACTIVE\"}"
+      },
+      {
+        "type": "AstroTimeCondition",
+        "configuration": "{\"astroTimeConditionType\":\"DAYTIME\",\"startOffsetInMinutes\":0}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"stateId\":\"21291590-a1f1-4fb2-8670-c5d2bbe46c6e\",\"state\":\"ACTIVE\"}"
+      },
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"stateId\":\"9a59e7e2-6aff-4b9c-8b17-f489e52f0326\",\"state\":\"ACTIVE\"}"
+      },
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"stateId\":\"3ab4766c-b60c-49fb-8344-3a1fd05e7608\",\"state\":\"ACTIVE\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "42e37ac8-d53e-4f30-8eea-31466a9ebb45",
+    "name": "ℹ️ \"Wohnungslicht\" set",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "UserDefinedStateTrigger",
+        "configuration": "{\"stateId\":\"3ab4766c-b60c-49fb-8344-3a1fd05e7608\",\"stateChange\":\"TO_ACTIVE\"}"
+      },
+      {
+        "type": "UserDefinedStateTrigger",
+        "configuration": "{\"stateId\":\"21291590-a1f1-4fb2-8670-c5d2bbe46c6e\",\"stateChange\":\"TO_ACTIVE\"}"
+      },
+      {
+        "type": "PhilipsHueOnOffTrigger",
+        "configuration": "{\"deviceId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"onOffState\":\"ON\"}"
+      },
+      {
+        "type": "UserDefinedStateTrigger",
+        "configuration": "{\"stateId\":\"49966c66-9f26-48db-8d46-c713232118d3\",\"stateChange\":\"TO_ACTIVE\"}"
+      },
+      {
+        "type": "UserDefinedStateTrigger",
+        "configuration": "{\"stateId\":\"e2e7dbb5-9e52-41bd-8e07-903e5ccbe28c\",\"stateChange\":\"TO_ACTIVE\"}"
+      },
+      {
+        "type": "UserDefinedStateTrigger",
+        "configuration": "{\"stateId\":\"9a59e7e2-6aff-4b9c-8b17-f489e52f0326\",\"stateChange\":\"TO_ACTIVE\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"96abf8e2-e2d5-419b-8742-9f71878a9c15\",\"state\":\"INACTIVE\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"stateId\":\"96abf8e2-e2d5-419b-8742-9f71878a9c15\",\"state\":\"ACTIVE\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "d3a2127f-f22b-4186-86c3-227b7d804d55",
+    "name": "Markise um 15:30 Uhr auf 55%",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "DailyTimerTrigger",
+        "configuration": "{\"time\":\"15:30\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"6737976e-0e75-4ac6-8b30-46ff7decee14\",\"state\":\"ACTIVE\"}"
+      },
+      {
+        "type": "ShutterControlRangeCondition",
+        "configuration": "{\"shutterControlId\":\"hdm:HomeMaticIP:3014F711AEEE5B597C270A80\",\"minLevelPercent\":0,\"maxLevelPercent\":54}"
+      },
+      {
+        "type": "RoomClimateControlMeasuredTemperatureCondition",
+        "configuration": "{\"deviceId\":\"roomClimateControl_hz_2\",\"threshold\":22,\"comparisonMode\":\"GREATER_THAN\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "ShutterControlAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"deviceId\":\"hdm:HomeMaticIP:3014F711AEEE5B597C270A80\",\"positionInPercent\":45}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "d8d972e5-02f7-4319-8d3e-842c499b4041",
+    "name": "Bad: Lüftungswarnung",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "ShutterContactReminderTrigger",
+        "configuration": "{\"shutterContactId\":\"hdm:HomeMaticIP:3014F711A58702D437303C25\",\"triggerState\":\"OPEN\",\"remindAfterSeconds\":600}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "ShutterContactCondition",
+        "configuration": "{\"shutterContactId\":\"hdm:ZigBee:7618448bc6cfe41c\",\"conditionState\":\"CLOSED\"}"
+      },
+      {
+        "type": "RoomClimateControlRoomControlModeCondition",
+        "configuration": "{\"rccId\":\"roomClimateControl_hz_2\",\"roomControlMode\":\"HEATING\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "CustomPushNotificationAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"message\":\"Demo-Benachrichtigung\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "22de763c-aaef-4b28-8175-47a9d6d74458",
+    "name": "Nachtlüftungslicht Bad + Flur",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "ShutterContactTrigger",
+        "configuration": "{\"shutterContactId\":\"hdm:HomeMaticIP:3014F711A58702D437303C25\",\"triggerState\":\"ON_OPEN\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"9a59e7e2-6aff-4b9c-8b17-f489e52f0326\",\"state\":\"ACTIVE\"}"
+      },
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"49966c66-9f26-48db-8d46-c713232118d3\",\"state\":\"ACTIVE\"}"
+      },
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"be05d45c-e835-4e3d-80f0-8c22cb7996fb\",\"state\":\"INACTIVE\"}"
+      },
+      {
+        "type": "TimePeriodCondition",
+        "configuration": "{\"startTime\":\"22:00\",\"endTime\":\"05:00\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "PhilipsHue",
+        "delayInSeconds": 0,
+        "configuration": "{\"philipsHueId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"onOffAction\":\"TURN_ON\",\"brightness\":1,\"color\":16729088}"
+      },
+      {
+        "type": "WallMountedSwitchOnOffAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"wallMountedSwitchId\":\"hdm:ZigBee:7aba162daa07b0c3#2\",\"action\":\"TURN_OFF\",\"brightness\":null,\"color\":null,\"colorTemperature\":null,\"lightId\":\"hdm:ZigBee:7aba162daa07b0c3#2\",\"onOffAction\":\"TURN_OFF\"}"
+      },
+      {
+        "type": "PhilipsHue",
+        "delayInSeconds": 0,
+        "configuration": "{\"philipsHueId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"onOffAction\":\"TURN_ON\",\"brightness\":1,\"color\":16752934}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "ea389e94-20aa-4238-8490-104e74b3b30d",
+    "name": "Heizung Schlafzimmer",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "ShutterContactButtonPressTrigger",
+        "configuration": "{\"shutterContactId\":\"hdm:ZigBee:dff9b75e257c4de4\",\"buttonPressState\":\"ON_LONG_PRESS\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"be05d45c-e835-4e3d-80f0-8c22cb7996fb\",\"state\":\"INACTIVE\"}"
+      },
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"6bfa6dc3-ca37-458c-8fc9-a582291ad4b0\",\"state\":\"ACTIVE\"}"
+      },
+      {
+        "type": "TimePeriodCondition",
+        "configuration": "{\"startTime\":\"10:00\",\"endTime\":\"23:30\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "RoomClimateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"rccId\":\"roomClimateControl_hz_2\",\"roomControlMode\":\"HEATING\",\"operationMode\":\"MANUAL\",\"operationModeToggleActive\":true,\"temperature\":20,\"temperatureToggleActive\":true,\"scheduleId\":\"1f622967-319a-4c16-8298-9398a657e46b\",\"scheduleName\":\"Heating (predefined)\",\"scheduleToggleActive\":false,\"enableBoostMode\":true,\"boostModeToggleActive\":false}"
+      },
+      {
+        "type": "RoomClimateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"rccId\":\"roomClimateControl_hz_2\",\"roomControlMode\":\"HEATING\",\"operationMode\":\"MANUAL\",\"operationModeToggleActive\":true,\"temperature\":19,\"temperatureToggleActive\":true,\"scheduleId\":\"b9f567d8-05ce-40b0-8c2a-2a7bae9e5dce\",\"scheduleName\":\"Heating (predefined)\",\"scheduleToggleActive\":false,\"enableBoostMode\":true,\"boostModeToggleActive\":false}"
+      },
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"stateId\":\"3bbe50b0-1330-4de0-8968-16910795245a\",\"state\":\"ACTIVE\"}"
+      },
+      {
+        "type": "RoomClimateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"rccId\":\"roomClimateControl_hz_2\",\"roomControlMode\":\"HEATING\",\"operationMode\":\"MANUAL\",\"operationModeToggleActive\":true,\"temperature\":21.5,\"temperatureToggleActive\":true,\"scheduleId\":\"e85cf00a-b515-4d5b-8c56-9cafa6f7c5db\",\"scheduleName\":\"Heating (predefined)\",\"scheduleToggleActive\":false,\"enableBoostMode\":true,\"boostModeToggleActive\":false}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "27df1b42-22a5-4e71-8a4e-2301d83c2af6",
+    "name": "Balkontür auf, Außenthermometer an",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "ShutterContactTrigger",
+        "configuration": "{\"shutterContactId\":\"hdm:HomeMaticIP:3014F711A58702D437303C25\",\"triggerState\":\"ON_OPEN\"}"
+      }
+    ],
+    "automationConditions": [],
+    "automationActions": [
+      {
+        "type": "WallThermostatDisplayConfigurationAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"deviceId\":\"hdm:ZigBee:90a5f7b696ca5616\",\"displayBrightness\":100}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "03b919ea-6758-4799-8b3c-a4391a3b0070",
+    "name": "ℹ️ \"Regen\" reset",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "WallThermostatExternalSensorTemperatureThresholdTrigger",
+        "configuration": "{\"deviceId\":\"hdm:ZigBee:90a5f7b696ca5616\",\"threshold\":25.5,\"comparisonMode\":\"LESS_THAN\"}"
+      }
+    ],
+    "automationConditions": [],
+    "automationActions": [
+      {
+        "type": "CustomPushNotificationAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"message\":\"Demo-Benachrichtigung\"}"
+      },
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"stateId\":\"576da870-3585-42a8-86d2-887b7a7211a0\",\"state\":\"INACTIVE\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "765d575b-36d5-4192-84e8-6ffd824dbc64",
+    "name": "Alarmerinnerung",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "LightControlOnOffTrigger",
+        "configuration": "{\"deviceId\":\"hdm:ZigBee:7aba162daa07b0c3#2\",\"onOffState\":\"OFF\"}"
+      },
+      {
+        "type": "ShutterContactTrigger",
+        "configuration": "{\"shutterContactId\":\"hdm:HomeMaticIP:3014F711A58702D437303C25\",\"triggerState\":\"ON_OPEN\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "IntrusionDetectionSystemArmedDisarmedCondition",
+        "configuration": "{\"conditionState\":\"SYSTEM_ARMED\",\"selectedProfiles\":[\"0\"]}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "WallMountedSwitchOnOffAction",
+        "delayInSeconds": 3,
+        "configuration": "{\"wallMountedSwitchId\":\"hdm:ZigBee:7aba162daa07b0c3#2\",\"action\":\"TURN_OFF\",\"brightness\":null,\"color\":null,\"colorTemperature\":null,\"lightId\":\"hdm:ZigBee:7aba162daa07b0c3#2\",\"onOffAction\":\"TURN_OFF\"}"
+      },
+      {
+        "type": "WallMountedSwitchOnOffAction",
+        "delayInSeconds": 1,
+        "configuration": "{\"wallMountedSwitchId\":\"hdm:ZigBee:7aba162daa07b0c3#2\",\"action\":\"TURN_ON\",\"brightness\":null,\"color\":null,\"colorTemperature\":null,\"lightId\":\"hdm:ZigBee:7aba162daa07b0c3#2\",\"onOffAction\":\"TURN_ON\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "a9b3322b-07cb-41fa-8209-b98766d0eecd",
+    "name": "Taster 2 lang oder Regen oder 1h vor Sunset, Markise hoch",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "AstroTimeEventTrigger",
+        "configuration": "{\"eventType\":\"SUNSET\",\"offsetInMinutes\":-60}"
+      },
+      {
+        "type": "KeypadButtonPressTrigger",
+        "configuration": "{\"deviceId\":\"hdm:HomeMaticIP:3014F711A57CCA0AD0E1B3B5\",\"keyName\":\"BUTTON_2\",\"keyCode\":2,\"buttonEvent\":\"PRESS_LONG\"}"
+      },
+      {
+        "type": "UserDefinedStateTrigger",
+        "configuration": "{\"stateId\":\"576da870-3585-42a8-86d2-887b7a7211a0\",\"stateChange\":\"TO_ACTIVE\"}"
+      }
+    ],
+    "automationConditions": [],
+    "automationActions": [
+      {
+        "type": "ShutterControlAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"deviceId\":\"hdm:HomeMaticIP:3014F711AEEE5B597C270A80\",\"positionInPercent\":100}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "ed851252-9312-438a-816f-77c1f47a4138",
+    "name": "Stromausfall beendet, Wohnungslicht aus",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "SmartPlugOnOffTrigger",
+        "configuration": "{\"smartPlugId\":\"hdm:ZigBee:358e310bee9f4e26\",\"triggerState\":\"OFF\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "ShutterContactCondition",
+        "configuration": "{\"shutterContactId\":\"hdm:ZigBee:7618448bc6cfe41c\",\"conditionState\":\"OPEN\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "CustomPushNotificationAction",
+        "delayInSeconds": 60,
+        "configuration": "{\"message\":\"Demo-Benachrichtigung\"}"
+      },
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 60,
+        "configuration": "{\"stateId\":\"96abf8e2-e2d5-419b-8742-9f71878a9c15\",\"state\":\"INACTIVE\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "eeddefcb-536e-46ba-8f95-058061e7ead7",
+    "name": "ℹ️ \"Anwesenheit Flur / Küche\" set / reset",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "MotionDetectorMotionDetectedTrigger",
+        "configuration": "{\"motionDetectorId\":\"hdm:ZigBee:ed51c065915d72ea\"}"
+      }
+    ],
+    "automationConditions": [],
+    "automationActions": [
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"stateId\":\"0f174376-8277-41ab-8c58-38517e57ca96\",\"state\":\"ACTIVE\"}"
+      },
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 900,
+        "configuration": "{\"stateId\":\"0f174376-8277-41ab-8c58-38517e57ca96\",\"state\":\"INACTIVE\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "da19705a-4d96-436a-8b26-d467748acd97",
+    "name": "Bad: Spot aus",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "KeypadMicromoduleLightTrigger",
+        "configuration": "{\"deviceId\":\"hdm:ZigBee:7aba162daa07b0c3\",\"buttonId\":1,\"buttonEvent\":\"SWITCH_TOGGLE\"}"
+      },
+      {
+        "type": "UserDefinedStateTrigger",
+        "configuration": "{\"stateId\":\"49966c66-9f26-48db-8d46-c713232118d3\",\"stateChange\":\"TO_INACTIVE\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "PhilipsHueOnOffCondition",
+        "configuration": "{\"philipsHueId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"conditionState\":\"ON\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "PhilipsHue",
+        "delayInSeconds": 0,
+        "configuration": "{\"philipsHueId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"onOffAction\":\"TURN_OFF\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "d823c197-da7f-48f5-8f78-e57ecc63d5c6",
+    "name": "ℹ️ \"Raumlicht Bad\" reset",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "PhilipsHueOnOffTrigger",
+        "configuration": "{\"deviceId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"onOffState\":\"OFF\"}"
+      },
+      {
+        "type": "LightControlOnOffTrigger",
+        "configuration": "{\"deviceId\":\"hdm:ZigBee:7aba162daa07b0c3#2\",\"onOffState\":\"OFF\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "PhilipsHueOnOffCondition",
+        "configuration": "{\"philipsHueId\":\"hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9\",\"conditionState\":\"OFF\"}"
+      },
+      {
+        "type": "BoschLightOnOffCondition",
+        "configuration": "{\"deviceId\":\"hdm:ZigBee:7aba162daa07b0c3#2\",\"conditionState\":\"OFF\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"stateId\":\"49966c66-9f26-48db-8d46-c713232118d3\",\"state\":\"INACTIVE\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "8b65fe67-1b8d-4677-8746-1d8d11248a50",
+    "name": "Nachts Spülmaschine aus",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "UserDefinedStateTrigger",
+        "configuration": "{\"stateId\":\"96abf8e2-e2d5-419b-8742-9f71878a9c15\",\"stateChange\":\"TO_INACTIVE\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"1119488b-40ac-453c-8350-5cde7aff1be7\",\"state\":\"ACTIVE\"}"
+      },
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"6cfbcd06-f54d-4ea5-88be-623c498d8a25\",\"state\":\"INACTIVE\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "SmartPlugOnOffAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"smartPlugId\":\"hdm:ZigBee:b3a8becd45da547f\",\"action\":\"TURN_OFF\",\"temporaryTurnOnTime\":null,\"operationMode\":null,\"addEnergySnapshot\":null,\"energySnapshotName\":null,\"overwriteOldestEnergySnapshotIfNeeded\":null,\"resetPowerConsumption\":null}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "c3e944c7-6242-4ecb-843e-391beb2c32e9",
+    "name": "Bewegung Flur / Küche, Licht Küche an",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "MotionDetectorMotionDetectedTrigger",
+        "configuration": "{\"motionDetectorId\":\"hdm:ZigBee:ed51c065915d72ea\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "MotionDetectorIlluminanceCondition",
+        "configuration": "{\"deviceId\":\"hdm:ZigBee:ed51c065915d72ea\",\"threshold\":20,\"comparisonMode\":\"LESS_THAN\"}"
+      },
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"49966c66-9f26-48db-8d46-c713232118d3\",\"state\":\"INACTIVE\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"stateId\":\"21291590-a1f1-4fb2-8670-c5d2bbe46c6e\",\"state\":\"ACTIVE\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "b99068f8-8b68-4fff-8145-1f4f1e05b17f",
+    "name": "Gehen, Alarmsystem aktivieren",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "UserDefinedStateTrigger",
+        "configuration": "{\"stateId\":\"8506a1db-68f1-4f0a-8b54-4a01b6aaacc8\",\"stateChange\":\"TO_ACTIVE\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"be05d45c-e835-4e3d-80f0-8c22cb7996fb\",\"state\":\"INACTIVE\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "IntrusionDetectionSystemArmDisarmAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"action\":\"SYSTEM_ARMED\",\"selectedProfile\":\"0\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "f033ea93-b538-414d-800b-092e09707605",
+    "name": "ℹ️ \"Waschmaschine\" reset",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "WasherOperationStateTrigger",
+        "configuration": "{\"whitegoodsDeviceId\":\"hdm:homeconnect:DEMO-3DE30B759158\",\"triggerState\":\"FINISHED\"}"
+      }
+    ],
+    "automationConditions": [],
+    "automationActions": [
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"stateId\":\"d884ae84-e1e7-431f-8249-efd14af57823\",\"state\":\"INACTIVE\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  },
+  {
+    "@type": "automationRule",
+    "id": "ea0782d6-3467-4505-868b-35f2fdfd5831",
+    "name": "Abwesenheit Schlafzimmer, Licht Schlafzimmer aus",
+    "enabled": true,
+    "automationTriggers": [
+      {
+        "type": "SmartPlugOnOffTrigger",
+        "configuration": "{\"smartPlugId\":\"hdm:ZigBee:358e310bee9f4e26\",\"triggerState\":\"OFF\"}"
+      },
+      {
+        "type": "UserDefinedStateTrigger",
+        "configuration": "{\"stateId\":\"8bbf3826-bb69-4abc-8cf0-ca87a0f3bc9a\",\"stateChange\":\"TO_INACTIVE\"}"
+      }
+    ],
+    "automationConditions": [
+      {
+        "type": "SmartPlugOnOffCondition",
+        "configuration": "{\"smartPlugId\":\"hdm:ZigBee:358e310bee9f4e26\",\"conditionState\":\"OFF\"}"
+      },
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"ed184beb-fae8-4a97-839e-78319991c99c\",\"state\":\"INACTIVE\"}"
+      },
+      {
+        "type": "UserDefinedStateCondition",
+        "configuration": "{\"stateId\":\"8bbf3826-bb69-4abc-8cf0-ca87a0f3bc9a\",\"state\":\"INACTIVE\"}"
+      },
+      {
+        "type": "ShutterContactCondition",
+        "configuration": "{\"shutterContactId\":\"hdm:ZigBee:dff9b75e257c4de4\",\"conditionState\":\"OPEN\"}"
+      }
+    ],
+    "automationActions": [
+      {
+        "type": "UserDefinedStateAction",
+        "delayInSeconds": 0,
+        "configuration": "{\"stateId\":\"3ab4766c-b60c-49fb-8344-3a1fd05e7608\",\"state\":\"INACTIVE\"}"
+      }
+    ],
+    "conditionLogicalOp": "AND"
+  }
+]

@@ -1,0 +1,56 @@
+[
+  {
+    "@type": "scenario",
+    "id": "b510ceed-0fe5-45dd-85c6-44ad41c8007c",
+    "name": "Türöffner",
+    "iconId": "icon_scenario_coming_home",
+    "actions": [
+      {
+        "deviceId": "hdm:ZigBee:bc5433f21f5d2daa",
+        "deviceServiceId": "ImpulseSwitch",
+        "targetState": {
+          "@type": "ImpulseSwitchState",
+          "impulseState": true
+        }
+      }
+    ]
+  },
+  {
+    "@type": "scenario",
+    "id": "425cf9f4-6f24-4d91-88b4-1c2dafd28657",
+    "name": "Nach Hause kommen",
+    "iconId": "icon_scenario_coming_home",
+    "actions": [
+      {
+        "deviceId": "intrusionDetectionSystem",
+        "deviceServiceId": "IntrusionDetectionControl",
+        "targetState": {
+          "@type": "intrusionDetectionControlState",
+          "value": "SYSTEM_DISARMED",
+          "activeProfile": "0"
+        }
+      }
+    ]
+  },
+  {
+    "@type": "scenario",
+    "id": "46073f5b-656f-4920-80c9-04dc9bf498e1",
+    "name": "Bad 20",
+    "iconId": "icon_scenario_shutter_down",
+    "actions": [
+      {
+        "deviceId": "roomClimateControl_hz_2",
+        "deviceServiceId": "RoomClimateControl",
+        "targetState": {
+          "@type": "climateControlState",
+          "setpointTemperature": 19,
+          "roomControlMode": "HEATING",
+          "setPointTemperatureOffset": 0,
+          "isSetPointTemperatureOffsetActive": false,
+          "setPointTemperatureOffsetActiveValue": 0
+        },
+        "additionalProperties": {}
+      }
+    ]
+  }
+]

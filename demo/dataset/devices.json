@@ -1,0 +1,633 @@
+[
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9",
+    "deviceServiceIds": [
+      "HueBlinkingActuator",
+      "HueLight",
+      "MultiLevelSwitch",
+      "HSBColorActuator",
+      "BinarySwitch",
+      "HueSlowDynamics"
+    ],
+    "manufacturer": "PHILIPS",
+    "roomId": "hz_2",
+    "deviceModel": "HUE_LIGHT",
+    "profile": "GENERIC",
+    "iconId": "icon_philips_hue_spot_gu10",
+    "name": "Licht 1",
+    "status": "AVAILABLE",
+    "parentDeviceId": "hdm:PhilipsHueBridge:HueBridge_5f8ad324372f",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1475792095335
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:ZigBee:ed51c065915d72ea",
+    "deviceServiceIds": [
+      "LatestMotion",
+      "CommunicationQuality",
+      "PirSensorConfiguration",
+      "BatteryLevel",
+      "LatestTamper",
+      "PollControl",
+      "MultiLevelSwitch",
+      "TemperatureLevel",
+      "SmartSensitivityControl",
+      "OccupancyDetection",
+      "BinarySwitch",
+      "DetectionTest",
+      "PetImmunity",
+      "MultiLevelSensor"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_2",
+    "deviceModel": "MD2",
+    "serial": "B87B3F94393BD5C8",
+    "profile": "GENERIC",
+    "name": "Bewegungsmelder 1",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [
+      "GENERIC",
+      "OUTDOOR"
+    ],
+    "installationTimestamp": 1777758081273
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "smokeDetectionSystem",
+    "deviceServiceIds": [
+      "SurveillanceAlarm",
+      "SmokeDetectionControl"
+    ],
+    "manufacturer": "BOSCH",
+    "deviceModel": "SMOKE_DETECTION_SYSTEM",
+    "serial": "smokeDetectionSystem",
+    "name": "-SmokeDetectionSystem-",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 0
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:HomeMaticIP:3014F711A58702D437303C25",
+    "deviceServiceIds": [
+      "ShutterContact",
+      "BatteryLevel"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_8",
+    "deviceModel": "SWD",
+    "serial": "AA394139A6EE9E8F",
+    "profile": "GENERIC",
+    "iconId": "icon_tfk_wardrobe",
+    "name": "Fensterkontakt 1",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1643140981561
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:PhilipsHueBridge:HueBridge_5f8ad324372f",
+    "deviceServiceIds": [
+      "HueBridge"
+    ],
+    "manufacturer": "PHILIPS",
+    "roomId": "hz_4",
+    "deviceModel": "HUE_BRIDGE",
+    "profile": "GENERIC",
+    "name": "Hue Bridge 1",
+    "status": "AVAILABLE",
+    "childDeviceIds": [
+      "hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9"
+    ],
+    "supportedProfiles": [],
+    "installationTimestamp": 1475792092500
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:ZigBee:358e310bee9f4e26",
+    "deviceServiceIds": [
+      "PowerMeter",
+      "CommunicationQuality",
+      "PowerSwitch",
+      "PowerSwitchConfiguration",
+      "PowerSwitchProgram"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_4",
+    "deviceModel": "PLUG_COMPACT",
+    "serial": "7DE2BCD3C3CA0068",
+    "profile": "GENERIC",
+    "iconId": "icon_plug_tv",
+    "name": "Steckdose 1",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [
+      "GENERIC",
+      "HEATING_RCC",
+      "LIGHT"
+    ],
+    "installationTimestamp": 1705519332411
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:ZigBee:7aba162daa07b0c3#2",
+    "deviceServiceIds": [
+      "PowerSwitch",
+      "ChildProtection",
+      "PowerSwitchProgram",
+      "SwitchConfiguration"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_3",
+    "deviceModel": "MICROMODULE_LIGHT_ATTACHED",
+    "serial": "24D42904F97B319B",
+    "profile": "GENERIC",
+    "iconId": "icon_philips_hue_spot_gu10",
+    "name": "Licht 2",
+    "status": "AVAILABLE",
+    "parentDeviceId": "hdm:ZigBee:7aba162daa07b0c3",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1659113258814
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "roomClimateControl_hz_2",
+    "deviceServiceIds": [
+      "TemperatureLevelConfiguration",
+      "ThermostatSupportedControlMode",
+      "RoomClimateControl",
+      "TemperatureLevel"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_2",
+    "deviceModel": "ROOM_CLIMATE_CONTROL",
+    "serial": "roomClimateControl_hz_2",
+    "iconId": "icon_room_bedroom_rcc",
+    "name": "-RoomClimateControl-",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 0
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "boilerControl_hdm:ZigBee:0cae5ffffe3bb41f",
+    "deviceServiceIds": [
+      "BoilerHeating"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_2",
+    "deviceModel": "BOILER",
+    "serial": "boilerControl_hdm:ZigBee:0cae5ffffe3bb41f",
+    "name": "Heizung 1",
+    "status": "AVAILABLE",
+    "parentDeviceId": "hdm:ZigBee:e2052c896bddda8e",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 0
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:ZigBee:bc5433f21f5d2daa",
+    "deviceServiceIds": [
+      "CommunicationQuality",
+      "ImpulseSwitch",
+      "ChildProtection",
+      "ElectricalFaults",
+      "Keypad",
+      "SwitchConfiguration"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_5",
+    "deviceModel": "MICROMODULE_RELAY",
+    "serial": "D4D7077CA4FEB485",
+    "profile": "GENERIC",
+    "iconId": "ip_gate",
+    "name": "Relais 1",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [
+      "GENERIC",
+      "LIGHT"
+    ],
+    "installationTimestamp": 1683036876788
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "roomLightControl_hz_5",
+    "deviceServiceIds": [
+      "BinarySwitch"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_5",
+    "deviceModel": "HUE_LIGHT_ROOM_CONTROL",
+    "serial": "roomLightControl_hz_5",
+    "name": "RoomLightControl",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 0
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:homeconnect:DEMO-3DE30B759158",
+    "deviceServiceIds": [
+      "HCWasher"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_1",
+    "deviceModel": "HOMECONNECT_WASHER",
+    "serial": "hdm:homeconnect:DEMO-3DE30B759158",
+    "profile": "GENERIC",
+    "name": "Waschmaschine 1",
+    "status": "COMMUNICATION_ERROR",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1778442703119
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "ventilationService",
+    "deviceServiceIds": [
+      "VentilationDelay"
+    ],
+    "manufacturer": "BOSCH",
+    "deviceModel": "VENTILATION_SERVICE",
+    "serial": "ventilationService",
+    "name": "-VentilationService-",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 0
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:ZigBee:dff9b75e257c4de4",
+    "deviceServiceIds": [
+      "CommunicationQuality",
+      "ShutterContact",
+      "BatteryLevel",
+      "Bypass",
+      "VibrationSensor"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_2",
+    "deviceModel": "SWD2_PLUS",
+    "serial": "7EDE9B26F91DDD84",
+    "profile": "GENERIC",
+    "iconId": "icon_tfk_door",
+    "name": "Türkontakt 1",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1672603812500
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:PhilipsHueBridge:PhilipsHueBridgeManager",
+    "deviceServiceIds": [
+      "HueBridgeConnector",
+      "HueBridgeSearcher"
+    ],
+    "manufacturer": "PHILIPS",
+    "deviceModel": "HUE_BRIDGE_MANAGER",
+    "profile": "GENERIC",
+    "name": "PhilipsHueBridgeManager",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1475786156397
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:ZigBee:b3a8becd45da547f",
+    "deviceServiceIds": [
+      "PowerSwitchWarning",
+      "CommunicationQuality",
+      "PowerMeter",
+      "PowerSwitch",
+      "PowerSwitchConfiguration",
+      "PowerSwitchProgram",
+      "LedBrightnessConfiguration",
+      "EnergySavingMode"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_1",
+    "deviceModel": "PLUG_COMPACT_DUAL",
+    "serial": "3E839244627814EF",
+    "profile": "GENERIC",
+    "iconId": "icon_plug_dryer",
+    "name": "Doppelsteckdose 1",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [
+      "GENERIC",
+      "HEATING_RCC",
+      "LIGHT",
+      "MINI_PV"
+    ],
+    "installationTimestamp": 1746904273200
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:HomeMaticIP:3014F711A3363281DA357B97",
+    "deviceServiceIds": [
+      "BatteryLevel",
+      "Alarm",
+      "SmokeDetectorCheck"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_6",
+    "deviceModel": "SD",
+    "serial": "A6A1FD9E81BD56CE",
+    "profile": "GENERIC",
+    "name": "Rauchmelder 1",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1673706060169
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:ZigBee:4413666ec30e8780",
+    "deviceServiceIds": [
+      "CommunicationQuality",
+      "BatteryLevel",
+      "WaterLeakageSensorTilt",
+      "WaterLeakageSensorCheck",
+      "WaterLeakageSensor"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_1",
+    "deviceModel": "WLS",
+    "serial": "A68E7D1C4113F409",
+    "profile": "GENERIC",
+    "name": "Wassermelder 1",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1626860246960
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:ZigBee:951592a0459a8bf5",
+    "deviceServiceIds": [
+      "CommunicationQuality",
+      "ShutterContact",
+      "BatteryLevel",
+      "Bypass"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_2",
+    "deviceModel": "SWD2_DUAL",
+    "serial": "CC50F807AC1C6154",
+    "profile": "GENERIC",
+    "iconId": "icon_tfk_door",
+    "name": "Türkontakt 2",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1732331235182
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:HomeMaticIP:3014F711A57CCA0AD0E1B3B5",
+    "deviceServiceIds": [
+      "BatteryLevel",
+      "KeypadTrigger",
+      "Keypad"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_1",
+    "deviceModel": "WRC2",
+    "serial": "F39F3C2104395114",
+    "profile": "GENERIC",
+    "name": "Universalschalter 1",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1650658006819
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "intrusionDetectionSystem",
+    "deviceServiceIds": [
+      "SurveillanceAlarm",
+      "IntrusionDetectionControl"
+    ],
+    "manufacturer": "BOSCH",
+    "deviceModel": "INTRUSION_DETECTION_SYSTEM",
+    "serial": "intrusionDetectionSystem",
+    "name": "-IntrusionDetectionSystem-",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 0
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:HomeMaticIP:3014F711AC9529BF77D4107F",
+    "deviceServiceIds": [
+      "Thermostat",
+      "BatteryLevel",
+      "ValveTappet",
+      "SilentMode",
+      "TemperatureLevel",
+      "Linking",
+      "TemperatureOffset"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_3",
+    "deviceModel": "TRV",
+    "serial": "71771EE0340F106C",
+    "profile": "GENERIC",
+    "name": "Heizkörperthermostat 1",
+    "status": "AVAILABLE",
+    "parentDeviceId": "roomClimateControl_hz_3",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1475791138199
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:ZigBee:90a5f7b696ca5616",
+    "deviceServiceIds": [
+      "CommunicationQuality",
+      "Thermostat",
+      "BatteryLevel",
+      "DisplayConfiguration",
+      "TemperatureLevel",
+      "HumidityLevel",
+      "TerminalConfiguration",
+      "Linking",
+      "TemperatureOffset"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_7",
+    "deviceModel": "RTH2_BAT",
+    "serial": "B8A361719ECB5C27",
+    "profile": "GENERIC",
+    "name": "Raumthermostat 1",
+    "status": "AVAILABLE",
+    "parentDeviceId": "roomClimateControl_hz_7",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1673116768621
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "presenceSimulationService",
+    "deviceServiceIds": [
+      "PresenceSimulationScheduling",
+      "PresenceSimulationConfiguration"
+    ],
+    "manufacturer": "BOSCH",
+    "deviceModel": "PRESENCE_SIMULATION_SERVICE",
+    "serial": "presenceSimulationService",
+    "iconId": "icon_service_presence_simulation",
+    "name": "-PresenceSimulationService-",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 0
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:ZigBee:32066b86048335f4",
+    "deviceServiceIds": [
+      "CommunicationQuality",
+      "BatteryLevel",
+      "MultiswitchDebug",
+      "MultiswitchConfiguration",
+      "TemperatureLevel"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_5",
+    "deviceModel": "MULTISWITCH",
+    "serial": "64437EFA13119CCB",
+    "profile": "GENERIC",
+    "name": "Twist 1",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1537473532544
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:HomeMaticIP:3014F711AEEE5B597C270A80",
+    "deviceServiceIds": [
+      "ShutterControl"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_7",
+    "deviceModel": "BBL",
+    "serial": "A63BFE437B2BDB24",
+    "profile": "GENERIC",
+    "name": "Rollladen 1",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1656004745409
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:ZigBee:b001c93a64f7653a",
+    "deviceServiceIds": [
+      "CommunicationQuality",
+      "BatteryLevel",
+      "AirQualityLevel",
+      "SmokeSensitivity",
+      "TwinguardNightlyPromise",
+      "SmokeDetectorCheck"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_5",
+    "deviceModel": "TWINGUARD",
+    "serial": "2B821BFC79B9C4B7",
+    "profile": "GENERIC",
+    "name": "Twinguard 1",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1731934410400
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:ZigBee:7618448bc6cfe41c",
+    "deviceServiceIds": [
+      "CommunicationQuality",
+      "ShutterContact",
+      "BatteryLevel",
+      "Bypass"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_3",
+    "deviceModel": "SWD2",
+    "serial": "057B877BC0D498B7",
+    "profile": "GENERIC",
+    "iconId": "icon_tfk_door",
+    "name": "Türkontakt 3",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 1686419846491
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "hdm:ZigBee:7aba162daa07b0c3",
+    "deviceServiceIds": [
+      "CommunicationQuality",
+      "PowerMeter",
+      "ElectricalFaults",
+      "Keypad",
+      "SwitchConfiguration"
+    ],
+    "manufacturer": "BOSCH",
+    "deviceModel": "MICROMODULE_LIGHT_CONTROL",
+    "serial": "24D42904F97B319B",
+    "profile": "GENERIC",
+    "name": "Lichtsteuerung 1",
+    "status": "AVAILABLE",
+    "childDeviceIds": [
+      "hdm:ZigBee:7aba162daa07b0c3#2"
+    ],
+    "supportedProfiles": [],
+    "installationTimestamp": 1659113258777
+  }
+]

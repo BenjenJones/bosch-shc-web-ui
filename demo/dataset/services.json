@@ -1,0 +1,1414 @@
+[
+  {
+    "@type": "DeviceServiceData",
+    "id": "HueBlinkingActuator",
+    "deviceId": "hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9",
+    "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/HueBlinkingActuator"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "HueLight",
+    "deviceId": "hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9",
+    "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/HueLight"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "MultiLevelSwitch",
+    "deviceId": "hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9",
+    "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/MultiLevelSwitch"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "HSBColorActuator",
+    "deviceId": "hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9",
+    "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/HSBColorActuator"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BinarySwitch",
+    "deviceId": "hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9",
+    "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/BinarySwitch"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "HueSlowDynamics",
+    "deviceId": "hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9",
+    "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/HueSlowDynamics"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "LatestMotion",
+    "deviceId": "hdm:ZigBee:ed51c065915d72ea",
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/LatestMotion"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "CommunicationQuality",
+    "deviceId": "hdm:ZigBee:ed51c065915d72ea",
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/CommunicationQuality",
+    "state": {
+      "@type": "communicationQualityState",
+      "quality": "GOOD"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PirSensorConfiguration",
+    "deviceId": "hdm:ZigBee:ed51c065915d72ea",
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/PirSensorConfiguration"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BatteryLevel",
+    "deviceId": "hdm:ZigBee:ed51c065915d72ea",
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/BatteryLevel"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "LatestTamper",
+    "deviceId": "hdm:ZigBee:ed51c065915d72ea",
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/LatestTamper"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PollControl",
+    "deviceId": "hdm:ZigBee:ed51c065915d72ea",
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/PollControl"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "MultiLevelSwitch",
+    "deviceId": "hdm:ZigBee:ed51c065915d72ea",
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/MultiLevelSwitch"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "TemperatureLevel",
+    "deviceId": "hdm:ZigBee:ed51c065915d72ea",
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/TemperatureLevel",
+    "state": {
+      "@type": "temperatureLevelState",
+      "temperature": 23
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "SmartSensitivityControl",
+    "deviceId": "hdm:ZigBee:ed51c065915d72ea",
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/SmartSensitivityControl"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "OccupancyDetection",
+    "deviceId": "hdm:ZigBee:ed51c065915d72ea",
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/OccupancyDetection"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BinarySwitch",
+    "deviceId": "hdm:ZigBee:ed51c065915d72ea",
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/BinarySwitch"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "DetectionTest",
+    "deviceId": "hdm:ZigBee:ed51c065915d72ea",
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/DetectionTest"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PetImmunity",
+    "deviceId": "hdm:ZigBee:ed51c065915d72ea",
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/PetImmunity"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "MultiLevelSensor",
+    "deviceId": "hdm:ZigBee:ed51c065915d72ea",
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/MultiLevelSensor"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "SurveillanceAlarm",
+    "deviceId": "smokeDetectionSystem",
+    "path": "/devices/smokeDetectionSystem/services/SurveillanceAlarm",
+    "state": {
+      "@type": "surveillanceAlarmState",
+      "alarmCaseId": "12110eca-ce41-4942-81ee-724fb9a52f9d",
+      "value": "ALARM_OFF",
+      "incidents": []
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "SmokeDetectionControl",
+    "deviceId": "smokeDetectionSystem",
+    "path": "/devices/smokeDetectionSystem/services/SmokeDetectionControl"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "ShutterContact",
+    "deviceId": "hdm:HomeMaticIP:3014F711A58702D437303C25",
+    "path": "/devices/hdm:HomeMaticIP:3014F711A58702D437303C25/services/ShutterContact",
+    "state": {
+      "@type": "shutterContactState",
+      "value": "CLOSED"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BatteryLevel",
+    "deviceId": "hdm:HomeMaticIP:3014F711A58702D437303C25",
+    "path": "/devices/hdm:HomeMaticIP:3014F711A58702D437303C25/services/BatteryLevel"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "HueBridge",
+    "deviceId": "hdm:PhilipsHueBridge:HueBridge_5f8ad324372f",
+    "path": "/devices/hdm:PhilipsHueBridge:HueBridge_5f8ad324372f/services/HueBridge"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PowerMeter",
+    "deviceId": "hdm:ZigBee:358e310bee9f4e26",
+    "path": "/devices/hdm:ZigBee:358e310bee9f4e26/services/PowerMeter",
+    "state": {
+      "@type": "powerMeterState",
+      "powerConsumption": 0,
+      "energyConsumption": 259260
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "CommunicationQuality",
+    "deviceId": "hdm:ZigBee:358e310bee9f4e26",
+    "path": "/devices/hdm:ZigBee:358e310bee9f4e26/services/CommunicationQuality",
+    "state": {
+      "@type": "communicationQualityState",
+      "quality": "UNKNOWN"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PowerSwitch",
+    "deviceId": "hdm:ZigBee:358e310bee9f4e26",
+    "path": "/devices/hdm:ZigBee:358e310bee9f4e26/services/PowerSwitch",
+    "state": {
+      "@type": "powerSwitchState",
+      "switchState": "OFF",
+      "automaticPowerOffTime": 0
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PowerSwitchConfiguration",
+    "deviceId": "hdm:ZigBee:358e310bee9f4e26",
+    "path": "/devices/hdm:ZigBee:358e310bee9f4e26/services/PowerSwitchConfiguration",
+    "state": {
+      "@type": "powerSwitchConfigurationState",
+      "stateAfterPowerOutage": "ON",
+      "supportedStatesAfterPowerOutage": [
+        "LAST_STATE",
+        "ON",
+        "OFF"
+      ]
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PowerSwitchProgram",
+    "deviceId": "hdm:ZigBee:358e310bee9f4e26",
+    "path": "/devices/hdm:ZigBee:358e310bee9f4e26/services/PowerSwitchProgram",
+    "state": {
+      "@type": "powerSwitchProgramState",
+      "operationMode": "MANUAL",
+      "schedule": {
+        "profiles": [
+          {
+            "day": "MONDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "TUESDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "WEDNESDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "THURSDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "FRIDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "SATURDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "SUNDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "temporaryTurnOnActive": false
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PowerSwitch",
+    "deviceId": "hdm:ZigBee:7aba162daa07b0c3#2",
+    "path": "/devices/hdm:ZigBee:7aba162daa07b0c3#2/services/PowerSwitch",
+    "state": {
+      "@type": "powerSwitchState",
+      "switchState": "ON",
+      "automaticPowerOffTime": 0
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "ChildProtection",
+    "deviceId": "hdm:ZigBee:7aba162daa07b0c3#2",
+    "path": "/devices/hdm:ZigBee:7aba162daa07b0c3#2/services/ChildProtection"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PowerSwitchProgram",
+    "deviceId": "hdm:ZigBee:7aba162daa07b0c3#2",
+    "path": "/devices/hdm:ZigBee:7aba162daa07b0c3#2/services/PowerSwitchProgram",
+    "state": {
+      "@type": "powerSwitchProgramState",
+      "operationMode": "MANUAL",
+      "schedule": {
+        "profiles": [
+          {
+            "day": "MONDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "TUESDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "WEDNESDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "THURSDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "FRIDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "SATURDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "SUNDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "temporaryTurnOnActive": false
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "SwitchConfiguration",
+    "deviceId": "hdm:ZigBee:7aba162daa07b0c3#2",
+    "path": "/devices/hdm:ZigBee:7aba162daa07b0c3#2/services/SwitchConfiguration"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "TemperatureLevelConfiguration",
+    "deviceId": "roomClimateControl_hz_2",
+    "path": "/devices/roomClimateControl_hz_2/services/TemperatureLevelConfiguration",
+    "state": {
+      "@type": "temperatureLevelConfigurationState",
+      "sensors": [
+        {
+          "deviceId": "hdm:HomeMaticIP:3014F711A2CE279CFF624779",
+          "active": true
+        },
+        {
+          "deviceId": "hdm:HomeMaticIP:3014F711A1E7214EA1F4B246",
+          "active": false
+        }
+      ]
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "ThermostatSupportedControlMode",
+    "deviceId": "roomClimateControl_hz_2",
+    "path": "/devices/roomClimateControl_hz_2/services/ThermostatSupportedControlMode",
+    "state": {
+      "@type": "thermostatSupportedControlModeState",
+      "supportedControlModes": [
+        "HEATING",
+        "OFF"
+      ]
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "RoomClimateControl",
+    "deviceId": "roomClimateControl_hz_2",
+    "path": "/devices/roomClimateControl_hz_2/services/RoomClimateControl",
+    "state": {
+      "@type": "climateControlState",
+      "operationMode": "MANUAL",
+      "setpointTemperature": 20,
+      "ventilationMode": false,
+      "low": false,
+      "boostMode": false,
+      "summerMode": false,
+      "supportsBoostMode": true,
+      "roomControlMode": "HEATING",
+      "activeScheduleId": "c309497d-d0dc-443e-8618-faddaa1ecd2c",
+      "setPointTemperatureOffset": 0,
+      "isSetPointTemperatureOffsetActive": false,
+      "setPointTemperatureOffsetActiveValue": 0,
+      "hasDemand": false
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "TemperatureLevel",
+    "deviceId": "roomClimateControl_hz_2",
+    "path": "/devices/roomClimateControl_hz_2/services/TemperatureLevel",
+    "state": {
+      "@type": "temperatureLevelState",
+      "temperature": 21.6
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BoilerHeating",
+    "deviceId": "boilerControl_hdm:ZigBee:0cae5ffffe3bb41f",
+    "path": "/devices/boilerControl_hdm:ZigBee:0cae5ffffe3bb41f/services/BoilerHeating"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "CommunicationQuality",
+    "deviceId": "hdm:ZigBee:bc5433f21f5d2daa",
+    "path": "/devices/hdm:ZigBee:bc5433f21f5d2daa/services/CommunicationQuality",
+    "state": {
+      "@type": "communicationQualityState",
+      "quality": "GOOD"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "ImpulseSwitch",
+    "deviceId": "hdm:ZigBee:bc5433f21f5d2daa",
+    "path": "/devices/hdm:ZigBee:bc5433f21f5d2daa/services/ImpulseSwitch"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "ChildProtection",
+    "deviceId": "hdm:ZigBee:bc5433f21f5d2daa",
+    "path": "/devices/hdm:ZigBee:bc5433f21f5d2daa/services/ChildProtection"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "ElectricalFaults",
+    "deviceId": "hdm:ZigBee:bc5433f21f5d2daa",
+    "path": "/devices/hdm:ZigBee:bc5433f21f5d2daa/services/ElectricalFaults"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "Keypad",
+    "deviceId": "hdm:ZigBee:bc5433f21f5d2daa",
+    "path": "/devices/hdm:ZigBee:bc5433f21f5d2daa/services/Keypad",
+    "state": {
+      "@type": "keypadState",
+      "keyCode": 1,
+      "keyName": "UPPER_BUTTON",
+      "eventType": "PRESS_SHORT",
+      "eventTimestamp": 1779959367711
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "SwitchConfiguration",
+    "deviceId": "hdm:ZigBee:bc5433f21f5d2daa",
+    "path": "/devices/hdm:ZigBee:bc5433f21f5d2daa/services/SwitchConfiguration"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BinarySwitch",
+    "deviceId": "roomLightControl_hz_5",
+    "path": "/devices/roomLightControl_hz_5/services/BinarySwitch"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "HCWasher",
+    "deviceId": "hdm:homeconnect:DEMO-3DE30B759158",
+    "path": "/devices/hdm:homeconnect:DEMO-3DE30B759158/services/HCWasher"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "VentilationDelay",
+    "deviceId": "ventilationService",
+    "path": "/devices/ventilationService/services/VentilationDelay",
+    "state": {
+      "@type": "ventilationDelayState",
+      "devices": [
+        {
+          "active": true,
+          "deviceId": "hdm:HomeMaticIP:3014F711A0DC7DFFD1683511"
+        },
+        {
+          "active": true,
+          "deviceId": "hdm:ZigBee:ce2dee83912c3f7b"
+        },
+        {
+          "active": true,
+          "deviceId": "hdm:HomeMaticIP:3014F711AA8A3C74E00DB417"
+        },
+        {
+          "active": true,
+          "deviceId": "hdm:HomeMaticIP:3014F711AD27118500D34AAA"
+        },
+        {
+          "active": true,
+          "deviceId": "hdm:HomeMaticIP:3014F711A507FB6F21AA93BF"
+        }
+      ],
+      "delay": 60
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "CommunicationQuality",
+    "deviceId": "hdm:ZigBee:dff9b75e257c4de4",
+    "path": "/devices/hdm:ZigBee:dff9b75e257c4de4/services/CommunicationQuality",
+    "state": {
+      "@type": "communicationQualityState",
+      "quality": "GOOD"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "ShutterContact",
+    "deviceId": "hdm:ZigBee:dff9b75e257c4de4",
+    "path": "/devices/hdm:ZigBee:dff9b75e257c4de4/services/ShutterContact",
+    "state": {
+      "@type": "shutterContactState",
+      "value": "CLOSED"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BatteryLevel",
+    "deviceId": "hdm:ZigBee:dff9b75e257c4de4",
+    "path": "/devices/hdm:ZigBee:dff9b75e257c4de4/services/BatteryLevel"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "Bypass",
+    "deviceId": "hdm:ZigBee:dff9b75e257c4de4",
+    "path": "/devices/hdm:ZigBee:dff9b75e257c4de4/services/Bypass",
+    "state": {
+      "@type": "bypassState",
+      "state": "BYPASS_INACTIVE",
+      "configuration": {
+        "enabled": true,
+        "timeout": 5,
+        "infinite": false
+      }
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "VibrationSensor",
+    "deviceId": "hdm:ZigBee:dff9b75e257c4de4",
+    "path": "/devices/hdm:ZigBee:dff9b75e257c4de4/services/VibrationSensor",
+    "state": {
+      "@type": "vibrationSensorState",
+      "value": "NO_VIBRATION",
+      "sensitivity": "HIGH",
+      "enabled": true
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "HueBridgeConnector",
+    "deviceId": "hdm:PhilipsHueBridge:PhilipsHueBridgeManager",
+    "path": "/devices/hdm:PhilipsHueBridge:PhilipsHueBridgeManager/services/HueBridgeConnector",
+    "state": {
+      "@type": "hueBridgeConnectorState"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "HueBridgeSearcher",
+    "deviceId": "hdm:PhilipsHueBridge:PhilipsHueBridgeManager",
+    "path": "/devices/hdm:PhilipsHueBridge:PhilipsHueBridgeManager/services/HueBridgeSearcher",
+    "state": {
+      "@type": "hueBridgeSearcherState",
+      "searcherState": "NO_BRIDGE_FOUND",
+      "value": "NO_BRIDGE_FOUND"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PowerSwitchWarning",
+    "deviceId": "hdm:ZigBee:b3a8becd45da547f",
+    "path": "/devices/hdm:ZigBee:b3a8becd45da547f/services/PowerSwitchWarning"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "CommunicationQuality",
+    "deviceId": "hdm:ZigBee:b3a8becd45da547f",
+    "path": "/devices/hdm:ZigBee:b3a8becd45da547f/services/CommunicationQuality",
+    "state": {
+      "@type": "communicationQualityState",
+      "quality": "UNKNOWN"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PowerMeter",
+    "deviceId": "hdm:ZigBee:b3a8becd45da547f",
+    "path": "/devices/hdm:ZigBee:b3a8becd45da547f/services/PowerMeter",
+    "state": {
+      "@type": "powerMeterState",
+      "powerConsumption": 0,
+      "energyConsumption": 608660
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PowerSwitch",
+    "deviceId": "hdm:ZigBee:b3a8becd45da547f",
+    "path": "/devices/hdm:ZigBee:b3a8becd45da547f/services/PowerSwitch",
+    "state": {
+      "@type": "powerSwitchState",
+      "switchState": "OFF",
+      "automaticPowerOffTime": 0
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PowerSwitchConfiguration",
+    "deviceId": "hdm:ZigBee:b3a8becd45da547f",
+    "path": "/devices/hdm:ZigBee:b3a8becd45da547f/services/PowerSwitchConfiguration",
+    "state": {
+      "@type": "powerSwitchConfigurationState",
+      "stateAfterPowerOutage": "OFF",
+      "supportedStatesAfterPowerOutage": [
+        "LAST_STATE",
+        "ON",
+        "OFF"
+      ]
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PowerSwitchProgram",
+    "deviceId": "hdm:ZigBee:b3a8becd45da547f",
+    "path": "/devices/hdm:ZigBee:b3a8becd45da547f/services/PowerSwitchProgram",
+    "state": {
+      "@type": "powerSwitchProgramState",
+      "operationMode": "MANUAL",
+      "schedule": {
+        "profiles": [
+          {
+            "day": "MONDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "TUESDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "WEDNESDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "THURSDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "FRIDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "SATURDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          },
+          {
+            "day": "SUNDAY",
+            "switchPoints": [
+              {
+                "startTimeMinutes": 0,
+                "value": {
+                  "@type": "switchStateSwitchPointValue",
+                  "switchState": "OFF"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "temporaryTurnOnActive": false
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "LedBrightnessConfiguration",
+    "deviceId": "hdm:ZigBee:b3a8becd45da547f",
+    "path": "/devices/hdm:ZigBee:b3a8becd45da547f/services/LedBrightnessConfiguration"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "EnergySavingMode",
+    "deviceId": "hdm:ZigBee:b3a8becd45da547f",
+    "path": "/devices/hdm:ZigBee:b3a8becd45da547f/services/EnergySavingMode"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BatteryLevel",
+    "deviceId": "hdm:HomeMaticIP:3014F711A3363281DA357B97",
+    "path": "/devices/hdm:HomeMaticIP:3014F711A3363281DA357B97/services/BatteryLevel"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "Alarm",
+    "deviceId": "hdm:HomeMaticIP:3014F711A3363281DA357B97",
+    "path": "/devices/hdm:HomeMaticIP:3014F711A3363281DA357B97/services/Alarm"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "SmokeDetectorCheck",
+    "deviceId": "hdm:HomeMaticIP:3014F711A3363281DA357B97",
+    "path": "/devices/hdm:HomeMaticIP:3014F711A3363281DA357B97/services/SmokeDetectorCheck"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "CommunicationQuality",
+    "deviceId": "hdm:ZigBee:4413666ec30e8780",
+    "path": "/devices/hdm:ZigBee:4413666ec30e8780/services/CommunicationQuality",
+    "state": {
+      "@type": "communicationQualityState",
+      "quality": "GOOD"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BatteryLevel",
+    "deviceId": "hdm:ZigBee:4413666ec30e8780",
+    "path": "/devices/hdm:ZigBee:4413666ec30e8780/services/BatteryLevel"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "WaterLeakageSensorTilt",
+    "deviceId": "hdm:ZigBee:4413666ec30e8780",
+    "path": "/devices/hdm:ZigBee:4413666ec30e8780/services/WaterLeakageSensorTilt"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "WaterLeakageSensorCheck",
+    "deviceId": "hdm:ZigBee:4413666ec30e8780",
+    "path": "/devices/hdm:ZigBee:4413666ec30e8780/services/WaterLeakageSensorCheck"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "WaterLeakageSensor",
+    "deviceId": "hdm:ZigBee:4413666ec30e8780",
+    "path": "/devices/hdm:ZigBee:4413666ec30e8780/services/WaterLeakageSensor"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "CommunicationQuality",
+    "deviceId": "hdm:ZigBee:951592a0459a8bf5",
+    "path": "/devices/hdm:ZigBee:951592a0459a8bf5/services/CommunicationQuality",
+    "state": {
+      "@type": "communicationQualityState",
+      "quality": "GOOD"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "ShutterContact",
+    "deviceId": "hdm:ZigBee:951592a0459a8bf5",
+    "path": "/devices/hdm:ZigBee:951592a0459a8bf5/services/ShutterContact",
+    "state": {
+      "@type": "shutterContactState",
+      "value": "CLOSED"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BatteryLevel",
+    "deviceId": "hdm:ZigBee:951592a0459a8bf5",
+    "path": "/devices/hdm:ZigBee:951592a0459a8bf5/services/BatteryLevel"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "Bypass",
+    "deviceId": "hdm:ZigBee:951592a0459a8bf5",
+    "path": "/devices/hdm:ZigBee:951592a0459a8bf5/services/Bypass",
+    "state": {
+      "@type": "bypassState",
+      "state": "BYPASS_INACTIVE",
+      "configuration": {
+        "enabled": true,
+        "timeout": 5,
+        "infinite": false
+      }
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BatteryLevel",
+    "deviceId": "hdm:HomeMaticIP:3014F711A57CCA0AD0E1B3B5",
+    "path": "/devices/hdm:HomeMaticIP:3014F711A57CCA0AD0E1B3B5/services/BatteryLevel"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "KeypadTrigger",
+    "deviceId": "hdm:HomeMaticIP:3014F711A57CCA0AD0E1B3B5",
+    "path": "/devices/hdm:HomeMaticIP:3014F711A57CCA0AD0E1B3B5/services/KeypadTrigger",
+    "state": {
+      "@type": "keypadTriggerState",
+      "scenarioIdAssociations": {
+        "2_SHORT": "46073f5b-656f-4920-80c9-04dc9bf498e1",
+        "1_LONG": "4b9de1a4-2331-489b-8520-f3721ac0227f",
+        "2_LONG": "1fd2088a-d9e3-4c0a-88c4-2d2aff51fbd8",
+        "1_SHORT": "4b9de1a4-2331-489b-8520-f3721ac0227f"
+      },
+      "switchType": "ScenarioTrigger",
+      "idsToTrigger": []
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "Keypad",
+    "deviceId": "hdm:HomeMaticIP:3014F711A57CCA0AD0E1B3B5",
+    "path": "/devices/hdm:HomeMaticIP:3014F711A57CCA0AD0E1B3B5/services/Keypad",
+    "state": {
+      "@type": "keypadState",
+      "keyCode": 1,
+      "keyName": "UPPER_BUTTON",
+      "eventType": "PRESS_SHORT",
+      "eventTimestamp": 1779959367711
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "SurveillanceAlarm",
+    "deviceId": "intrusionDetectionSystem",
+    "path": "/devices/intrusionDetectionSystem/services/SurveillanceAlarm",
+    "state": {
+      "@type": "surveillanceAlarmState",
+      "alarmCaseId": "12110eca-ce41-4942-81ee-724fb9a52f9d",
+      "value": "ALARM_OFF",
+      "incidents": []
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "IntrusionDetectionControl",
+    "deviceId": "intrusionDetectionSystem",
+    "path": "/devices/intrusionDetectionSystem/services/IntrusionDetectionControl",
+    "state": {
+      "@type": "intrusionDetectionControlState",
+      "value": "SYSTEM_DISARMED",
+      "activeProfile": "1",
+      "triggers": [
+        {
+          "id": "hdm:HomeMaticIP:3014F711A0DC7DFFD1683511",
+          "active": true,
+          "readonly": false
+        },
+        {
+          "id": "hdm:ZigBee:ce2dee83912c3f7b",
+          "active": true,
+          "readonly": false
+        },
+        {
+          "id": "hdm:HomeMaticIP:3014F711A507FB6F21AA93BF",
+          "active": true,
+          "readonly": false
+        },
+        {
+          "id": "hdm:HomeMaticIP:3014F711AD27118500D34AAA",
+          "active": true,
+          "readonly": false
+        },
+        {
+          "id": "hdm:HomeMaticIP:3014F711AA8A3C74E00DB417",
+          "active": true,
+          "readonly": false
+        }
+      ],
+      "actuators": [
+        {
+          "id": "intrusion:video",
+          "active": false,
+          "readonly": false
+        }
+      ],
+      "armActivationDelayTime": 1,
+      "alarmActivationDelayTime": 1
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "Thermostat",
+    "deviceId": "hdm:HomeMaticIP:3014F711AC9529BF77D4107F",
+    "path": "/devices/hdm:HomeMaticIP:3014F711AC9529BF77D4107F/services/Thermostat",
+    "state": {
+      "@type": "childLockState",
+      "childLock": "ON"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BatteryLevel",
+    "deviceId": "hdm:HomeMaticIP:3014F711AC9529BF77D4107F",
+    "path": "/devices/hdm:HomeMaticIP:3014F711AC9529BF77D4107F/services/BatteryLevel"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "ValveTappet",
+    "deviceId": "hdm:HomeMaticIP:3014F711AC9529BF77D4107F",
+    "path": "/devices/hdm:HomeMaticIP:3014F711AC9529BF77D4107F/services/ValveTappet",
+    "state": {
+      "@type": "valveTappetState",
+      "value": "VALVE_ADAPTION_SUCCESSFUL",
+      "position": 0,
+      "automaticHydraulicBalanceActive": false,
+      "thresholdForIgnoringValve": 5
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "SilentMode",
+    "deviceId": "hdm:HomeMaticIP:3014F711AC9529BF77D4107F",
+    "path": "/devices/hdm:HomeMaticIP:3014F711AC9529BF77D4107F/services/SilentMode",
+    "state": {
+      "@type": "silentModeState",
+      "mode": "MODE_NORMAL"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "TemperatureLevel",
+    "deviceId": "hdm:HomeMaticIP:3014F711AC9529BF77D4107F",
+    "path": "/devices/hdm:HomeMaticIP:3014F711AC9529BF77D4107F/services/TemperatureLevel",
+    "state": {
+      "@type": "temperatureLevelState",
+      "temperature": 23
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "Linking",
+    "deviceId": "hdm:HomeMaticIP:3014F711AC9529BF77D4107F",
+    "path": "/devices/hdm:HomeMaticIP:3014F711AC9529BF77D4107F/services/Linking",
+    "state": {
+      "@type": "linkingState",
+      "links": [
+        {
+          "state": "CREATED",
+          "profile": "HEATING_ROOM_CONTROL",
+          "from": "hdm:HomeMaticIP:3014F711A1D4682DE086A841",
+          "to": "hdm:HomeMaticIP:3014F711A195ADB5C18B94EF"
+        }
+      ]
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "TemperatureOffset",
+    "deviceId": "hdm:HomeMaticIP:3014F711AC9529BF77D4107F",
+    "path": "/devices/hdm:HomeMaticIP:3014F711AC9529BF77D4107F/services/TemperatureOffset",
+    "state": {
+      "@type": "temperatureOffsetState",
+      "offset": -1,
+      "stepSize": 0.1,
+      "minOffset": -3.5,
+      "maxOffset": 3.5
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "CommunicationQuality",
+    "deviceId": "hdm:ZigBee:90a5f7b696ca5616",
+    "path": "/devices/hdm:ZigBee:90a5f7b696ca5616/services/CommunicationQuality",
+    "state": {
+      "@type": "communicationQualityState",
+      "quality": "GOOD"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "Thermostat",
+    "deviceId": "hdm:ZigBee:90a5f7b696ca5616",
+    "path": "/devices/hdm:ZigBee:90a5f7b696ca5616/services/Thermostat",
+    "state": {
+      "@type": "childLockState",
+      "childLock": "OFF"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BatteryLevel",
+    "deviceId": "hdm:ZigBee:90a5f7b696ca5616",
+    "path": "/devices/hdm:ZigBee:90a5f7b696ca5616/services/BatteryLevel"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "DisplayConfiguration",
+    "deviceId": "hdm:ZigBee:90a5f7b696ca5616",
+    "path": "/devices/hdm:ZigBee:90a5f7b696ca5616/services/DisplayConfiguration"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "TemperatureLevel",
+    "deviceId": "hdm:ZigBee:90a5f7b696ca5616",
+    "path": "/devices/hdm:ZigBee:90a5f7b696ca5616/services/TemperatureLevel",
+    "state": {
+      "@type": "temperatureLevelState",
+      "temperature": 23
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "HumidityLevel",
+    "deviceId": "hdm:ZigBee:90a5f7b696ca5616",
+    "path": "/devices/hdm:ZigBee:90a5f7b696ca5616/services/HumidityLevel",
+    "state": {
+      "@type": "humidityLevelState",
+      "humidity": 51
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "TerminalConfiguration",
+    "deviceId": "hdm:ZigBee:90a5f7b696ca5616",
+    "path": "/devices/hdm:ZigBee:90a5f7b696ca5616/services/TerminalConfiguration"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "Linking",
+    "deviceId": "hdm:ZigBee:90a5f7b696ca5616",
+    "path": "/devices/hdm:ZigBee:90a5f7b696ca5616/services/Linking",
+    "state": {
+      "@type": "linkingState",
+      "links": [
+        {
+          "state": "CREATED",
+          "profile": "HEATING_ROOM_CONTROL",
+          "from": "hdm:HomeMaticIP:3014F711A1E7214EA1F4B246",
+          "to": "hdm:HomeMaticIP:3014F711A2CE279CFF624779"
+        }
+      ]
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "TemperatureOffset",
+    "deviceId": "hdm:ZigBee:90a5f7b696ca5616",
+    "path": "/devices/hdm:ZigBee:90a5f7b696ca5616/services/TemperatureOffset",
+    "state": {
+      "@type": "temperatureOffsetState",
+      "offset": 0,
+      "stepSize": 0.1,
+      "minOffset": -3.5,
+      "maxOffset": 3.5
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PresenceSimulationScheduling",
+    "deviceId": "presenceSimulationService",
+    "path": "/devices/presenceSimulationService/services/PresenceSimulationScheduling",
+    "state": {
+      "@type": "presenceSimulationSchedulingState",
+      "schedule": []
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PresenceSimulationConfiguration",
+    "deviceId": "presenceSimulationService",
+    "path": "/devices/presenceSimulationService/services/PresenceSimulationConfiguration",
+    "state": {
+      "@type": "presenceSimulationConfigurationState",
+      "enabled": false,
+      "devices": [
+        {
+          "deviceId": "hdm:ZigBee:858859e1f41b40a9",
+          "active": false
+        },
+        {
+          "deviceId": "hdm:ZigBee:bef0e495ca765723",
+          "active": false
+        },
+        {
+          "deviceId": "hdm:ZigBee:4b8c0cefcf08b70e",
+          "active": false
+        }
+      ],
+      "runningStartTime": "-",
+      "runningEndTime": "-"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "CommunicationQuality",
+    "deviceId": "hdm:ZigBee:32066b86048335f4",
+    "path": "/devices/hdm:ZigBee:32066b86048335f4/services/CommunicationQuality",
+    "state": {
+      "@type": "communicationQualityState",
+      "quality": "UNKNOWN"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BatteryLevel",
+    "deviceId": "hdm:ZigBee:32066b86048335f4",
+    "path": "/devices/hdm:ZigBee:32066b86048335f4/services/BatteryLevel"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "MultiswitchDebug",
+    "deviceId": "hdm:ZigBee:32066b86048335f4",
+    "path": "/devices/hdm:ZigBee:32066b86048335f4/services/MultiswitchDebug"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "MultiswitchConfiguration",
+    "deviceId": "hdm:ZigBee:32066b86048335f4",
+    "path": "/devices/hdm:ZigBee:32066b86048335f4/services/MultiswitchConfiguration"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "TemperatureLevel",
+    "deviceId": "hdm:ZigBee:32066b86048335f4",
+    "path": "/devices/hdm:ZigBee:32066b86048335f4/services/TemperatureLevel",
+    "state": {
+      "@type": "temperatureLevelState",
+      "temperature": 21.6
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "ShutterControl",
+    "deviceId": "hdm:HomeMaticIP:3014F711AEEE5B597C270A80",
+    "path": "/devices/hdm:HomeMaticIP:3014F711AEEE5B597C270A80/services/ShutterControl",
+    "state": {
+      "@type": "shutterControlState",
+      "level": 0.47,
+      "operationState": "STOPPED"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "CommunicationQuality",
+    "deviceId": "hdm:ZigBee:b001c93a64f7653a",
+    "path": "/devices/hdm:ZigBee:b001c93a64f7653a/services/CommunicationQuality",
+    "state": {
+      "@type": "communicationQualityState",
+      "quality": "GOOD"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BatteryLevel",
+    "deviceId": "hdm:ZigBee:b001c93a64f7653a",
+    "path": "/devices/hdm:ZigBee:b001c93a64f7653a/services/BatteryLevel"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "AirQualityLevel",
+    "deviceId": "hdm:ZigBee:b001c93a64f7653a",
+    "path": "/devices/hdm:ZigBee:b001c93a64f7653a/services/AirQualityLevel",
+    "state": {
+      "@type": "airQualityLevelState",
+      "combinedRating": "GOOD",
+      "temperature": 20.4,
+      "temperatureRating": "GOOD",
+      "humidity": 58,
+      "humidityRating": "GOOD",
+      "purity": 509,
+      "purityRating": "GOOD"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "SmokeSensitivity",
+    "deviceId": "hdm:ZigBee:b001c93a64f7653a",
+    "path": "/devices/hdm:ZigBee:b001c93a64f7653a/services/SmokeSensitivity"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "TwinguardNightlyPromise",
+    "deviceId": "hdm:ZigBee:b001c93a64f7653a",
+    "path": "/devices/hdm:ZigBee:b001c93a64f7653a/services/TwinguardNightlyPromise"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "SmokeDetectorCheck",
+    "deviceId": "hdm:ZigBee:b001c93a64f7653a",
+    "path": "/devices/hdm:ZigBee:b001c93a64f7653a/services/SmokeDetectorCheck"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "CommunicationQuality",
+    "deviceId": "hdm:ZigBee:7618448bc6cfe41c",
+    "path": "/devices/hdm:ZigBee:7618448bc6cfe41c/services/CommunicationQuality",
+    "state": {
+      "@type": "communicationQualityState",
+      "quality": "GOOD"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "ShutterContact",
+    "deviceId": "hdm:ZigBee:7618448bc6cfe41c",
+    "path": "/devices/hdm:ZigBee:7618448bc6cfe41c/services/ShutterContact",
+    "state": {
+      "@type": "shutterContactState",
+      "value": "CLOSED"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "BatteryLevel",
+    "deviceId": "hdm:ZigBee:7618448bc6cfe41c",
+    "path": "/devices/hdm:ZigBee:7618448bc6cfe41c/services/BatteryLevel"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "Bypass",
+    "deviceId": "hdm:ZigBee:7618448bc6cfe41c",
+    "path": "/devices/hdm:ZigBee:7618448bc6cfe41c/services/Bypass",
+    "state": {
+      "@type": "bypassState",
+      "state": "BYPASS_INACTIVE",
+      "configuration": {
+        "enabled": true,
+        "timeout": 5,
+        "infinite": false
+      }
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "CommunicationQuality",
+    "deviceId": "hdm:ZigBee:7aba162daa07b0c3",
+    "path": "/devices/hdm:ZigBee:7aba162daa07b0c3/services/CommunicationQuality",
+    "state": {
+      "@type": "communicationQualityState",
+      "quality": "GOOD"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "PowerMeter",
+    "deviceId": "hdm:ZigBee:7aba162daa07b0c3",
+    "path": "/devices/hdm:ZigBee:7aba162daa07b0c3/services/PowerMeter",
+    "state": {
+      "@type": "powerMeterState",
+      "powerConsumption": 5,
+      "energyConsumption": 28320,
+      "energyConsumptionStartDate": "2025-10-16T15:39:09Z"
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "ElectricalFaults",
+    "deviceId": "hdm:ZigBee:7aba162daa07b0c3",
+    "path": "/devices/hdm:ZigBee:7aba162daa07b0c3/services/ElectricalFaults"
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "Keypad",
+    "deviceId": "hdm:ZigBee:7aba162daa07b0c3",
+    "path": "/devices/hdm:ZigBee:7aba162daa07b0c3/services/Keypad",
+    "state": {
+      "@type": "keypadState",
+      "keyCode": 1,
+      "keyName": "UPPER_BUTTON",
+      "eventType": "PRESS_SHORT",
+      "eventTimestamp": 1779959367711
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
+    "id": "SwitchConfiguration",
+    "deviceId": "hdm:ZigBee:7aba162daa07b0c3",
+    "path": "/devices/hdm:ZigBee:7aba162daa07b0c3/services/SwitchConfiguration"
+  }
+]

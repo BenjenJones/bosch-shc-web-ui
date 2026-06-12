@@ -1,0 +1,116 @@
+[
+  {
+    "@type": "userDefinedState",
+    "id": "3ab4766c-b60c-49fb-8344-3a1fd05e7608",
+    "name": "Status 1",
+    "state": true
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "1119488b-40ac-453c-8350-5cde7aff1be7",
+    "name": "Status 2",
+    "state": false
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "010292f6-0509-42c5-816d-615e90b7c61b",
+    "name": "Status 3",
+    "state": false
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "6cfbcd06-f54d-4ea5-88be-623c498d8a25",
+    "name": "Status 4",
+    "state": true
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "49966c66-9f26-48db-8d46-c713232118d3",
+    "name": "Status 5",
+    "state": false
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "e2e7dbb5-9e52-41bd-8e07-903e5ccbe28c",
+    "name": "Status 6",
+    "state": false
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "21291590-a1f1-4fb2-8670-c5d2bbe46c6e",
+    "name": "Status 7",
+    "state": true
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "9a59e7e2-6aff-4b9c-8b17-f489e52f0326",
+    "name": "Status 8",
+    "state": false
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "96abf8e2-e2d5-419b-8742-9f71878a9c15",
+    "name": "Status 9",
+    "state": false
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "6737976e-0e75-4ac6-8b30-46ff7decee14",
+    "name": "Status 10",
+    "state": true
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "be05d45c-e835-4e3d-80f0-8c22cb7996fb",
+    "name": "Status 11",
+    "state": false
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "6bfa6dc3-ca37-458c-8fc9-a582291ad4b0",
+    "name": "Status 12",
+    "state": false
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "3bbe50b0-1330-4de0-8968-16910795245a",
+    "name": "Status 13",
+    "state": true
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "576da870-3585-42a8-86d2-887b7a7211a0",
+    "name": "Status 14",
+    "state": false
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "0f174376-8277-41ab-8c58-38517e57ca96",
+    "name": "Status 15",
+    "state": false
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "8506a1db-68f1-4f0a-8b54-4a01b6aaacc8",
+    "name": "Status 16",
+    "state": true
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "d884ae84-e1e7-431f-8249-efd14af57823",
+    "name": "Status 17",
+    "state": false
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "8bbf3826-bb69-4abc-8cf0-ca87a0f3bc9a",
+    "name": "Status 18",
+    "state": false
+  },
+  {
+    "@type": "userDefinedState",
+    "id": "ed184beb-fae8-4a97-839e-78319991c99c",
+    "name": "Status 19",
+    "state": true
+  }
+]

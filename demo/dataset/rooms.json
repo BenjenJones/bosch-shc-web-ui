@@ -1,0 +1,50 @@
+[
+  {
+    "@type": "room",
+    "id": "hz_1",
+    "iconId": "icon_room_kitchen",
+    "name": "Küche"
+  },
+  {
+    "@type": "room",
+    "id": "hz_2",
+    "iconId": "icon_room_bedroom",
+    "name": "Schlafzimmer"
+  },
+  {
+    "@type": "room",
+    "id": "hz_3",
+    "iconId": "icon_room_bathroom",
+    "name": "Badezimmer"
+  },
+  {
+    "@type": "room",
+    "id": "hz_4",
+    "iconId": "icon_room_living_room",
+    "name": "Wohnzimmer"
+  },
+  {
+    "@type": "room",
+    "id": "hz_5",
+    "iconId": "icon_room_hallway",
+    "name": "Flur"
+  },
+  {
+    "@type": "room",
+    "id": "hz_6",
+    "iconId": "icon_room_storage",
+    "name": "Abstellkammer"
+  },
+  {
+    "@type": "room",
+    "id": "hz_7",
+    "iconId": "icon_room_terrace",
+    "name": "Terrasse"
+  },
+  {
+    "@type": "room",
+    "id": "hz_8",
+    "iconId": "icon_room_office",
+    "name": "Arbeitszimmer"
+  }
+]

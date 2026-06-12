@@ -43,6 +43,7 @@ function messageInner(m, dateLocale) {
   let source = m.sourceName || (m.sourceId && deviceName(m.sourceId)) || m.sourceId || '';
   if (m.location) source = m.location + ' - ' + source;
   const date = m.timestamp ? new Date(Number(m.timestamp)).toLocaleString(dateLocale) : '';
+  const archivedAt = m.archivedAt ? new Date(Number(m.archivedAt)).toLocaleString(dateLocale) : '';
   const argsHtml = describeArguments(m.arguments);
   return `
     <div class="flex-1 min-w-0">
@@ -52,6 +53,7 @@ function messageInner(m, dateLocale) {
         ${source && date ? ' · ' : ''}
         ${date ? `<span>${date}</span>` : ''}
       </div>
+      ${archivedAt ? `<div class="text-xs text-slate-500 mt-0.5">${t('messages.archive.at', archivedAt)}</div>` : ''}
       ${argsHtml ? `<div class="text-xs mt-1.5">${argsHtml}</div>` : ''}
       <details class="mt-1.5 text-xs text-slate-400">
         <summary class="cursor-pointer hover:text-slate-600">${t('messages.technical')}</summary>
