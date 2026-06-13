@@ -1,0 +1,49 @@
+[
+  {
+    "@type": "message",
+    "id": "d4968b29-bdd2-4c13-8b70-83243aa89cbc",
+    "messageCode": {
+      "@type": "messageCode",
+      "name": "CRITICAL_LOW_BATTERY",
+      "category": "WARNING"
+    },
+    "sourceType": "DEVICE",
+    "sourceId": "hdm:HomeMaticIP:3014F711A3363281DA357B97",
+    "sourceName": "Rauchmelder 1",
+    "location": "Abstellkammer",
+    "flags": [],
+    "arguments": {
+      "deviceModel": "SD"
+    }
+  },
+  {
+    "@type": "message",
+    "id": "71673d65-e84a-4f5c-856b-4fdfba45aab1",
+    "messageCode": {
+      "@type": "messageCode",
+      "name": "TILT_DETECTION",
+      "category": "WARNING"
+    },
+    "sourceType": "DEVICE",
+    "sourceId": "hdm:HomeMaticIP:3014F711A58702D437303C25",
+    "sourceName": "Fensterkontakt 1",
+    "location": "Arbeitszimmer",
+    "flags": [],
+    "arguments": {}
+  },
+  {
+    "@type": "message",
+    "id": "210dd3bd-644f-466e-8f98-a3a22d9a7da4",
+    "messageCode": {
+      "@type": "messageCode",
+      "name": "CHECK_INSTALLATION",
+      "category": "NOTICE"
+    },
+    "sourceType": "DEVICE",
+    "sourceId": "hdm:HomeMaticIP:3014F711A3363281DA357B97",
+    "sourceName": "Rauchmelder 1",
+    "location": "Abstellkammer",
+    "flags": [],
+    "arguments": {}
+  }
+]

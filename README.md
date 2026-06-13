@@ -118,13 +118,13 @@ Want to explore the UI without owning a Smart Home Controller (or any devices)? 
 npm run demo
 ```
 
-This starts the server on a **separate port (3001 by default, override with `BOSCH_SHC_DEMO_PORT`)** so it can run alongside a real instance on 3000. No `config.json`, no certificates and no login are required — instead the server serves an in-memory dataset that covers **one of every device model** (thermostats, contacts, shutters, lights, plugs, smoke/motion/water sensors, Twinguard, intrusion system, …) plus automations spanning every trigger/condition/action type, scenarios and user-defined states.
+This starts a self-contained **demo SHC** (`demo/shc-server.js`) that mimics the real controller's `/smarthome/*` HTTP API, then boots the normal UI server pointed at it via a temporary `shcProtocol: 'http'` config — so `server.js` carries no demo-specific code; the abstraction is the HTTP interface itself. It listens on a **separate port (3001 by default, override with `BOSCH_SHC_DEMO_PORT`)** so it can run alongside a real instance on 3000. No real `config.json`, certificates or login are required. The dataset covers **one of every device model** (thermostats, contacts, shutters, lights, plugs, smoke/motion/water sensors, Twinguard, intrusion system, …) plus automations spanning every trigger/condition/action type, scenarios, user-defined states and active/archived messages.
 
 Everything is interactive: toggling a plug, moving a setpoint, arming the alarm or renaming a room all persist **in memory** for the lifetime of the process (a restart resets to the dataset on disk, which is never modified). It's a self-contained playground for screenshots, UI development and trying things out.
 
 ### The demo dataset
 
-The committed dataset lives in [`demo/dataset/`](demo/dataset/) (`devices.json`, `services.json`, `rooms.json`, `scenarios.json`, `automations.json`, `userdefinedstates.json`) and is what `npm run demo` loads. It is **anonymized and curated** — one device per `deviceModel`, real device/state IDs replaced with deterministic placeholders, device names genericized, free-text push messages scrubbed.
+The committed dataset lives in [`demo/dataset/`](demo/dataset/) (`devices.json`, `services.json`, `rooms.json`, `scenarios.json`, `automations.json`, `userdefinedstates.json`, `messages.json`, `messages-archive.json`) and is what `npm run demo` loads. It is **anonymized and curated** — one device per `deviceModel`, real device/state IDs replaced with deterministic placeholders, device names genericized, free-text push messages scrubbed.
 
 It is generated from real SHC exports placed under `examples/` (which are **gitignored** — they come from a real system and are never committed):
 

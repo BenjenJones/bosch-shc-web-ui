@@ -285,6 +285,41 @@ const rooms = roomIds.map(id => {
 });
 
 // =========================================================================
+//  Systemmeldungen — aktive + (zum Archivieren vorgesehene) Beispiele, die auf
+//  vorhandene Demo-Geräte zeigen. Ohne timestamp/archivedAt — die stempelt
+//  demo-data.js beim Laden, damit die Daten immer "frisch" wirken. Nur
+//  messageCodes, für die die UI Titel kennt (i18n msg.*).
+// =========================================================================
+const roomNameOf = (d) => (rooms.find(r => r.id === d.roomId) || {}).name || d.roomId || '';
+const hasService = (d, sid) => (d.deviceServiceIds || []).includes(sid);
+const pickDev = (pred) => devices.find(pred);
+const mkMsg = (code, category, dev, { flags = [], args = {} } = {}) => ({
+  '@type': 'message', id: anonUuid('msg-' + code + '-' + (dev ? dev.id : 'shc')),
+  messageCode: { '@type': 'messageCode', name: code, category },
+  sourceType: 'DEVICE', sourceId: dev ? dev.id : null, sourceName: dev ? dev.name : null,
+  location: dev ? roomNameOf(dev) : null, flags, arguments: args,
+});
+
+const batteryDev   = pickDev(d => hasService(d, 'BatteryLevel') && d.deviceModel === 'TRV') || pickDev(d => hasService(d, 'BatteryLevel'));
+const updateDev    = pickDev(d => d.deviceModel === 'PLUG_COMPACT') || devices[0];
+const unreachDev   = pickDev(d => d.status === 'COMMUNICATION_ERROR') || pickDev(d => d.deviceModel === 'HUE_LIGHT');
+const contactDev   = pickDev(d => hasService(d, 'ShutterContact'));
+const smokeDev     = pickDev(d => d.deviceModel === 'SD' || d.deviceModel === 'TWINGUARD');
+const critBattDev  = pickDev(d => hasService(d, 'BatteryLevel') && d.deviceModel === 'SD') || batteryDev;
+
+const messages = [
+  mkMsg('LOW_BATTERY', 'WARNING', batteryDev, { flags: ['USER_ACTION_REQUIRED'], args: { deviceModel: batteryDev?.deviceModel } }),
+  mkMsg('SOFTWARE_UPDATE_AVAILABLE', 'NOTICE', updateDev, { args: { swInstalledVersion: '10.20.1965', swUpdateAvailableVersion: '10.21.2200' } }),
+  mkMsg('DEVICE_UNREACHABLE', 'WARNING', unreachDev, { flags: ['USER_ACTION_REQUIRED'] }),
+].filter(m => m.sourceId);
+
+const messagesArchive = [
+  mkMsg('CRITICAL_LOW_BATTERY', 'WARNING', critBattDev, { args: { deviceModel: critBattDev?.deviceModel } }),
+  mkMsg('TILT_DETECTION', 'WARNING', contactDev),
+  mkMsg('CHECK_INSTALLATION', 'NOTICE', smokeDev),
+].filter(m => m.sourceId);
+
+// =========================================================================
 //  Schreiben
 // =========================================================================
 fs.mkdirSync(OUT, { recursive: true });
@@ -295,7 +330,10 @@ write('services.json', services);
 write('scenarios.json', scenarios);
 write('automations.json', automations);
 write('userdefinedstates.json', userdefinedstates);
+write('messages.json', messages);
+write('messages-archive.json', messagesArchive);
 
 console.log('✔ demo/dataset geschrieben:');
 console.log(`  rooms ${rooms.length}  devices ${devices.length} (1 je Modell)  services ${services.length} (${services.filter(s => s.state).length} mit state)`);
 console.log(`  scenarios ${scenarios.length}  automations ${automations.length} (Trigger ${seen.t.size}/Bedingungen ${seen.c.size}/Aktionen ${seen.a.size})  states ${userdefinedstates.length}`);
+console.log(`  messages ${messages.length} aktiv / ${messagesArchive.length} archiviert`);

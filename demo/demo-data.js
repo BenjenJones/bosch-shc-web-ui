@@ -1,12 +1,11 @@
 /**
- * Demo-Modus — in-memory SHC-Ersatz.
+ * Demo-Datenmodell + Router — der in-memory "Inhalt" des Demo-SHC.
  *
- * Wird nur geladen wenn der Server mit BOSCH_SHC_DEMO=1 startet (siehe
- * `npm run demo`). Statt eine echte SHC über mTLS anzusprechen, hält dieses
- * Modul den kompletten Datenbestand im Speicher und beantwortet exakt die
- * `/smarthome/...`-Pfade, die server.js' shcRequest() sonst an die Box
- * schicken würde. So lässt sich die UI mit allen bekannten Gerätetypen
- * anschauen, ohne die Hardware zu besitzen.
+ * Hält den kompletten Datenbestand im Speicher und beantwortet via `handle()`
+ * exakt die `/smarthome/...`-Pfade der echten Box. Der eigentliche HTTP-Server,
+ * der das nach außen über dieselbe Schnittstelle wie die echte SHC ausliefert,
+ * ist demo/shc-server.js; server.js verbindet sich dann ganz normal
+ * (`shcProtocol:'http'`) damit — kein Demo-Sonderweg im UI-Server.
  *
  * Die Geräte/Services/Szenen/Automationen kommen aus dem *eingecheckten*,
  * anonymisierten Datensatz unter demo/dataset/ (je ein Beispiel pro Typ). Den
@@ -22,6 +21,17 @@ const crypto = require('crypto');
 const DATA = path.join(__dirname, 'dataset');
 const readJson = (file) => JSON.parse(fs.readFileSync(path.join(DATA, file), 'utf8'));
 
+// Meldungen liegen im Datensatz ohne timestamp/archivedAt — hier beim Laden
+// gestempelt, damit die Daten unabhängig vom Build-Datum "frisch" wirken
+// (jüngste zuerst). Das Archiv wird von server.js (loadMessageArchive) im
+// Demo-Modus aus store.messageArchive übernommen statt aus der NDJSON-Datei.
+const HOUR = 3600e3, DAY = 24 * HOUR;
+const now = Date.now();
+const activeMessages = readJson('messages.json').map((m, i) => ({ ...m, timestamp: now - (i + 1) * 6 * HOUR }));
+const archivedMessages = readJson('messages-archive.json').map((m, i) => ({
+  ...m, timestamp: now - (i + 3) * DAY, archivedAt: now - (i + 1) * 18 * HOUR,
+}));
+
 // =========================================================================
 //  In-memory store — frisch bei jedem Boot aus dem Datensatz geladen, damit
 //  Mutationen die JSON-Dateien auf der Platte nicht anfassen.
@@ -33,7 +43,8 @@ const store = {
   scenarios: readJson('scenarios.json'),
   automations: readJson('automations.json'),
   userdefinedstates: readJson('userdefinedstates.json'),
-  messages: [],
+  messages: activeMessages,
+  messageArchive: archivedMessages,
   clients: [
     { '@type': 'client', id: 'oss_bosch_shc_web_ui', name: 'Bosch SHC Web UI (Demo)', primaryRole: 'ROLE_RESTRICTED_CLIENT', dynamicRoles: [] },
   ],

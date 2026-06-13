@@ -1,0 +1,56 @@
+[
+  {
+    "@type": "message",
+    "id": "98868f8c-35d7-4326-8d7d-cec9aba4c574",
+    "messageCode": {
+      "@type": "messageCode",
+      "name": "LOW_BATTERY",
+      "category": "WARNING"
+    },
+    "sourceType": "DEVICE",
+    "sourceId": "hdm:HomeMaticIP:3014F711AC9529BF77D4107F",
+    "sourceName": "Heizkörperthermostat 1",
+    "location": "Badezimmer",
+    "flags": [
+      "USER_ACTION_REQUIRED"
+    ],
+    "arguments": {
+      "deviceModel": "TRV"
+    }
+  },
+  {
+    "@type": "message",
+    "id": "5c8c08a0-6a71-4383-886a-b3f2fdb95a89",
+    "messageCode": {
+      "@type": "messageCode",
+      "name": "SOFTWARE_UPDATE_AVAILABLE",
+      "category": "NOTICE"
+    },
+    "sourceType": "DEVICE",
+    "sourceId": "hdm:ZigBee:358e310bee9f4e26",
+    "sourceName": "Steckdose 1",
+    "location": "Wohnzimmer",
+    "flags": [],
+    "arguments": {
+      "swInstalledVersion": "10.20.1965",
+      "swUpdateAvailableVersion": "10.21.2200"
+    }
+  },
+  {
+    "@type": "message",
+    "id": "8e778815-a943-44b3-8648-41664faf5e91",
+    "messageCode": {
+      "@type": "messageCode",
+      "name": "DEVICE_UNREACHABLE",
+      "category": "WARNING"
+    },
+    "sourceType": "DEVICE",
+    "sourceId": "hdm:homeconnect:DEMO-3DE30B759158",
+    "sourceName": "Waschmaschine 1",
+    "location": "Küche",
+    "flags": [
+      "USER_ACTION_REQUIRED"
+    ],
+    "arguments": {}
+  }
+]
