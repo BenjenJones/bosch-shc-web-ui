@@ -172,6 +172,11 @@ for (const s of realServices) {
 }
 const GEN = {
   ShutterControl: (d) => ({ '@type': 'shutterControlState', level: Math.round(h01(d.id + 'sl') * 100) / 100, operationState: 'STOPPED' }),
+  BinarySwitch: (d) => ({ '@type': 'binarySwitchState', on: h01(d.id + 'bs') > 0.5 }),
+  MultiLevelSwitch: (d) => ({ '@type': 'multiLevelSwitchState', level: Math.round(h01(d.id + 'ml') * 100) }),
+  // rgb is a signed 32-bit ARGB int (full alpha); pick a warm-ish demo colour.
+  HSBColorActuator: (d) => ({ '@type': 'colorState', rgb: (0xff << 24) | (255 << 16) | (Math.round(120 + h01(d.id + 'co') * 100) << 8) | 40 }),
+  ImpulseSwitch: () => ({ '@type': 'impulseSwitchState', impulseState: false, instantOfLastImpulse: '', impulseLength: 6 }),
   AirQualityLevel: (d) => ({
     '@type': 'airQualityLevelState', combinedRating: 'GOOD',
     temperature: r1(20 + h01(d.id + 'aq') * 3), temperatureRating: 'GOOD',

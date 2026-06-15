@@ -287,6 +287,9 @@ function renderDeviceList() {
 
   $$('#device-list [data-action]').forEach(el => el.addEventListener('click', onDeviceAction));
   $$('#device-list [data-temp-set]').forEach(el => el.addEventListener('change', onTemperatureChange));
+  $$('#device-list [data-shutter-level]').forEach(el => el.addEventListener('change', onShutterLevelChange));
+  $$('#device-list [data-dimmer-level]').forEach(el => el.addEventListener('change', onDimmerLevelChange));
+  $$('#device-list [data-color-set]').forEach(el => el.addEventListener('change', onColorChange));
   // Remember the open/closed state on user interaction (not while filtering)
   $$('#device-list details.room').forEach(el => el.addEventListener('toggle', () => {
     if (state.deviceFilter.trim() || state.statusFilter || state.typeFilter.size) return;
@@ -541,6 +544,11 @@ function renderDeviceCard(device) {
   const humidity = services.find(s => s.id === 'HumidityLevel');
   const battery  = services.find(s => s.id === 'BatteryLevel');
   const shutter  = services.find(s => s.id === 'ShutterContact');
+  const shutterCtl = services.find(s => s.id === 'ShutterControl');
+  const binary   = services.find(s => s.id === 'BinarySwitch');   // generic on/off (Hue, micromodule light/switch)
+  const dimmer   = services.find(s => s.id === 'MultiLevelSwitch'); // brightness 0–100
+  const color    = services.find(s => s.id === 'HSBColorActuator'); // rgb colour
+  const impulse  = services.find(s => s.id === 'ImpulseSwitch');  // momentary relay trigger
   const valve    = services.find(s => s.id === 'ValveTappet');
   const energy   = services.find(s => s.id === 'PowerMeter');
   const silentMode = services.find(s => s.id === 'SilentMode');
@@ -562,6 +570,54 @@ function renderDeviceCard(device) {
         ${on ? 'bg-amber-100 text-amber-900 hover:bg-amber-200'
              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
         ${t(on ? 'devices.turnOff' : 'devices.turnOn')}
+      </button>`;
+  }
+  // BinarySwitch: generic on/off used by Hue lights and micromodule light/switch
+  // actuators (these have no PowerSwitch). Skip if a PowerSwitch already drew a
+  // toggle to avoid two on/off buttons on the same card.
+  if (binary && !power) {
+    const on = binary.state?.on === true;
+    body += `
+      <button data-action="toggle-binary" data-device="${device.id}" data-on="${on}"
+        class="w-full mt-2 px-3 py-2 rounded-md font-medium text-sm
+        ${on ? 'bg-amber-100 text-amber-900 hover:bg-amber-200'
+             : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}">
+        ${t(on ? 'devices.turnOff' : 'devices.turnOn')}
+      </button>`;
+  }
+  // MultiLevelSwitch: dimmable brightness 0–100 %.
+  if (dimmer?.state) {
+    const lvl = Math.round(dimmer.state.level ?? 0);
+    body += `
+      <div class="mt-2">
+        <div class="flex items-baseline justify-between">
+          <span class="text-sm text-slate-600">${t('devices.brightness')}</span>
+          <span class="text-xs text-slate-500 tabular-nums">${lvl}%</span>
+        </div>
+        <input type="range" min="0" max="100" step="1" value="${lvl}"
+          data-dimmer-level data-device="${device.id}"
+          class="w-full mt-1 accent-amber-500" />
+      </div>`;
+  }
+  // HSBColorActuator: rgb is a signed 32-bit ARGB int; mask low 24 bits for the
+  // colour input, re-add full alpha when writing back.
+  if (color?.state && typeof color.state.rgb === 'number') {
+    const hex = '#' + (color.state.rgb & 0xFFFFFF).toString(16).padStart(6, '0');
+    body += `
+      <div class="mt-2 flex items-center gap-2">
+        <span class="text-sm text-slate-600">${t('devices.color')}</span>
+        <input type="color" value="${hex}"
+          data-color-set data-device="${device.id}"
+          class="h-7 w-10 rounded border border-slate-300 cursor-pointer bg-white" />
+      </div>`;
+  }
+  // ImpulseSwitch: momentary relay (e.g. garage door). Single trigger button.
+  if (impulse) {
+    body += `
+      <button data-action="impulse" data-device="${device.id}"
+        class="w-full mt-2 px-3 py-2 rounded-md font-medium text-sm
+        bg-slate-100 text-slate-700 hover:bg-slate-200">
+        ${t('devices.trigger')}
       </button>`;
   }
   // Inline camera toggles (PrivacyMode, CameraNotification, CameraLight),
@@ -611,6 +667,36 @@ function renderDeviceCard(device) {
       <span class="w-2 h-2 rounded-full ${open ? 'bg-rose-500' : 'bg-emerald-500'}"></span>
       ${t(open ? 'devices.opened' : 'devices.closed')}
     </div>`;
+  }
+  // Motorised shutter / blinds (ShutterControl). level is 0.0=closed .. 1.0=open.
+  if (shutterCtl?.state) {
+    const level = shutterCtl.state.level ?? 0;
+    const pct = Math.round(level * 100);
+    const op = shutterCtl.state.operationState; // STOPPED | OPENING | CLOSING
+    const opTxt = op === 'OPENING' ? t('devices.shutterOpening')
+                : op === 'CLOSING' ? t('devices.shutterClosing') : '';
+    body += `
+      <div class="mt-2">
+        <div class="flex items-baseline gap-2">
+          <span class="text-sm text-slate-600">${t('devices.shutterPosition', pct)}</span>
+          ${opTxt ? `<span class="text-xs text-sky-700 inline-flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>${opTxt}</span>` : ''}
+        </div>
+        <input type="range" min="0" max="100" step="1" value="${pct}"
+          data-shutter-level data-device="${device.id}"
+          class="w-full mt-1 accent-sky-600" />
+        <div class="mt-1 grid grid-cols-3 gap-1">
+          <button data-action="shutter-set" data-device="${device.id}" data-level="1"
+            class="px-2 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200">
+            ${t('devices.shutterOpen')}</button>
+          <button data-action="shutter-stop" data-device="${device.id}"
+            class="px-2 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200">
+            ${t('devices.shutterStop')}</button>
+          <button data-action="shutter-set" data-device="${device.id}" data-level="0"
+            class="px-2 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200">
+            ${t('devices.shutterClose')}</button>
+        </div>
+      </div>`;
   }
   if (energy?.state) {
     body += `<div class="mt-2 text-xs text-slate-500">
@@ -732,6 +818,56 @@ async function onDeviceAction(e) {
       if (svc) svc.state = { ...(svc.state || {}), '@type': def.type, [def.field]: newValue };
       renderDevices();
     } catch (err) { alert(t('error.generic', err.message)); }
+  } else if (action === 'shutter-set') {
+    const level = parseFloat(btn.dataset.level); // 1=open, 0=closed
+    btn.classList.add('pulse');
+    try {
+      await api(`/api/devices/${encodeURIComponent(device)}/services/ShutterControl/state`, {
+        method: 'PUT',
+        body: { '@type': 'shutterControlState', level },
+      });
+      const svc = serviceOf(device, 'ShutterControl');
+      if (svc) svc.state = { ...(svc.state || {}), '@type': 'shutterControlState', level };
+      renderDevices();
+    } catch (err) { alert(t('error.generic', err.message)); }
+  } else if (action === 'toggle-binary') {
+    const on = !(btn.dataset.on === 'true');
+    btn.classList.add('pulse');
+    try {
+      await api(`/api/devices/${encodeURIComponent(device)}/services/BinarySwitch/state`, {
+        method: 'PUT',
+        body: { '@type': 'binarySwitchState', on },
+      });
+      const svc = serviceOf(device, 'BinarySwitch');
+      if (svc) svc.state = { ...(svc.state || {}), '@type': 'binarySwitchState', on };
+      renderDevices();
+    } catch (err) { alert(t('error.generic', err.message)); }
+  } else if (action === 'impulse') {
+    btn.classList.add('pulse');
+    try {
+      await api(`/api/devices/${encodeURIComponent(device)}/services/ImpulseSwitch/state`, {
+        method: 'PUT',
+        body: {
+          '@type': 'impulseSwitchState',
+          impulseState: true,
+          instantOfLastImpulse: new Date().toISOString(),
+          impulseLength: serviceOf(device, 'ImpulseSwitch')?.state?.impulseLength ?? 6,
+        },
+      });
+    } catch (err) { alert(t('error.generic', err.message)); }
+  } else if (action === 'shutter-stop') {
+    // No documented stop endpoint; the SHC accepts a partial PUT setting
+    // operationState=STOPPED (same as the Bosch app / boschshcpy).
+    btn.classList.add('pulse');
+    try {
+      await api(`/api/devices/${encodeURIComponent(device)}/services/ShutterControl/state`, {
+        method: 'PUT',
+        body: { '@type': 'shutterControlState', operationState: 'STOPPED' },
+      });
+      const svc = serviceOf(device, 'ShutterControl');
+      if (svc) svc.state = { ...(svc.state || {}), operationState: 'STOPPED' };
+      renderDevices();
+    } catch (err) { alert(t('error.generic', err.message)); }
   }
 }
 
@@ -756,5 +892,67 @@ function onTemperatureChange(e) {
   }, 1000));
 }
 
+// Debounce shutter level PUTs per device: dragging the slider fires many
+// `change` events. Wait until settled (~700 ms) and send only the latest level.
+const shutterDebounce = new Map();
 
-export { DEVICE_CATEGORIES, deviceCategory, deviceSortRank, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange };
+function onShutterLevelChange(e) {
+  const deviceId = e.currentTarget.dataset.device;
+  const level = parseInt(e.currentTarget.value, 10) / 100; // 0.0=closed .. 1.0=open
+  clearTimeout(shutterDebounce.get(deviceId));
+  shutterDebounce.set(deviceId, setTimeout(async () => {
+    shutterDebounce.delete(deviceId);
+    try {
+      await api(`/api/devices/${encodeURIComponent(deviceId)}/services/ShutterControl/state`, {
+        method: 'PUT',
+        body: { '@type': 'shutterControlState', level },
+      });
+      const svc = serviceOf(deviceId, 'ShutterControl');
+      if (svc) svc.state = { ...(svc.state || {}), '@type': 'shutterControlState', level };
+    } catch (err) { alert(t('error.generic', err.message)); }
+  }, 700));
+}
+
+// Debounce dimmer (MultiLevelSwitch) PUTs per device while the slider is dragged.
+const dimmerDebounce = new Map();
+
+function onDimmerLevelChange(e) {
+  const deviceId = e.currentTarget.dataset.device;
+  const level = parseInt(e.currentTarget.value, 10); // 0–100
+  clearTimeout(dimmerDebounce.get(deviceId));
+  dimmerDebounce.set(deviceId, setTimeout(async () => {
+    dimmerDebounce.delete(deviceId);
+    try {
+      await api(`/api/devices/${encodeURIComponent(deviceId)}/services/MultiLevelSwitch/state`, {
+        method: 'PUT',
+        body: { '@type': 'multiLevelSwitchState', level },
+      });
+      const svc = serviceOf(deviceId, 'MultiLevelSwitch');
+      if (svc) svc.state = { ...(svc.state || {}), '@type': 'multiLevelSwitchState', level };
+    } catch (err) { alert(t('error.generic', err.message)); }
+  }, 700));
+}
+
+// HSBColorActuator: convert the colour-input hex to Bosch's signed 32-bit ARGB
+// int (full alpha) before writing. The `|` operator already yields a signed int.
+function onColorChange(e) {
+  const deviceId = e.currentTarget.dataset.device;
+  const hex = e.currentTarget.value.replace('#', '');
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const rgb = (0xff << 24) | (r << 16) | (g << 8) | b; // signed 32-bit
+  (async () => {
+    try {
+      await api(`/api/devices/${encodeURIComponent(deviceId)}/services/HSBColorActuator/state`, {
+        method: 'PUT',
+        body: { '@type': 'colorState', rgb },
+      });
+      const svc = serviceOf(deviceId, 'HSBColorActuator');
+      if (svc) svc.state = { ...(svc.state || {}), '@type': 'colorState', rgb };
+    } catch (err) { alert(t('error.generic', err.message)); }
+  })();
+}
+
+
+export { DEVICE_CATEGORIES, deviceCategory, deviceSortRank, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange, onShutterLevelChange, onDimmerLevelChange, onColorChange };

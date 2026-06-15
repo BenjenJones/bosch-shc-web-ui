@@ -15,19 +15,31 @@
     "@type": "DeviceServiceData",
     "id": "MultiLevelSwitch",
     "deviceId": "hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9",
-    "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/MultiLevelSwitch"
+    "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/MultiLevelSwitch",
+    "state": {
+      "@type": "multiLevelSwitchState",
+      "level": 72
+    }
   },
   {
     "@type": "DeviceServiceData",
     "id": "HSBColorActuator",
     "deviceId": "hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9",
-    "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/HSBColorActuator"
+    "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/HSBColorActuator",
+    "state": {
+      "@type": "colorState",
+      "rgb": -19416
+    }
   },
   {
     "@type": "DeviceServiceData",
     "id": "BinarySwitch",
     "deviceId": "hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9",
-    "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/BinarySwitch"
+    "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/BinarySwitch",
+    "state": {
+      "@type": "binarySwitchState",
+      "on": true
+    }
   },
   {
     "@type": "DeviceServiceData",
@@ -519,7 +531,13 @@
     "@type": "DeviceServiceData",
     "id": "ImpulseSwitch",
     "deviceId": "hdm:ZigBee:bc5433f21f5d2daa",
-    "path": "/devices/hdm:ZigBee:bc5433f21f5d2daa/services/ImpulseSwitch"
+    "path": "/devices/hdm:ZigBee:bc5433f21f5d2daa/services/ImpulseSwitch",
+    "state": {
+      "@type": "impulseSwitchState",
+      "impulseState": false,
+      "instantOfLastImpulse": "",
+      "impulseLength": 6
+    }
   },
   {
     "@type": "DeviceServiceData",

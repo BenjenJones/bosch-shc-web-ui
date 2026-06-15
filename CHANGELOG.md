@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-15
+
+- (Dashboard) Control motorised shutters/blinds from the device card — position slider (`ShutterControl` level), Open/Stop/Close buttons and an Opening/Closing status badge.
+- (Dashboard) Control lights from the device card — on/off for `BinarySwitch` devices (e.g. Hue, micromodule light/switch that expose no `PowerSwitch`), a brightness slider (`MultiLevelSwitch`) and a colour picker (`HSBColorActuator`).
+- (Dashboard) Trigger momentary relays (`ImpulseSwitch`, e.g. garage door) with a single button.
+- (Demo) Seed light/switch states (brightness, colour, on/off, impulse) so the new controls are testable; add matching `build-dataset.js` fallback generators.
+
 ## 2026-06-12
 
 - (Demo) Add demo mode — `npm run demo` runs a self-contained demo SHC that mimics the controller's `/smarthome/*` HTTP API; the normal UI server connects to it via `shcProtocol: 'http'`, so `server.js` carries no demo-specific code. Separate port (3001, override `BOSCH_SHC_DEMO_PORT`); no SHC, certs or login required, runs alongside a real instance.
