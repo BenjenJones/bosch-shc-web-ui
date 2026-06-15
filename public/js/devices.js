@@ -1,5 +1,25 @@
 import { state, $, $$, t, api, escapeHtml, roomName, deviceName, serviceOf, deviceUpdateInfo, saveCollapsedRooms } from './core.js';
 import { severityFromMessage, messageTitle } from './messages.js';
+import { showModal, hideModal } from './modals.js';
+
+// Service ids that the per-device settings dialog (⚙) can configure.
+const CONFIG_SVC_IDS = ['Thermostat', 'TemperatureOffset', 'PowerSwitchConfiguration', 'VibrationSensor', 'Bypass', 'KeypadTrigger'];
+// Radiator thermostats (TRV) vs. room thermostats (RT). When a TRV shares a
+// room with an RT, the RT drives the temperature, so the TRV's own offset is
+// meaningless and must not be offered.
+const TRV_MODELS = ['TRV', 'TRV_GEN2'];
+const ROOM_THERMOSTAT_MODELS = ['THB', 'RTH', 'RTH2', 'RTH2_BAT', 'RT2'];
+// True if the device exposes at least one configurable service with state.
+// `Thermostat` only counts as child-lock; `KeypadTrigger` needs scenarios to map.
+function hasSettings(services) {
+  return CONFIG_SVC_IDS.some(id => {
+    const s = services.find(x => x.id === id);
+    if (!s?.state) return false;
+    if (id === 'Thermostat') return s.state['@type'] === 'childLockState';
+    if (id === 'KeypadTrigger') return s.state.switchType === 'ScenarioTrigger' && state.scenarios.length > 0;
+    return true;
+  });
+}
 
 // =========================================================================
 //  Tab: Devices
@@ -766,6 +786,9 @@ function renderDeviceCard(device) {
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
           ${cqHtml}
+          ${hasSettings(services) ? `<button data-action="settings" data-device="${device.id}"
+            title="${t('settings.title')}" aria-label="${t('settings.title')}"
+            class="text-slate-400 hover:text-slate-700 leading-none text-base px-0.5">⚙</button>` : ''}
           <span class="text-[10px] px-1.5 py-0.5 rounded
             ${device.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700'
                                             : 'bg-slate-100 text-slate-500'}">${device.status||''}</span>
@@ -779,6 +802,10 @@ function renderDeviceCard(device) {
 async function onDeviceAction(e) {
   const btn = e.currentTarget;
   const { action, device } = btn.dataset;
+  if (action === 'settings') {
+    openDeviceSettings(device);
+    return;
+  }
   if (action === 'toggle-power') {
     const newState = btn.dataset.on === 'true' ? 'OFF' : 'ON';
     btn.classList.add('pulse');
@@ -871,6 +898,146 @@ async function onDeviceAction(e) {
   }
 }
 
+// Per-device settings dialog (⚙). Builds a form from whichever configurable
+// services the device exposes and writes each change straight to the SHC via
+// `PUT /services/{svc}/state` (mostly undocumented — see [[project_shc_undocumented_crud]]).
+function openDeviceSettings(deviceId) {
+  const device = state.devices.find(d => d.id === deviceId);
+  if (!device) return;
+  const svc = id => serviceOf(deviceId, id);
+
+  const row = (label, control) => `
+    <label class="flex items-center justify-between gap-3 py-2 border-b border-slate-100 last:border-0">
+      <span class="text-sm text-slate-700">${label}</span>
+      <span class="shrink-0">${control}</span>
+    </label>`;
+  const checkbox = (set, on) =>
+    `<input type="checkbox" data-set="${set}" ${on ? 'checked' : ''} class="w-4 h-4 accent-blue-600 cursor-pointer">`;
+  const select = (set, options) =>
+    `<select data-set="${set}" class="border border-slate-300 rounded-md px-2 py-1 text-sm">${options}</select>`;
+
+  const sections = [];
+
+  const thermo = svc('Thermostat');
+  if (thermo?.state?.['@type'] === 'childLockState') {
+    sections.push(row(t('settings.childLock'), checkbox('childLock', thermo.state.childLock === 'ON')));
+  }
+
+  const off = svc('TemperatureOffset');
+  const model = (device.deviceModel || '').toUpperCase();
+  const trvUnderRoomThermostat = TRV_MODELS.includes(model)
+    && state.devices.some(d => d.roomId === device.roomId
+        && ROOM_THERMOSTAT_MODELS.includes((d.deviceModel || '').toUpperCase()));
+  if (off?.state && !trvUnderRoomThermostat) {
+    const { offset = 0, minOffset = -3.5, maxOffset = 3.5, stepSize = 0.1 } = off.state;
+    sections.push(row(t('settings.tempOffset'),
+      `<input type="number" data-set="tempOffset" value="${offset}" min="${minOffset}" max="${maxOffset}"
+         step="${stepSize}" class="w-20 text-right border border-slate-300 rounded-md px-2 py-1 text-sm tabular-nums"> °C`));
+  }
+
+  const psc = svc('PowerSwitchConfiguration');
+  if (psc?.state) {
+    const opts = (psc.state.supportedStatesAfterPowerOutage || ['LAST_STATE', 'ON', 'OFF'])
+      .map(v => `<option value="${v}"${v === psc.state.stateAfterPowerOutage ? ' selected' : ''}>${t('settings.powerOutage.' + v)}</option>`).join('');
+    sections.push(row(t('settings.powerOutage'), select('powerOutage', opts)));
+  }
+
+  const vib = svc('VibrationSensor');
+  if (vib?.state) {
+    sections.push(row(t('settings.vibEnabled'), checkbox('vibEnabled', vib.state.enabled === true)));
+    const opts = ['HIGH', 'MEDIUM', 'LOW']
+      .map(v => `<option value="${v}"${v === vib.state.sensitivity ? ' selected' : ''}>${t('settings.sensitivity.' + v)}</option>`).join('');
+    sections.push(row(t('settings.vibSensitivity'), select('vibSensitivity', opts)));
+  }
+
+  const byp = svc('Bypass');
+  if (byp?.state) {
+    const cfg = byp.state.configuration || {};
+    sections.push(row(t('settings.bypassEnabled'), checkbox('bypassEnabled', cfg.enabled === true)));
+    sections.push(row(t('settings.bypassTimeout'),
+      `<input type="number" data-set="bypassTimeout" value="${cfg.timeout ?? 5}" min="0"
+         class="w-20 text-right border border-slate-300 rounded-md px-2 py-1 text-sm tabular-nums"> s`));
+  }
+
+  // WRC2 universal switch: map each button press to a scenario. keyCode is
+  // inverted vs. position — keyCode 2 = top button (Bosch app "Button 1"),
+  // keyCode 1 = bottom; list top first. Writing scenarioIdAssociations is
+  // undocumented but accepted (see [[project_keypadtrigger_writable]]).
+  const keypad = svc('KeypadTrigger');
+  if (keypad?.state?.switchType === 'ScenarioTrigger' && state.scenarios.length) {
+    const assoc = keypad.state.scenarioIdAssociations || {};
+    const opts = selId =>
+      `<option value="">${t('devices.keypadNone')}</option>` +
+      state.scenarios.map(s => `<option value="${s.id}"${s.id === selId ? ' selected' : ''}>${escapeHtml(s.name)}</option>`).join('');
+    const rows = [
+      ['2_SHORT', 'devices.keypadBtnTopShort'],
+      ['2_LONG',  'devices.keypadBtnTopLong'],
+      ['1_SHORT', 'devices.keypadBtnBottomShort'],
+      ['1_LONG',  'devices.keypadBtnBottomLong'],
+    ];
+    sections.push(`
+      <div class="py-2 border-b border-slate-100 last:border-0">
+        <div class="text-sm text-slate-700 mb-1">${t('devices.keypadAssign')}</div>
+        ${rows.map(([key, lbl]) => `
+          <label class="flex items-center gap-2 mt-1">
+            <span class="w-28 shrink-0 text-xs text-slate-500">${t(lbl)}</span>
+            <select data-keypad-trigger data-device="${deviceId}" data-key="${key}"
+              class="flex-1 min-w-0 border border-slate-300 rounded-md px-2 py-1 text-xs">${opts(assoc[key])}</select>
+          </label>`).join('')}
+      </div>`);
+  }
+
+  if (!sections.length) return;
+
+  showModal(`
+    <h4 class="font-medium mb-1 truncate">${t('settings.title')}</h4>
+    <p class="text-xs text-slate-500 mb-2 truncate">${escapeHtml(device.name || device.id)}</p>
+    <div>${sections.join('')}</div>
+    <div class="mt-4 flex justify-end">
+      <button id="m-close" class="px-3 py-1.5 text-sm border border-slate-300 rounded-md">${t('modal.close')}</button>
+    </div>`);
+  $('#m-close').onclick = hideModal;
+
+  // Write a state change and mirror it locally so the card reflects it on close.
+  const put = async (svcId, body, el) => {
+    try {
+      await api(`/api/devices/${encodeURIComponent(deviceId)}/services/${svcId}/state`, { method: 'PUT', body });
+      const s = serviceOf(deviceId, svcId);
+      if (s) s.state = { ...(s.state || {}), ...body };
+      renderDevices();
+    } catch (err) {
+      alert(t('error.generic', err.message));
+      if (el) openDeviceSettings(deviceId); // re-open with the true state on failure
+    }
+  };
+
+  const card = $('#modal-card');
+  card.querySelector('[data-set="childLock"]')?.addEventListener('change', e =>
+    put('Thermostat', { '@type': 'childLockState', childLock: e.target.checked ? 'ON' : 'OFF' }, e.target));
+  card.querySelector('[data-set="tempOffset"]')?.addEventListener('change', e =>
+    put('TemperatureOffset', { '@type': 'temperatureOffsetState', offset: parseFloat(e.target.value) }, e.target));
+  card.querySelector('[data-set="powerOutage"]')?.addEventListener('change', e =>
+    put('PowerSwitchConfiguration', { '@type': 'powerSwitchConfigurationState', stateAfterPowerOutage: e.target.value }, e.target));
+  const putVib = () => put('VibrationSensor', {
+    '@type': 'vibrationSensorState',
+    enabled: card.querySelector('[data-set="vibEnabled"]').checked,
+    sensitivity: card.querySelector('[data-set="vibSensitivity"]').value,
+  });
+  card.querySelector('[data-set="vibEnabled"]')?.addEventListener('change', putVib);
+  card.querySelector('[data-set="vibSensitivity"]')?.addEventListener('change', putVib);
+  const putBypass = () => put('Bypass', {
+    '@type': 'bypassState',
+    configuration: {
+      ...(svc('Bypass')?.state?.configuration || {}),
+      enabled: card.querySelector('[data-set="bypassEnabled"]').checked,
+      timeout: parseInt(card.querySelector('[data-set="bypassTimeout"]').value, 10),
+    },
+  });
+  card.querySelector('[data-set="bypassEnabled"]')?.addEventListener('change', putBypass);
+  card.querySelector('[data-set="bypassTimeout"]')?.addEventListener('change', putBypass);
+  card.querySelectorAll('[data-keypad-trigger]').forEach(el => el.addEventListener('change', onKeypadScenarioChange));
+}
+
 // Debounce setpoint PUTs per device: clicking the number-input arrows fires a
 // `change` event each step, which would flood the SHC with one request per
 // click. Wait until the user has settled on a value (~700 ms) and send only the
@@ -933,6 +1100,28 @@ function onDimmerLevelChange(e) {
   }, 700));
 }
 
+// KeypadTrigger (WRC2): assign/clear the scenario bound to one button event.
+// Sends the full state back with a merged scenarioIdAssociations map; an empty
+// selection removes that button's mapping. PUT is undocumented (see [[project_shc_undocumented_crud]]).
+async function onKeypadScenarioChange(e) {
+  const el = e.currentTarget;
+  const deviceId = el.dataset.device;
+  const key = el.dataset.key;
+  const value = el.value; // '' = no scenario
+  const svc = serviceOf(deviceId, 'KeypadTrigger');
+  if (!svc) return;
+  const assoc = { ...(svc.state?.scenarioIdAssociations || {}) };
+  if (value) assoc[key] = value; else delete assoc[key];
+  const newState = { ...(svc.state || {}), '@type': 'keypadTriggerState', scenarioIdAssociations: assoc };
+  try {
+    await api(`/api/devices/${encodeURIComponent(deviceId)}/services/KeypadTrigger/state`, {
+      method: 'PUT',
+      body: newState,
+    });
+    svc.state = newState;
+  } catch (err) { alert(t('error.generic', err.message)); }
+}
+
 // HSBColorActuator: convert the colour-input hex to Bosch's signed 32-bit ARGB
 // int (full alpha) before writing. The `|` operator already yields a signed int.
 function onColorChange(e) {
@@ -955,4 +1144,4 @@ function onColorChange(e) {
 }
 
 
-export { DEVICE_CATEGORIES, deviceCategory, deviceSortRank, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange, onShutterLevelChange, onDimmerLevelChange, onColorChange };
+export { DEVICE_CATEGORIES, deviceCategory, deviceSortRank, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange, onShutterLevelChange, onDimmerLevelChange, onColorChange, onKeypadScenarioChange };

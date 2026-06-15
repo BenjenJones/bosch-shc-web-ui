@@ -85,6 +85,39 @@ details.dropdown>summary::-webkit-details-marker {
     display: none;
 }
 
+/* Admin accordion sections */
+details[data-section]>summary::-webkit-details-marker {
+    display: none;
+}
+
+details[data-section]>summary .chevron {
+    display: inline-block;
+}
+
+details[data-section][open]>summary .chevron {
+    transform: rotate(180deg);
+}
+
+details[data-devcat]>summary::-webkit-details-marker {
+    display: none;
+}
+
+details[data-devcat]>summary .chevron {
+    display: inline-block;
+    transition: transform .15s;
+}
+
+details[data-devcat][open]>summary .chevron {
+    transform: rotate(180deg);
+}
+
+/* The accordion sections are full-width; suppress the card hover-lift so they
+   don't jump when the cursor passes over them. */
+details[data-section].card:hover {
+    transform: none;
+    box-shadow: none;
+}
+
 /* =========================================================================
    Dark theme — overrides the Tailwind utility classes used in the markup.
    Activated by setting [data-theme="dark"] on <html>.

@@ -958,10 +958,9 @@
     "state": {
       "@type": "keypadTriggerState",
       "scenarioIdAssociations": {
-        "2_SHORT": "46073f5b-656f-4920-80c9-04dc9bf498e1",
-        "1_LONG": "4b9de1a4-2331-489b-8520-f3721ac0227f",
-        "2_LONG": "1fd2088a-d9e3-4c0a-88c4-2d2aff51fbd8",
-        "1_SHORT": "4b9de1a4-2331-489b-8520-f3721ac0227f"
+        "1_SHORT": "b510ceed-0fe5-45dd-85c6-44ad41c8007c",
+        "1_LONG": "425cf9f4-6f24-4d91-88b4-1c2dafd28657",
+        "2_SHORT": "46073f5b-656f-4920-80c9-04dc9bf498e1"
       },
       "switchType": "ScenarioTrigger",
       "idsToTrigger": []

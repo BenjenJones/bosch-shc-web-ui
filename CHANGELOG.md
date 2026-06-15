@@ -5,7 +5,13 @@
 - (Dashboard) Control motorised shutters/blinds from the device card — position slider (`ShutterControl` level), Open/Stop/Close buttons and an Opening/Closing status badge.
 - (Dashboard) Control lights from the device card — on/off for `BinarySwitch` devices (e.g. Hue, micromodule light/switch that expose no `PowerSwitch`), a brightness slider (`MultiLevelSwitch`) and a colour picker (`HSBColorActuator`).
 - (Dashboard) Trigger momentary relays (`ImpulseSwitch`, e.g. garage door) with a single button.
-- (Demo) Seed light/switch states (brightness, colour, on/off, impulse) so the new controls are testable; add matching `build-dataset.js` fallback generators.
+- (Dashboard) Per-device settings dialog (⚙ on the card) — child lock (`Thermostat`), temperature offset (`TemperatureOffset`), state after power outage (`PowerSwitchConfiguration`), vibration sensor enable/sensitivity (`VibrationSensor`), pause/bypass (`Bypass`) and universal-switch (WRC2) button→scenario mapping (`KeypadTrigger`, upper/lower × short/long). Shown only for devices that expose the matching service.
+- (Admin) Assign a device to a room from the device list (`roomId` dropdown).
+- (Admin) Stack the sections into a full-width, collapsible accordion (open/closed state persisted) so the device list has room to breathe.
+- (Admin) Group managed devices by type; the type groups start collapsed and behave as an exclusive accordion (opening one closes the others).
+- (Admin) Drop the virtual `ROOM_CLIMATE_CONTROL` meta-device from the managed-devices list — it only models room temperature control via the room thermostat.
+- (Dashboard) Hide the temperature-offset setting on a radiator thermostat (TRV) when a room thermostat shares its room — the room thermostat drives the temperature there. Offset is shown in °C.
+- (Demo) Seed states so the new controls/settings are testable — light/switch (brightness, colour, on/off, impulse), WRC2 button→scenario mappings, and config services (child lock, temperature offset, power-outage state, vibration, bypass); add matching `build-dataset.js` fallback generators. Co-locate the demo room thermostat with the radiator thermostat to exercise the offset-hiding rule.
 
 ## 2026-06-12
 
