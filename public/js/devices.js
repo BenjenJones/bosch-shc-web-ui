@@ -36,7 +36,7 @@ const DEVICE_TYPE_ORDER = [
   ['BSM', 'MICROMODULE_LIGHT_CONTROL', 'LIGHT_CONTROL_2',
    'HUE_LIGHT', 'HUE_LIGHT_ROOM_CONTROL',
    'LEDVANCE_LIGHT', 'SMART_BULB'],                                 // light
-  ['PSM', 'PLUG', 'PLUG_COMPACT'],                                  // smart plug
+  ['PSM', 'PLUG', 'PLUG_COMPACT', 'PLUG_COMPACT_DUAL'],             // smart plug
   ['MICROMODULE_RELAY'],                                            // relay (impulse)
   ['SD', 'SMOKE_DETECTOR', 'SMOKE_DETECTOR_2', 'TWINGUARD'],        // smoke detector
   ['MD', 'MOTION_DETECTOR'],                                        // motion detector
@@ -61,7 +61,7 @@ const DEVICE_CATEGORIES = [
   { id: 'contact',    icon: 'window-closed',    models: ['SWD','SWD2'], prefixes: ['SWD', 'SWD2'] },
   { id: 'shutter',    icon: 'window-shutter',   models: ['BBL','BBL_2','MICROMODULE_SHUTTER','SHUTTER_CONTROL'] },
   { id: 'light',      icon: 'lightbulb-on',     models: ['BSM','MICROMODULE_LIGHT_CONTROL','LIGHT_CONTROL_2','HUE_LIGHT','HUE_LIGHT_ROOM_CONTROL','LEDVANCE_LIGHT','SMART_BULB'] },
-  { id: 'plug',       icon: 'power-plug',       models: ['PSM','PLUG','PLUG_COMPACT'] },
+  { id: 'plug',       icon: 'power-plug',       models: ['PSM','PLUG','PLUG_COMPACT','PLUG_COMPACT_DUAL'] },
   { id: 'relay',      icon: 'electric-switch',  models: ['MICROMODULE_RELAY'] },
   { id: 'smoke',      icon: 'smoke-detector',   models: ['SD','SMOKE_DETECTOR','SMOKE_DETECTOR_2','TWINGUARD'] },
   { id: 'motion',     icon: 'motion-sensor',    models: ['MD','MOTION_DETECTOR'] },
