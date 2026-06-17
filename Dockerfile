@@ -2,8 +2,13 @@
 # ---------------------------------------------------------------------------
 # Build stage: full deps (incl. tailwindcss devDep) to compile the CSS that
 # is gitignored and therefore not shipped in the repo.
+# Pinned to $BUILDPLATFORM (the runner's native arch) so multi-arch builds
+# don't run `npm ci` under QEMU — the dev deps pull arch-specific native
+# binaries (esbuild/oxc/lightningcss) that fail to install under arm emulation.
+# The compiled CSS is plain text and arch-independent, so building it once on
+# the host and copying it into each per-arch runtime is correct.
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS build
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -14,7 +19,7 @@ RUN npm run build:css
 # Runtime stage: production deps only + openssl (needed by setup.js to
 # generate the client certificate during pairing).
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS runtime
+FROM node:22-alpine AS runtime
 RUN apk add --no-cache openssl
 WORKDIR /app
 ENV NODE_ENV=production
