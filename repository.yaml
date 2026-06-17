@@ -1,0 +1,7 @@
+# Marks this GitHub repo as a Home Assistant add-on repository so it can be
+# added via Settings → Add-ons → Add-on Store → ⋮ → Repositories with the URL
+#   https://github.com/BenjenJones/bosch-shc-web-ui
+# Each add-on lives in its own subdirectory (here: bosch-shc-ui/).
+name: Bosch SHC Web UI
+url: https://github.com/BenjenJones/bosch-shc-web-ui
+maintainer: BenjenJones

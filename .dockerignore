@@ -11,12 +11,16 @@ certs/
 
 # Local-only / tooling
 .git
+.github/
 .gitignore
 .claude
 .DS_Store
 autostart/
 examples/
-addon/
+
+# HA add-on repository metadata — not part of the app image
+repository.yaml
+bosch-shc-ui/
 
 # Tests & specs not needed at runtime
 test/

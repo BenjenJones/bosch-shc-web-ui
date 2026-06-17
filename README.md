@@ -130,13 +130,24 @@ The SHC is reached over the LAN by its IP, so the default bridge network is enou
 
 ### Home Assistant (HASS OS) add-on
 
-The repo root doubles as a **local Home Assistant add-on** (`config.yaml` + the `Dockerfile` above):
+This repo is a **Home Assistant add-on repository** — anyone can add it by URL and install the add-on; no local build on the HA host. The add-on (`bosch-shc-ui/config.yaml`) pulls a prebuilt multi-arch image from GHCR; the image is built from the root `Dockerfile` by `.github/workflows/build-addon.yml`.
 
-1. Copy the whole project folder to `/addons/bosch-shc-ui/` on the HA host (via the Samba or SSH add-on, or `/addons` share).
-2. **Settings → Add-ons → Add-on Store → ⋮ → Check for updates**, then open **Local add-ons → Bosch SHC Web UI → Install**.
-3. **Start** the add-on, then open `http://<home-assistant-ip>:3000` and run the pairing wizard.
+**Publishing a version (maintainer):** tag a release so the workflow builds and pushes the image, then make the GHCR package public once:
 
-The Supervisor provides and persists `/data` automatically, so pairing survives add-on restarts and updates. The add-on builds for `aarch64` (Raspberry Pi), `amd64` and `armv7`.
+```bash
+git tag v0.0.1 && git push origin v0.0.1
+```
+
+This publishes `ghcr.io/benjenjones/bosch-shc-web-ui:0.0.1` for `amd64`, `aarch64` (Raspberry Pi) and `armv7`. The git tag (`v0.0.1`) must match the `version` in `bosch-shc-ui/config.yaml`. The first time, set the package visibility to **Public** under the repo's *Packages* so users can pull without authentication.
+
+**Installing (users):**
+
+1. **Settings → Add-ons → Add-on Store → ⋮ → Repositories** and add
+   `https://github.com/BenjenJones/bosch-shc-web-ui`.
+2. Open **Bosch SHC Web UI → Install**, then **Start**.
+3. Open `http://<home-assistant-ip>:3000` and run the pairing wizard.
+
+The Supervisor provides and persists `/data` automatically, so pairing survives add-on restarts and updates.
 
 ## Demo mode
 

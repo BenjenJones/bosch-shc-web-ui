@@ -1,0 +1,50 @@
+name: Build add-on image
+
+# Builds the multi-arch container image (from the root Dockerfile) and pushes
+# it to GHCR so the Home Assistant add-on (bosch-shc-ui/config.yaml) can pull
+# it. Tag a release to publish a versioned image:
+#   git tag v0.0.1 && git push origin v0.0.1
+# The git tag (v0.0.1) must match the add-on `version` (0.0.1) so HA finds the
+# image. `workflow_dispatch` also publishes/refreshes the `latest` tag.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/bosch-shc-web-ui
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          # armv7 = linux/arm/v7 (older Raspberry Pi); arm64 = aarch64; amd64 = Intel.
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

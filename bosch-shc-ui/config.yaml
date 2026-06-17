@@ -1,0 +1,26 @@
+# Home Assistant add-on manifest.
+# This add-on pulls a prebuilt multi-arch image from ghcr.io (built by
+# .github/workflows/build-addon.yml from the root Dockerfile) — there is no
+# Dockerfile in this folder, so the HA host does not build anything locally.
+# The image tag used is this `version`, so it must match a published image
+# (push a git tag like v0.0.1 to build & publish ghcr.io/.../bosch-shc-web-ui:0.0.1).
+name: Bosch SHC Web UI
+version: "0.0.1"
+slug: bosch_shc_web_ui
+description: Lokale Web-UI für den Bosch Smart Home Controller (SHC)
+url: https://github.com/BenjenJones/bosch-shc-web-ui
+image: ghcr.io/benjenjones/bosch-shc-web-ui
+arch:
+  - aarch64
+  - amd64
+  - armv7
+# Not a Home Assistant s6-overlay base image (we run node:alpine directly),
+# so disable the S6 init injection.
+init: false
+# /data is provided and persisted by the Supervisor automatically; the image
+# points BOSCH_SHC_DATA_DIR there, so pairing/auth/certs survive restarts and
+# updates.
+ports:
+  3000/tcp: 3000
+ports_description:
+  3000/tcp: Web UI (open http://<home-assistant-ip>:3000)
