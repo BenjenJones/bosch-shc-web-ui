@@ -788,7 +788,8 @@ function renderDeviceCard(device) {
           ${cqHtml}
           ${hasSettings(services) ? `<button data-action="settings" data-device="${device.id}"
             title="${t('settings.title')}" aria-label="${t('settings.title')}"
-            class="text-slate-400 hover:text-slate-700 leading-none text-base px-0.5">⚙</button>` : ''}
+            class="text-slate-400 hover:text-slate-700 leading-none p-0.5">
+            <img src="svg/cog.svg" style="width:18px;height:18px" alt="" /></button>` : ''}
           <span class="text-[10px] px-1.5 py-0.5 rounded
             ${device.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700'
                                             : 'bg-slate-100 text-slate-500'}">${device.status||''}</span>
