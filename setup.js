@@ -17,11 +17,18 @@ const crypto = require('crypto');
 const readline = require('readline');
 const { execSync } = require('child_process');
 
-const CERT_DIR    = path.join(__dirname, 'certs');
+// All runtime-writable state lives under DATA_DIR. Defaults to this source
+// dir (unchanged for bare `npm start`); in a container set BOSCH_SHC_DATA_DIR
+// to a mounted volume (e.g. /data) so pairing/auth/certs survive restarts and
+// image updates.
+const DATA_DIR    = process.env.BOSCH_SHC_DATA_DIR
+  ? path.resolve(process.env.BOSCH_SHC_DATA_DIR)
+  : __dirname;
+const CERT_DIR    = path.join(DATA_DIR, 'certs');
 const CERT_FILE   = path.join(CERT_DIR, 'client-cert.pem');
 const KEY_FILE    = path.join(CERT_DIR, 'client-key.pem');
-const CONFIG_FILE = path.join(__dirname, 'config.json');
-const AUTH_FILE   = path.join(__dirname, 'auth.json');
+const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
+const AUTH_FILE   = path.join(DATA_DIR, 'auth.json');
 
 // Per Bosch terms: client id must start with "oss_"
 const CLIENT_ID   = 'oss_bosch_shc_web_ui';
@@ -104,8 +111,8 @@ function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
 function writeConfig({ shcIp, authEnabled }) {
   const config = {
     shcIp,
-    certPath: path.relative(__dirname, CERT_FILE),
-    keyPath:  path.relative(__dirname, KEY_FILE),
+    certPath: path.relative(DATA_DIR, CERT_FILE),
+    keyPath:  path.relative(DATA_DIR, KEY_FILE),
     clientId: CLIENT_ID,
     uiPort: 3000,
     authEnabled: !!authEnabled,
@@ -145,6 +152,7 @@ function removeAuthFile() {
 }
 
 module.exports = {
+  DATA_DIR,
   CERT_DIR, CERT_FILE, KEY_FILE, CONFIG_FILE, AUTH_FILE,
   CLIENT_ID, CLIENT_NAME,
   ensureCerts, formatCertForBosch, registerClient,

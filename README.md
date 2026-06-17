@@ -110,6 +110,34 @@ To change **only the admin login** later — without re-pairing the SHC — run 
 | Wizard step 2: *"certificate generation failed"* | OpenSSL isn't on the server's PATH. Install it (built-in on macOS/Linux; on Windows e.g. via Git Bash) and retry. |
 | Wizard never appears | `config.json` already exists. To re-pair, stop the server, delete `config.json`, `auth.json`, and `certs/`, then `npm start` again. |
 
+## Docker
+
+All runtime-writable state (`config.json`, `auth.json`, `certs/`, `messages-archive.ndjson`) is relocated to `BOSCH_SHC_DATA_DIR` — set to `/data` in the image — so it persists on a volume across restarts and image updates. `openssl` (needed for pairing) is included.
+
+```bash
+docker compose up -d --build
+# → http://localhost:3000  (boots into the setup wizard on first run)
+```
+
+Or without compose:
+
+```bash
+docker build -t bosch-shc-ui .
+docker run -d --name bosch-shc-ui -p 3000:3000 -v bosch-shc-data:/data bosch-shc-ui
+```
+
+The SHC is reached over the LAN by its IP, so the default bridge network is enough — no host networking required. The image runs `node server.js` directly (the Tailwind CSS is compiled in a build stage), so the `prestart` build hook and the `tailwindcss` devDependency aren't needed at runtime.
+
+### Home Assistant (HASS OS) add-on
+
+The repo root doubles as a **local Home Assistant add-on** (`config.yaml` + the `Dockerfile` above):
+
+1. Copy the whole project folder to `/addons/bosch-shc-ui/` on the HA host (via the Samba or SSH add-on, or `/addons` share).
+2. **Settings → Add-ons → Add-on Store → ⋮ → Check for updates**, then open **Local add-ons → Bosch SHC Web UI → Install**.
+3. **Start** the add-on, then open `http://<home-assistant-ip>:3000` and run the pairing wizard.
+
+The Supervisor provides and persists `/data` automatically, so pairing survives add-on restarts and updates. The add-on builds for `aarch64` (Raspberry Pi), `amd64` and `armv7`.
+
 ## Demo mode
 
 Want to explore the UI without owning a Smart Home Controller (or any devices)? Run:

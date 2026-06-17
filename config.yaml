@@ -1,0 +1,23 @@
+# Home Assistant add-on manifest.
+# The repo root doubles as a local HA add-on: copy the whole folder to
+# /addons/bosch-shc-ui/ on HASS OS, then it appears under Settings →
+# Add-ons → Local add-ons. The Dockerfile in this dir is the build.
+name: Bosch SHC Web UI
+version: "0.0.1"
+slug: bosch_shc_web_ui
+description: Lokale Web-UI für den Bosch Smart Home Controller (SHC)
+url: https://github.com/benherfurth/bosch-shc-web-ui
+arch:
+  - aarch64
+  - amd64
+  - armv7
+# Not a Home Assistant s6-overlay base image (we run node:alpine directly),
+# so disable the S6 init injection.
+init: false
+# /data is provided and persisted by the Supervisor automatically; the
+# Dockerfile points BOSCH_SHC_DATA_DIR there, so pairing/auth/certs survive
+# restarts and updates.
+ports:
+  3000/tcp: 3000
+ports_description:
+  3000/tcp: Web UI (open http://<home-assistant-ip>:3000)

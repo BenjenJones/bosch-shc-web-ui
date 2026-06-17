@@ -13,15 +13,16 @@ const crypto = require('crypto');
 const express = require('express');
 const setupLib = require('./setup.js');
 
-// Config & auth paths can be overridden via env (used by the test harness so
-// it doesn't have to touch the real config.json sitting next to the source).
-const CONFIG_FILE = process.env.BOSCH_SHC_CONFIG_FILE || path.join(__dirname, 'config.json');
-const AUTH_FILE   = process.env.BOSCH_SHC_AUTH_FILE   || path.join(__dirname, 'auth.json');
+// All writable state defaults to setupLib.DATA_DIR (= BOSCH_SHC_DATA_DIR or
+// this source dir). The per-file env overrides below stay for the test harness
+// so it doesn't have to touch the real files sitting next to the source.
+const CONFIG_FILE = process.env.BOSCH_SHC_CONFIG_FILE || setupLib.CONFIG_FILE;
+const AUTH_FILE   = process.env.BOSCH_SHC_AUTH_FILE   || setupLib.AUTH_FILE;
 // Server-local archive of dismissed / no-longer-active messages. The SHC drops
 // a message the moment it is resolved or dismissed, so we keep our own copy
 // here to give the UI a browsable history. Plain JSON file — no SHC connection
 // or auth state involved, so it loads at boot regardless of setup status.
-const MESSAGE_ARCHIVE_FILE = process.env.BOSCH_SHC_MESSAGE_ARCHIVE_FILE || path.join(__dirname, 'messages-archive.ndjson');
+const MESSAGE_ARCHIVE_FILE = process.env.BOSCH_SHC_MESSAGE_ARCHIVE_FILE || path.join(setupLib.DATA_DIR, 'messages-archive.ndjson');
 const MESSAGE_ARCHIVE_MAX  = 500; // cap so a chatty SHC can't grow the file forever
 
 // =========================================================================
@@ -56,8 +57,10 @@ function initRuntime() {
   // server.
   SHC_PROTOCOL = config.shcProtocol === 'http' ? 'http' : 'https';
   SHC_PORT     = config.shcPort || (SHC_PROTOCOL === 'http' ? 80 : 8444);
-  cert = SHC_PROTOCOL === 'https' ? fs.readFileSync(path.join(__dirname, config.certPath)) : null;
-  key  = SHC_PROTOCOL === 'https' ? fs.readFileSync(path.join(__dirname, config.keyPath))  : null;
+  // certPath/keyPath are stored relative to DATA_DIR; path.resolve keeps an
+  // absolute path as-is, so both old (next-to-source) and container installs work.
+  cert = SHC_PROTOCOL === 'https' ? fs.readFileSync(path.resolve(setupLib.DATA_DIR, config.certPath)) : null;
+  key  = SHC_PROTOCOL === 'https' ? fs.readFileSync(path.resolve(setupLib.DATA_DIR, config.keyPath))  : null;
   transport = SHC_PROTOCOL === 'http' ? http : https;
   // keep-alive on plain HTTP causes ECONNRESET races against Prism after a
   // 4xx — Prism closes the socket but a pooled request gets queued onto the

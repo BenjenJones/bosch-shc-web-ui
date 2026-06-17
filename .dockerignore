@@ -1,0 +1,23 @@
+# Build artifacts / deps — reinstalled inside the image
+node_modules/
+npm-debug.log
+*.log
+
+# Runtime-writable state — must NOT bake into the image; lives on the /data volume
+config.json
+auth.json
+messages-archive.ndjson
+certs/
+
+# Local-only / tooling
+.git
+.gitignore
+.claude
+.DS_Store
+autostart/
+examples/
+addon/
+
+# Tests & specs not needed at runtime
+test/
+TODO.md
