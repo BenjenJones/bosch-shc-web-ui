@@ -5,7 +5,7 @@
 # The image tag used is this `version`, so it must match a published image
 # (push a git tag like v0.0.1 to build & publish ghcr.io/.../bosch-shc-web-ui:0.0.1).
 name: Bosch SHC Web UI
-version: "0.0.1"
+version: "0.0.2"
 slug: bosch_shc_web_ui
 description: Lokale Web-UI für den Bosch Smart Home Controller (SHC)
 url: https://github.com/BenjenJones/bosch-shc-web-ui
@@ -23,3 +23,11 @@ ports:
   3000/tcp: 3000
 ports_description:
   3000/tcp: Web UI (open http://<home-assistant-ip>:3000)
+# To embed the UI in a Home Assistant dashboard (Webpage card / iframe panel)
+# set frame_ancestors to your HA origin(s), space-separated. The default
+# 'none' blocks all framing (clickjacking protection) for standalone use.
+# Example: http://homeassistant.local:8123 http://192.168.1.10:8123
+options:
+  frame_ancestors: "'none'"
+schema:
+  frame_ancestors: str

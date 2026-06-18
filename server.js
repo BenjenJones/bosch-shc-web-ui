@@ -23,6 +23,25 @@ const AUTH_FILE   = process.env.BOSCH_SHC_AUTH_FILE   || setupLib.AUTH_FILE;
 // here to give the UI a browsable history. Plain JSON file — no SHC connection
 // or auth state involved, so it loads at boot regardless of setup status.
 const MESSAGE_ARCHIVE_FILE = process.env.BOSCH_SHC_MESSAGE_ARCHIVE_FILE || path.join(setupLib.DATA_DIR, 'messages-archive.ndjson');
+
+// CSP `frame-ancestors` value. Default 'none' keeps clickjacking protection on
+// for standalone use. To embed the UI in a Home Assistant dashboard (Webpage
+// card / iframe panel) it must list the HA origin(s), e.g.
+//   "http://homeassistant.local:8123 http://192.168.1.10:8123"
+// Resolution order: env var (tests) -> HA add-on option in /data/options.json
+// -> 'none'. The HA Supervisor writes the configured add-on options to
+// options.json, so reading it here avoids needing a jq entrypoint.
+function resolveFrameAncestors() {
+  if (process.env.BOSCH_SHC_FRAME_ANCESTORS) return process.env.BOSCH_SHC_FRAME_ANCESTORS;
+  try {
+    const opts = JSON.parse(fs.readFileSync(path.join(setupLib.DATA_DIR, 'options.json'), 'utf8'));
+    if (opts && typeof opts.frame_ancestors === 'string' && opts.frame_ancestors.trim()) {
+      return opts.frame_ancestors.trim();
+    }
+  } catch { /* no options.json (not running as add-on) — fall through */ }
+  return "'none'";
+}
+const FRAME_ANCESTORS = resolveFrameAncestors();
 const MESSAGE_ARCHIVE_MAX  = 500; // cap so a chatty SHC can't grow the file forever
 
 // =========================================================================
@@ -269,7 +288,7 @@ app.use((req, res, next) => {
     "connect-src 'self'",
     "base-uri 'self'",
     "form-action 'self'",
-    "frame-ancestors 'none'",
+    `frame-ancestors ${FRAME_ANCESTORS}`,
     "object-src 'none'",
   ].join('; '));
   next();
