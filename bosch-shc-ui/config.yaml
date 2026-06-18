@@ -13,7 +13,6 @@ image: ghcr.io/benjenjones/bosch-shc-web-ui
 arch:
   - aarch64
   - amd64
-  - armv7
 # Not a Home Assistant s6-overlay base image (we run node:alpine directly),
 # so disable the S6 init injection.
 init: false

@@ -138,7 +138,7 @@ This repo is a **Home Assistant add-on repository** — anyone can add it by URL
 git tag v0.0.1 && git push origin v0.0.1
 ```
 
-This publishes `ghcr.io/benjenjones/bosch-shc-web-ui:0.0.1` for `amd64`, `aarch64` (Raspberry Pi) and `armv7`. The git tag (`v0.0.1`) must match the `version` in `bosch-shc-ui/config.yaml`. The first time, set the package visibility to **Public** under the repo's *Packages* so users can pull without authentication.
+This publishes `ghcr.io/benjenjones/bosch-shc-web-ui:0.0.1` for `amd64` and `aarch64` (64-bit Raspberry Pi). The git tag (`v0.0.1`) must match the `version` in `bosch-shc-ui/config.yaml`. The first time, set the package visibility to **Public** under the repo's *Packages* so users can pull without authentication.
 
 **Installing (users):**
 

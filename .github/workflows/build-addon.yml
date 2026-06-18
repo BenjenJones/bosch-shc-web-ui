@@ -43,8 +43,14 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          # armv7 = linux/arm/v7 (older Raspberry Pi); arm64 = aarch64; amd64 = Intel.
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          # arm64 = aarch64 (RPi 3/4/5 on 64-bit HASS OS); amd64 = Intel/VM.
+          # armv7 (32-bit) dropped — QEMU-emulated arm/v7 builds are flaky and
+          # nearly all current HASS OS installs are 64-bit.
+          platforms: linux/amd64,linux/arm64
           push: true
+          # No SBOM/provenance attestations — they push extra manifest entries
+          # that some registries/Supervisor image pulls choke on.
+          provenance: false
+          sbom: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
