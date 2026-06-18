@@ -1,0 +1,1 @@
+- set temperature on room badge?

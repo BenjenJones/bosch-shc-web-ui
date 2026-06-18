@@ -1,5 +1,9 @@
 /* Source file for the Tailwind CLI — `npm run build:css` produces
- * public/tailwind.css from this. Don't edit the generated file. */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+ * public/tailwind.css from this. Don't edit the generated file.
+ *
+ * Tailwind v4 is CSS-first; this single import replaces the old
+ * @tailwind base/components/utilities directives. The legacy JS config
+ * (content globs + attribute-based dark mode) is loaded via @config so the
+ * migration stays minimal. */
+@import "tailwindcss";
+@config "../tailwind.config.js";

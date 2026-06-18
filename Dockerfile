@@ -8,7 +8,7 @@
 # The compiled CSS is plain text and arch-independent, so building it once on
 # the host and copying it into each per-arch runtime is correct.
 # ---------------------------------------------------------------------------
-FROM --platform=$BUILDPLATFORM node:22-alpine AS build
+FROM --platform=$BUILDPLATFORM node:24-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -19,7 +19,7 @@ RUN npm run build:css
 # Runtime stage: production deps only + openssl (needed by setup.js to
 # generate the client certificate during pairing).
 # ---------------------------------------------------------------------------
-FROM node:22-alpine AS runtime
+FROM node:24-alpine AS runtime
 RUN apk add --no-cache openssl
 WORKDIR /app
 ENV NODE_ENV=production
