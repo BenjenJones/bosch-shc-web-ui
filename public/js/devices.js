@@ -307,6 +307,41 @@ function renderDeviceList() {
 
   $$('#device-list [data-action]').forEach(el => el.addEventListener('click', onDeviceAction));
   $$('#device-list [data-temp-set]').forEach(el => el.addEventListener('change', onTemperatureChange));
+  // Live value readout while dragging the slider.
+  $$('#device-list [data-temp-set]').forEach(el => el.addEventListener('input', e => {
+    const out = e.currentTarget.closest('[data-setpoint]')?.querySelector('[data-temp-out]');
+    if (out) out.textContent = e.currentTarget.value + '°';
+  }));
+  // Step the setpoint by 0.5 °C and trigger the write. Shared by the −/+ buttons
+  // and the mouse-wheel handler. Dispatches `change` so the existing debounced
+  // PUT path (onTemperatureChange) handles clamp, write and re-render.
+  const stepSetpoint = (slider, dir) => {
+    const next = Math.min(30, Math.max(5, parseFloat(slider.value) + dir * 0.5));
+    slider.value = next;
+    const out = slider.closest('[data-setpoint]')?.querySelector('[data-temp-out]');
+    if (out) out.textContent = next + '°';
+    slider.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+  $$('#device-list [data-temp-step]').forEach(el => el.addEventListener('click', e => {
+    const slider = e.currentTarget.closest('[data-setpoint]')?.querySelector('[data-temp-set]');
+    if (slider) stepSetpoint(slider, Number(e.currentTarget.dataset.tempStep));
+  }));
+  // Mouse wheel over any slider nudges it by one step (up = increase). Non-passive
+  // so the page doesn't scroll while the cursor is over the control. Reuses each
+  // slider's existing change handler (setpoint / dimmer / shutter) for the write.
+  $$('#device-list input[type="range"]').forEach(el => el.addEventListener('wheel', e => {
+    e.preventDefault();
+    const r = e.currentTarget;
+    const step = parseFloat(r.step) || 1;
+    const min = parseFloat(r.min), max = parseFloat(r.max);
+    const dir = e.deltaY < 0 ? 1 : -1;
+    r.value = Math.min(max, Math.max(min, parseFloat(r.value) + dir * step));
+    r.dispatchEvent(new Event('input', { bubbles: true }));
+    r.dispatchEvent(new Event('change', { bubbles: true }));
+  }, { passive: false }));
+  // Sliders/buttons sitting in a room <summary> must not toggle the room when used.
+  $$('#device-list [data-room-setpoint]').forEach(el =>
+    el.addEventListener('click', e => e.preventDefault()));
   $$('#device-list [data-shutter-level]').forEach(el => el.addEventListener('change', onShutterLevelChange));
   $$('#device-list [data-dimmer-level]').forEach(el => el.addEventListener('change', onDimmerLevelChange));
   $$('#device-list [data-color-set]').forEach(el => el.addEventListener('change', onColorChange));
@@ -417,7 +452,38 @@ function renderRoomClimateBadge(roomId) {
   // Mobile: wrap parts onto multiple lines and drop the dot separators so they
   // don't crowd. Desktop (sm+) keeps the original single-line · separated look.
   const sep = '<span class="hidden sm:inline" aria-hidden="true">·</span>';
-  return `<div class="text-xs text-slate-600 flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1 sm:gap-2">${parts.join(sep)}</div>`;
+  const info = `<div class="text-xs text-slate-600 flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1 sm:gap-2">${parts.join(sep)}</div>`;
+
+  // Setpoint slider in the summary so the target can be changed without
+  // expanding the room. data-room-setpoint marks it so clicks don't toggle
+  // the <details>.
+  const climateSvc = rccDevice && serviceOf(rccDevice.id, 'RoomClimateControl');
+  const slider = climateSvc
+    ? `<div class="mt-1 w-full sm:w-56" data-room-setpoint>${renderSetpointControl(rccDevice.id, climateSvc.state?.setpointTemperature, { compact: true })}</div>`
+    : '';
+
+  return `<div class="flex flex-col gap-1 w-full sm:w-auto sm:items-end">${info}${slider}</div>`;
+}
+
+// Temperature setpoint slider for RoomClimateControl. Shared by the device card
+// and the collapsed-room climate badge so the target can be set without
+// expanding the room. The change PUT is wired via [data-temp-set]
+// (onTemperatureChange); an `input` listener updates [data-temp-out] live.
+function renderSetpointControl(deviceId, setpoint, { compact = false } = {}) {
+  const val = typeof setpoint === 'number' ? setpoint : 5;
+  const btn = (dir, glyph) =>
+    `<button type="button" data-temp-step="${dir}" data-device="${deviceId}"
+       class="shrink-0 w-7 h-7 flex items-center justify-center rounded-md border border-slate-300
+              text-slate-600 hover:bg-slate-100 active:bg-slate-200 text-lg leading-none">${glyph}</button>`;
+  return `
+    <div class="flex items-center gap-1.5 w-full" data-setpoint>
+      ${btn(-1, '−')}
+      <input type="range" min="5" max="30" step="0.5" value="${val}"
+        data-temp-set data-device="${deviceId}"
+        class="flex-1 min-w-0 accent-sky-600 cursor-pointer" />
+      ${btn(1, '+')}
+      <span class="tabular-nums text-sm font-medium w-12 text-right" data-temp-out>${val}°</span>
+    </div>`;
 }
 
 // Returns an icon name for a device. Primary lookup is by deviceModel
@@ -655,18 +721,14 @@ function renderDeviceCard(device) {
       </button>`;
   }
   if (climate && temp) {
-    const setpoint = climate.state?.setpointTemperature ?? '-';
-    const current  = temp.state?.temperature?.toFixed?.(1) ?? '-';
+    const current = temp.state?.temperature?.toFixed?.(1) ?? '-';
     body += `
-      <div class="mt-2 flex items-center gap-3">
-        <div class="text-2xl font-light tabular-nums">${current}°</div>
-        <div class="text-xs text-slate-500">${t('devices.current')}</div>
-        <div class="ml-auto flex items-center gap-1.5">
-          <input type="number" min="5" max="30" step="0.5" value="${setpoint}"
-            data-temp-set data-device="${device.id}"
-            class="w-16 text-right border border-slate-300 rounded-md px-2 py-1 text-sm tabular-nums" />
-          <span class="text-xs text-slate-500">${t('devices.target')}</span>
+      <div class="mt-2">
+        <div class="flex items-baseline gap-2">
+          <span class="text-2xl font-light tabular-nums">${current}°</span>
+          <span class="text-xs text-slate-500">${t('devices.current')}</span>
         </div>
+        <div class="mt-1.5">${renderSetpointControl(device.id, climate.state?.setpointTemperature)}</div>
       </div>
       ${humTxt ? `<div class="mt-1">${humTxt}</div>` : ''}`;
   } else if (temp && humidity) {
@@ -1047,7 +1109,10 @@ const tempDebounce = new Map();
 
 function onTemperatureChange(e) {
   const deviceId = e.currentTarget.dataset.device;
-  const value = parseFloat(e.currentTarget.value);
+  // Radiator thermostats accept 5–30 °C; clamp so a typed out-of-range value
+  // (number inputs don't enforce min/max on manual entry) isn't sent to the SHC.
+  const value = Math.min(30, Math.max(5, parseFloat(e.currentTarget.value)));
+  e.currentTarget.value = value;
   clearTimeout(tempDebounce.get(deviceId));
   tempDebounce.set(deviceId, setTimeout(async () => {
     tempDebounce.delete(deviceId);
@@ -1056,6 +1121,12 @@ function onTemperatureChange(e) {
         method: 'PUT',
         body: { '@type': 'climateControlState', setpointTemperature: value },
       });
+      // Mirror locally and re-render so both the card and the room badge slider
+      // reflect the new target. The demo SHC emits no long-poll events, so
+      // without this the other control stays stale until a manual refresh.
+      const s = serviceOf(deviceId, 'RoomClimateControl');
+      if (s) s.state = { ...(s.state || {}), setpointTemperature: value };
+      renderDevices();
     } catch (err) { alert('Fehler: ' + err.message); }
   }, 1000));
 }
