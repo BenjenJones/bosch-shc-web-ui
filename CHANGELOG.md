@@ -8,6 +8,14 @@
 - (Dashboard) Per-device settings dialog (⚙) gains child lock for non-thermostat actuators (`ChildProtection`, `childLockActive`) — micromodule dimmer/relay/shutter and BSM light switches.
 - (Demo) Seed states so the new controls are testable — a heating-circuit device, motion-detector illuminance and a `ChildProtection` state.
 
+## 2026-06-19
+
+- (Dashboard) Climate on Room badge level
+
+## 2026-06-18
+
+- (HomeAssistant) Integration as Home Assistant App
+
 ## 2026-06-15
 
 - (Dashboard) Control motorised shutters/blinds from the device card — position slider (`ShutterControl` level), Open/Stop/Close buttons and an Opening/Closing status badge.
