@@ -3,7 +3,7 @@ import { severityFromMessage, messageTitle } from './messages.js';
 import { showModal, hideModal } from './modals.js';
 
 // Service ids that the per-device settings dialog (⚙) can configure.
-const CONFIG_SVC_IDS = ['Thermostat', 'TemperatureOffset', 'PowerSwitchConfiguration', 'VibrationSensor', 'Bypass', 'KeypadTrigger'];
+const CONFIG_SVC_IDS = ['Thermostat', 'ChildProtection', 'TemperatureOffset', 'PowerSwitchConfiguration', 'VibrationSensor', 'Bypass', 'KeypadTrigger'];
 // Radiator thermostats (TRV) vs. room thermostats (RT). When a TRV shares a
 // room with an RT, the RT drives the temperature, so the TRV's own offset is
 // meaningless and must not be offered.
@@ -16,6 +16,7 @@ function hasSettings(services) {
     const s = services.find(x => x.id === id);
     if (!s?.state) return false;
     if (id === 'Thermostat') return s.state['@type'] === 'childLockState';
+    if (id === 'ChildProtection') return s.state.childLockActive != null;
     if (id === 'KeypadTrigger') return s.state.switchType === 'ScenarioTrigger' && state.scenarios.length > 0;
     return true;
   });
@@ -30,7 +31,7 @@ const DEVICE_TYPE_ORDER = [
   ['ROOM_CLIMATE_CONTROL'],                                         // virtual room climate control
   ['THB', 'RTH', 'RTH2', 'RTH2_BAT', 'RT2'],                        // room thermostat
   ['TRV', 'TRV_GEN2'],                                              // radiator thermostat
-  ['BOILER'],                                                       // central heating control
+  ['BOILER', 'HEATING_CIRCUIT'],                                    // central heating control
   ['SWD', 'SWD2'],                                                  // door/window contact
   ['BBL', 'BBL_2', 'MICROMODULE_SHUTTER', 'SHUTTER_CONTROL'],       // shutter
   ['BSM', 'MICROMODULE_LIGHT_CONTROL', 'LIGHT_CONTROL_2',
@@ -57,7 +58,7 @@ const DEVICE_MODEL_RANK = (() => {
 // e.g. CAMERA_360, TRV_GEN2_FOO).
 const DEVICE_CATEGORIES = [
   { id: 'thermostat', icon: 'home-thermometer', models: ['THB','RTH','RTH2','RTH2_BAT','RT2','TRV','TRV_GEN2','ROOM_CLIMATE_CONTROL'], prefixes: ['TRV'] },
-  { id: 'boiler',     icon: 'water-boiler',     models: ['BOILER'] },
+  { id: 'boiler',     icon: 'water-boiler',     models: ['BOILER', 'HEATING_CIRCUIT'] },
   { id: 'contact',    icon: 'window-closed',    models: ['SWD','SWD2'], prefixes: ['SWD', 'SWD2'] },
   { id: 'shutter',    icon: 'window-shutter',   models: ['BBL','BBL_2','MICROMODULE_SHUTTER','SHUTTER_CONTROL'] },
   { id: 'light',      icon: 'lightbulb-on',     models: ['BSM','MICROMODULE_LIGHT_CONTROL','LIGHT_CONTROL_2','HUE_LIGHT','HUE_LIGHT_ROOM_CONTROL','LEDVANCE_LIGHT','SMART_BULB'] },
@@ -342,6 +343,12 @@ function renderDeviceList() {
   // Sliders/buttons sitting in a room <summary> must not toggle the room when used.
   $$('#device-list [data-room-setpoint]').forEach(el =>
     el.addEventListener('click', e => e.preventDefault()));
+  $$('#device-list [data-heat-set]').forEach(el => el.addEventListener('change', onHeatingSetpointChange));
+  // Live readout while dragging the heating-circuit slider.
+  $$('#device-list [data-heat-set]').forEach(el => el.addEventListener('input', e => {
+    const out = e.currentTarget.closest('[data-setpoint]')?.querySelector('[data-temp-out]');
+    if (out) out.textContent = e.currentTarget.value + '°';
+  }));
   $$('#device-list [data-shutter-level]').forEach(el => el.addEventListener('change', onShutterLevelChange));
   $$('#device-list [data-dimmer-level]').forEach(el => el.addEventListener('change', onDimmerLevelChange));
   $$('#device-list [data-color-set]').forEach(el => el.addEventListener('change', onColorChange));
@@ -486,6 +493,32 @@ function renderSetpointControl(deviceId, setpoint, { compact = false } = {}) {
     </div>`;
 }
 
+// HeatingCircuit control: AUTOMATIC/MANUAL mode toggle + target slider. The
+// circuit has no own temperature sensor (per the model registry), so we only
+// expose the setpoint. Writes go to the HeatingCircuit service
+// (onHeatingSetpointChange / the `heat-mode` device action).
+function renderHeatingCircuit(deviceId, st) {
+  const manual = st.operationMode === 'MANUAL';
+  const val = typeof st.setpointTemperature === 'number' ? st.setpointTemperature : 5;
+  const modeBtn = (mode, active, label) =>
+    `<button data-action="heat-mode" data-device="${deviceId}" data-mode="${mode}"
+       class="flex-1 px-2 py-1 rounded-md text-xs font-medium
+       ${active ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${label}</button>`;
+  return `
+    <div class="mt-2">
+      <div class="flex items-center gap-1.5">
+        ${modeBtn('AUTOMATIC', !manual, t('devices.heatAuto'))}
+        ${modeBtn('MANUAL', manual, t('devices.heatManual'))}
+      </div>
+      <div class="flex items-center gap-1.5 w-full mt-2" data-setpoint>
+        <input type="range" min="5" max="30" step="0.5" value="${val}"
+          data-heat-set data-device="${deviceId}"
+          class="flex-1 min-w-0 accent-orange-500 cursor-pointer" />
+        <span class="tabular-nums text-sm font-medium w-12 text-right" data-temp-out>${val}°</span>
+      </div>
+    </div>`;
+}
+
 // Returns an icon name for a device. Primary lookup is by deviceModel
 // (Bosch shorthand like TRV, SWD, PSM …), with a fallback based on the
 // services present for unknown or third-party devices.
@@ -504,6 +537,8 @@ function deviceIcon(device) {
       || m === 'ROOM_CLIMATE_CONTROL') return 'home-thermometer';
   // Central heating control (virtual)
   if (m === 'BOILER') return 'water-boiler';
+  // Heating circuit (central heating valve circuit)
+  if (m === 'HEATING_CIRCUIT') return 'radiator';
   // Home Connect washing machine
   if (m === 'HOMECONNECT_WASHER') return 'washing-machine';
   // Hue room light virtual device
@@ -552,6 +587,7 @@ function deviceIcon(device) {
 
   // Fallback based on the services that are present
   if (has('ValveTappet')) return 'radiator';
+  if (has('HeatingCircuit')) return 'radiator';
   if (has('RoomClimateControl')) return 'home-thermometer';
   if (has('ShutterContact')) return 'window-shutter';
   if (has('PowerSwitch')) return 'power-plug';
@@ -607,6 +643,12 @@ function commQualityInfo(quality) {
   return map[quality] || { icon: 'wifi-off', cls: 'text-slate-400', label: quality || t('commQuality.unknown') };
 }
 
+// Air-quality / climate rating (GOOD | MEDIUM | BAD) → text colour.
+function ratingColor(rating) {
+  return { GOOD: 'text-emerald-600', MEDIUM: 'text-amber-600', BAD: 'text-rose-600' }[rating]
+    || 'text-slate-500';
+}
+
 // Wrapper: a render error in a single card must not tear down the whole
 // device list. We show a fallback error card instead.
 function safeRenderDeviceCard(device) {
@@ -638,6 +680,9 @@ function renderDeviceCard(device) {
   const valve    = services.find(s => s.id === 'ValveTappet');
   const energy   = services.find(s => s.id === 'PowerMeter');
   const silentMode = services.find(s => s.id === 'SilentMode');
+  const airQuality = services.find(s => s.id === 'AirQualityLevel'); // Twinguard
+  const illuminanceSvc = services.find(s => s.id === 'MultiLevelSensor'); // motion detector
+  const heatingCircuit = services.find(s => s.id === 'HeatingCircuit');
   const communicationQuality = services.find(s => s.id === 'CommunicationQuality');
 
   const humTxt = (humidity?.state?.humidity != null)
@@ -784,6 +829,31 @@ function renderDeviceCard(device) {
     body += `<div class="mt-2 text-xs text-slate-500">
       ${energy.state.powerConsumption ?? 0} W · ${(energy.state.energyConsumption/1000).toFixed(2)} kWh
     </div>`;
+  }
+  // HeatingCircuit (central heating valve circuit): mode toggle + setpoint slider.
+  // AUTOMATIC follows the schedule; MANUAL holds the chosen target.
+  if (heatingCircuit?.state) body += renderHeatingCircuit(device.id, heatingCircuit.state);
+  // AirQualityLevel (Twinguard): purity in ppm, coloured by the combined rating.
+  if (airQuality?.state?.purity != null) {
+    const r = airQuality.state.combinedRating;
+    body += `
+      <div class="mt-2 flex items-center gap-2 text-sm">
+        <span class="text-slate-600">${t('devices.airQuality')}</span>
+        <span class="tabular-nums font-medium ${ratingColor(r)}">${airQuality.state.purity} ppm</span>
+        ${r ? `<span class="text-xs ${ratingColor(r)}">${t('rating.' + r)}</span>` : ''}
+      </div>`;
+  }
+  // MultiLevelSensor illuminance (motion detector): Gen2 reports a lux integer,
+  // Gen1 a LOW|MEDIUM|HIGH string — show whichever the device sends.
+  if (illuminanceSvc?.state?.illuminance != null) {
+    const lx = illuminanceSvc.state.illuminance;
+    const txt = typeof lx === 'number' ? `${Math.round(lx)} lx` : t('illuminance.' + lx, lx);
+    body += `
+      <div class="mt-2 flex items-center gap-1.5 text-sm text-slate-600">
+        <img src="svg/lightbulb-on.svg" style="width:16px;height:16px" alt="" />
+        <span>${t('devices.illuminance')}</span>
+        <span class="tabular-nums font-medium">${txt}</span>
+      </div>`;
   }
   if (silentMode) {
     const silent = silentMode.state?.mode === 'MODE_SILENT';
@@ -958,6 +1028,18 @@ async function onDeviceAction(e) {
       if (svc) svc.state = { ...(svc.state || {}), operationState: 'STOPPED' };
       renderDevices();
     } catch (err) { alert(t('error.generic', err.message)); }
+  } else if (action === 'heat-mode') {
+    const mode = btn.dataset.mode; // AUTOMATIC | MANUAL
+    btn.classList.add('pulse');
+    try {
+      await api(`/api/devices/${encodeURIComponent(device)}/services/HeatingCircuit/state`, {
+        method: 'PUT',
+        body: { '@type': 'heatingCircuitState', operationMode: mode },
+      });
+      const svc = serviceOf(device, 'HeatingCircuit');
+      if (svc) svc.state = { ...(svc.state || {}), '@type': 'heatingCircuitState', operationMode: mode };
+      renderDevices();
+    } catch (err) { alert(t('error.generic', err.message)); }
   }
 }
 
@@ -984,6 +1066,13 @@ function openDeviceSettings(deviceId) {
   const thermo = svc('Thermostat');
   if (thermo?.state?.['@type'] === 'childLockState') {
     sections.push(row(t('settings.childLock'), checkbox('childLock', thermo.state.childLock === 'ON')));
+  }
+
+  // ChildProtection (childLockActive bool) — micromodule dimmer/relay/shutter, BSM.
+  // Distinct from the thermostat's own childLock (ThermostatService).
+  const childProt = svc('ChildProtection');
+  if (childProt?.state?.childLockActive != null) {
+    sections.push(row(t('settings.childLock'), checkbox('childProtection', childProt.state.childLockActive === true)));
   }
 
   const off = svc('TemperatureOffset');
@@ -1077,6 +1166,8 @@ function openDeviceSettings(deviceId) {
   const card = $('#modal-card');
   card.querySelector('[data-set="childLock"]')?.addEventListener('change', e =>
     put('Thermostat', { '@type': 'childLockState', childLock: e.target.checked ? 'ON' : 'OFF' }, e.target));
+  card.querySelector('[data-set="childProtection"]')?.addEventListener('change', e =>
+    put('ChildProtection', { '@type': 'childProtectionState', childLockActive: e.target.checked }, e.target));
   card.querySelector('[data-set="tempOffset"]')?.addEventListener('change', e =>
     put('TemperatureOffset', { '@type': 'temperatureOffsetState', offset: parseFloat(e.target.value) }, e.target));
   card.querySelector('[data-set="powerOutage"]')?.addEventListener('change', e =>
@@ -1128,6 +1219,28 @@ function onTemperatureChange(e) {
       if (s) s.state = { ...(s.state || {}), setpointTemperature: value };
       renderDevices();
     } catch (err) { alert('Fehler: ' + err.message); }
+  }, 1000));
+}
+
+// Debounce HeatingCircuit setpoint PUTs per device (slider drag / wheel).
+const heatDebounce = new Map();
+
+function onHeatingSetpointChange(e) {
+  const deviceId = e.currentTarget.dataset.device;
+  const value = Math.min(30, Math.max(5, parseFloat(e.currentTarget.value)));
+  e.currentTarget.value = value;
+  clearTimeout(heatDebounce.get(deviceId));
+  heatDebounce.set(deviceId, setTimeout(async () => {
+    heatDebounce.delete(deviceId);
+    try {
+      await api(`/api/devices/${encodeURIComponent(deviceId)}/services/HeatingCircuit/state`, {
+        method: 'PUT',
+        body: { '@type': 'heatingCircuitState', setpointTemperature: value },
+      });
+      const s = serviceOf(deviceId, 'HeatingCircuit');
+      if (s) s.state = { ...(s.state || {}), '@type': 'heatingCircuitState', setpointTemperature: value };
+      renderDevices();
+    } catch (err) { alert(t('error.generic', err.message)); }
   }, 1000));
 }
 
@@ -1216,4 +1329,4 @@ function onColorChange(e) {
 }
 
 
-export { DEVICE_CATEGORIES, deviceCategory, deviceSortRank, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange, onShutterLevelChange, onDimmerLevelChange, onColorChange, onKeypadScenarioChange };
+export { DEVICE_CATEGORIES, deviceCategory, deviceSortRank, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange, onHeatingSetpointChange, onShutterLevelChange, onDimmerLevelChange, onColorChange, onKeypadScenarioChange };

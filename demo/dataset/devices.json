@@ -2,6 +2,23 @@
   {
     "@type": "device",
     "rootDeviceId": "64-da-a0-42-0a-2a",
+    "id": "heatingCircuit_hz_1",
+    "deviceServiceIds": [
+      "HeatingCircuit"
+    ],
+    "manufacturer": "BOSCH",
+    "roomId": "hz_1",
+    "deviceModel": "HEATING_CIRCUIT",
+    "serial": "heatingCircuit_hz_1",
+    "name": "Heizkreis Küche",
+    "status": "AVAILABLE",
+    "childDeviceIds": [],
+    "supportedProfiles": [],
+    "installationTimestamp": 0
+  },
+  {
+    "@type": "device",
+    "rootDeviceId": "64-da-a0-42-0a-2a",
     "id": "hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9",
     "deviceServiceIds": [
       "HueBlinkingActuator",

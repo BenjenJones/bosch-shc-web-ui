@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-06-20
+
+- (Dashboard) Control heating circuits (`HEATING_CIRCUIT`) from the device card — AUTOMATIC/MANUAL mode toggle and a 5–30 °C target slider (`HeatingCircuit`, debounced PUT). New device type with radiator icon and sort/category placement.
+- (Dashboard) Show air quality on Twinguard cards — purity in ppm coloured by the combined rating (`AirQualityLevel`).
+- (Dashboard) Show brightness on motion detectors — `MultiLevelSensor` illuminance (Gen2 lux value / Gen1 LOW·MEDIUM·HIGH).
+- (Dashboard) Per-device settings dialog (⚙) gains child lock for non-thermostat actuators (`ChildProtection`, `childLockActive`) — micromodule dimmer/relay/shutter and BSM light switches.
+- (Demo) Seed states so the new controls are testable — a heating-circuit device, motion-detector illuminance and a `ChildProtection` state.
+
 ## 2026-06-15
 
 - (Dashboard) Control motorised shutters/blinds from the device card — position slider (`ShutterControl` level), Open/Stop/Close buttons and an Opening/Closing status badge.

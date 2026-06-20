@@ -1,6 +1,20 @@
 [
   {
     "@type": "DeviceServiceData",
+    "id": "HeatingCircuit",
+    "deviceId": "heatingCircuit_hz_1",
+    "path": "/devices/heatingCircuit_hz_1/services/HeatingCircuit",
+    "state": {
+      "@type": "heatingCircuitState",
+      "operationMode": "AUTOMATIC",
+      "setpointTemperature": 21.5,
+      "setpointTemperatureForLevelEco": 18.0,
+      "setpointTemperatureForLevelComfort": 22.0,
+      "on": true
+    }
+  },
+  {
+    "@type": "DeviceServiceData",
     "id": "HueBlinkingActuator",
     "deviceId": "hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9",
     "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/HueBlinkingActuator"
@@ -137,7 +151,11 @@
     "@type": "DeviceServiceData",
     "id": "MultiLevelSensor",
     "deviceId": "hdm:ZigBee:ed51c065915d72ea",
-    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/MultiLevelSensor"
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/MultiLevelSensor",
+    "state": {
+      "@type": "multiLevelSensorState",
+      "illuminance": 137
+    }
   },
   {
     "@type": "DeviceServiceData",
@@ -340,7 +358,11 @@
     "@type": "DeviceServiceData",
     "id": "ChildProtection",
     "deviceId": "hdm:ZigBee:7aba162daa07b0c3#2",
-    "path": "/devices/hdm:ZigBee:7aba162daa07b0c3#2/services/ChildProtection"
+    "path": "/devices/hdm:ZigBee:7aba162daa07b0c3#2/services/ChildProtection",
+    "state": {
+      "@type": "childProtectionState",
+      "childLockActive": false
+    }
   },
   {
     "@type": "DeviceServiceData",
