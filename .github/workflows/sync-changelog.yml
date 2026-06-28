@@ -1,0 +1,43 @@
+name: Sync changelog to add-on
+
+# The Home Assistant Supervisor renders the add-on's changelog from
+# bosch-shc-ui/CHANGELOG.md, read straight from this repo (not from the
+# container image). Root CHANGELOG.md is the single source of truth; this
+# workflow mirrors it into the add-on folder whenever it changes on main and
+# commits the result back, so you never have to sync it by hand before
+# committing.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - CHANGELOG.md
+
+permissions:
+  contents: write
+
+# Don't let two rapid pushes race on the commit-back.
+concurrency: sync-changelog
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - run: cp CHANGELOG.md bosch-shc-ui/CHANGELOG.md
+
+      # Commit back only when the copy actually changed. The push uses the
+      # default GITHUB_TOKEN, which does NOT retrigger workflows, so this
+      # can't loop.
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- bosch-shc-ui/CHANGELOG.md; then
+            echo "Add-on changelog already up to date."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bosch-shc-ui/CHANGELOG.md
+          git commit -m "chore: sync changelog to add-on folder"
+          git push
