@@ -1,4 +1,4 @@
-import { state, $, $$, t, api, escapeHtml, deviceName, roomName, I18N } from './core.js';
+import { state, $, $$, t, api, escapeHtml, deviceName, roomName, I18N, isMessageActive } from './core.js';
 import { renderDeviceList } from './devices.js';
 
 // =========================================================================
@@ -102,8 +102,8 @@ async function archiveMessage(m) {
 }
 
 function renderMessages() {
-  // Hide messages flagged as deleted
-  const visible = state.messages.filter(m => !m.deleted);
+  // Hide deleted messages and ones already archived ("marked read").
+  const visible = state.messages.filter(isMessageActive);
   // Badge mit Anzahl der nicht-info-Messages
   const importantCount = visible.filter(m => severityFromMessage(m) !== 'info').length;
   const badge = $('#msg-badge');
@@ -145,11 +145,20 @@ function renderMessages() {
       const msg = state.messages.find(x => x.id === id);
       try {
         await api(`/api/messages/${encodeURIComponent(id)}`, { method: 'DELETE' });
-        if (msg) await archiveMessage(msg);
-        state.messages = state.messages.filter(x => x.id !== id);
-        renderMessages();
-        renderDeviceList(); // drop the room marker now that the message is gone
-      } catch (err) { alert(t('error.generic', err.message)); }
+      } catch (err) {
+        // The SHC won't delete some system messages (update/fault notices tied
+        // to an active condition). Treat dismiss as "mark read": archive it
+        // locally and suppress it from the active list. Any other error is real.
+        const code = err.body?.body?.errorCode;
+        if (code !== 'ENTITY_NOT_DELETABLE' && !/ENTITY_NOT_DELETABLE/.test(err.message)) {
+          alert(t('error.generic', err.message));
+          return;
+        }
+      }
+      if (msg) await archiveMessage(msg);
+      state.messages = state.messages.filter(x => x.id !== id);
+      renderMessages();
+      renderDeviceList(); // drop the room marker now that the message is gone
     })
   );
 

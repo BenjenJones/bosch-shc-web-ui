@@ -32,7 +32,7 @@
     "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/MultiLevelSwitch",
     "state": {
       "@type": "multiLevelSwitchState",
-      "level": 72
+      "level": 21
     }
   },
   {
@@ -42,7 +42,7 @@
     "path": "/devices/hdm:PhilipsHueBridge:HueLight_c396cc2ae6cff6d8-0b_61a5368917c9/services/HSBColorActuator",
     "state": {
       "@type": "colorState",
-      "rgb": -19416
+      "rgb": -28376
     }
   },
   {
@@ -105,7 +105,11 @@
     "@type": "DeviceServiceData",
     "id": "MultiLevelSwitch",
     "deviceId": "hdm:ZigBee:ed51c065915d72ea",
-    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/MultiLevelSwitch"
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/MultiLevelSwitch",
+    "state": {
+      "@type": "multiLevelSwitchState",
+      "level": 63
+    }
   },
   {
     "@type": "DeviceServiceData",
@@ -133,7 +137,11 @@
     "@type": "DeviceServiceData",
     "id": "BinarySwitch",
     "deviceId": "hdm:ZigBee:ed51c065915d72ea",
-    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/BinarySwitch"
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/BinarySwitch",
+    "state": {
+      "@type": "binarySwitchState",
+      "on": false
+    }
   },
   {
     "@type": "DeviceServiceData",
@@ -151,11 +159,7 @@
     "@type": "DeviceServiceData",
     "id": "MultiLevelSensor",
     "deviceId": "hdm:ZigBee:ed51c065915d72ea",
-    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/MultiLevelSensor",
-    "state": {
-      "@type": "multiLevelSensorState",
-      "illuminance": 137
-    }
+    "path": "/devices/hdm:ZigBee:ed51c065915d72ea/services/MultiLevelSensor"
   },
   {
     "@type": "DeviceServiceData",
@@ -358,11 +362,7 @@
     "@type": "DeviceServiceData",
     "id": "ChildProtection",
     "deviceId": "hdm:ZigBee:7aba162daa07b0c3#2",
-    "path": "/devices/hdm:ZigBee:7aba162daa07b0c3#2/services/ChildProtection",
-    "state": {
-      "@type": "childProtectionState",
-      "childLockActive": false
-    }
+    "path": "/devices/hdm:ZigBee:7aba162daa07b0c3#2/services/ChildProtection"
   },
   {
     "@type": "DeviceServiceData",
@@ -510,8 +510,8 @@
       "@type": "climateControlState",
       "operationMode": "MANUAL",
       "setpointTemperature": 20,
-      "ventilationMode": false,
-      "low": false,
+      "ventilationMode": true,
+      "low": true,
       "boostMode": false,
       "summerMode": false,
       "supportsBoostMode": true,
@@ -596,7 +596,11 @@
     "@type": "DeviceServiceData",
     "id": "BinarySwitch",
     "deviceId": "roomLightControl_hz_5",
-    "path": "/devices/roomLightControl_hz_5/services/BinarySwitch"
+    "path": "/devices/roomLightControl_hz_5/services/BinarySwitch",
+    "state": {
+      "@type": "binarySwitchState",
+      "on": false
+    }
   },
   {
     "@type": "DeviceServiceData",
@@ -942,7 +946,7 @@
     "path": "/devices/hdm:ZigBee:951592a0459a8bf5/services/ShutterContact",
     "state": {
       "@type": "shutterContactState",
-      "value": "CLOSED"
+      "value": "OPEN"
     }
   },
   {
@@ -980,9 +984,10 @@
     "state": {
       "@type": "keypadTriggerState",
       "scenarioIdAssociations": {
-        "1_SHORT": "b510ceed-0fe5-45dd-85c6-44ad41c8007c",
-        "1_LONG": "425cf9f4-6f24-4d91-88b4-1c2dafd28657",
-        "2_SHORT": "46073f5b-656f-4920-80c9-04dc9bf498e1"
+        "2_SHORT": "46073f5b-656f-4920-80c9-04dc9bf498e1",
+        "1_LONG": "4b9de1a4-2331-489b-8520-f3721ac0227f",
+        "2_LONG": "1fd2088a-d9e3-4c0a-88c4-2d2aff51fbd8",
+        "1_SHORT": "4b9de1a4-2331-489b-8520-f3721ac0227f"
       },
       "switchType": "ScenarioTrigger",
       "idsToTrigger": []

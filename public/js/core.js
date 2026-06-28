@@ -291,6 +291,15 @@ const serviceOf = (deviceId, serviceId) =>
 const roomName = (id) => state.rooms.find(r => r.id === id)?.name ?? id;
 const deviceName = (id) => state.devices.find(d => d.id === id)?.name ?? id;
 
+// True for active messages that should still be shown. The SHC refuses to
+// delete some system messages (ENTITY_NOT_DELETABLE — update/fault notices
+// tied to an active condition). When the user dismisses one of those we
+// "mark it read" by archiving it locally; once its id is in the archive we
+// hide it from the active list and room badges so it doesn't come back on the
+// next reload. The SHC keeps the original until the underlying cause clears.
+const isMessageActive = (m) =>
+  !m.deleted && !state.messageArchive.some(a => a.id === m.id);
+
 // Determines a device's update status. Sources in this order:
 //  1) "SoftwareUpdate" service on the device (most reliable: state + both versions)
 //  2) "FirmwareVersion" service or similar (installed version only)
@@ -338,4 +347,4 @@ function deviceUpdateInfo(device) {
 
 const escapeHtml = (s) => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
-export { $, $$, I18N, loadI18N, t, state, isAdmin, toggleNotify, notifyNewMessage, saveCollapsedRooms, setTheme, setLang, applyStaticTexts, api, safeApi, loadAll, renderAll, serviceOf, roomName, deviceName, deviceUpdateInfo, escapeHtml };
+export { $, $$, I18N, loadI18N, t, state, isAdmin, toggleNotify, notifyNewMessage, saveCollapsedRooms, setTheme, setLang, applyStaticTexts, api, safeApi, loadAll, renderAll, serviceOf, roomName, deviceName, deviceUpdateInfo, escapeHtml, isMessageActive };

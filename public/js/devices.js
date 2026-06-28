@@ -1,4 +1,4 @@
-import { state, $, $$, t, api, escapeHtml, roomName, deviceName, serviceOf, deviceUpdateInfo, saveCollapsedRooms } from './core.js';
+import { state, $, $$, t, api, escapeHtml, roomName, deviceName, serviceOf, deviceUpdateInfo, saveCollapsedRooms, isMessageActive } from './core.js';
 import { severityFromMessage, messageTitle } from './messages.js';
 import { showModal, hideModal } from './modals.js';
 
@@ -375,7 +375,7 @@ function messageRoomId(m) {
 }
 
 function activeMessagesForRoom(roomId) {
-  return state.messages.filter(m => !m.deleted && messageRoomId(m) === roomId);
+  return state.messages.filter(m => isMessageActive(m) && messageRoomId(m) === roomId);
 }
 
 // Marker shown in the room header when the room has active messages — count +
@@ -430,10 +430,14 @@ function renderRoomClimateBadge(roomId) {
     s => s.id === 'PowerSwitch' && roomDeviceIds.includes(s.deviceId)
          && s.state?.switchState === 'ON'
   ).length;
+  // Heating paused (Heizpause): the SHC sets ventilationMode when an open
+  // window/door contact is linked to the room's climate control.
+  const heatPaused = !!(rccDevice
+    && serviceOf(rccDevice.id, 'RoomClimateControl')?.state?.ventilationMode);
 
   const tVal = tempSvc?.state?.temperature;
   const hVal = humSvc?.state?.humidity;
-  if (tVal == null && hVal == null && contactSvcs.length === 0 && onCount === 0) return '';
+  if (tVal == null && hVal == null && contactSvcs.length === 0 && onCount === 0 && !heatPaused) return '';
 
   const parts = [];
   if (tVal != null) parts.push(`<span class="tabular-nums">${tVal.toFixed(1)}°C</span>`);
@@ -454,6 +458,13 @@ function renderRoomClimateBadge(roomId) {
     parts.push(
       `<span class="flex items-center gap-1 ${cls}" title="${escapeHtml(label)}">` +
       `<img src="svg/${icon}.svg" style="width:14px;height:14px" aria-hidden="true" />${label}</span>`
+    );
+  }
+  if (heatPaused) {
+    const label = t('devices.heatPause');
+    parts.push(
+      `<span class="flex items-center gap-1 text-amber-600 font-medium" title="${escapeHtml(label)}">` +
+      `<img src="svg/radiator-disabled.svg" style="width:14px;height:14px" aria-hidden="true" />${label}</span>`
     );
   }
   // Mobile: wrap parts onto multiple lines and drop the dot separators so they
@@ -775,6 +786,8 @@ function renderDeviceCard(device) {
         </div>
         <div class="mt-1.5">${renderSetpointControl(device.id, climate.state?.setpointTemperature)}</div>
       </div>
+      ${climate.state?.ventilationMode ? `<div class="mt-1.5 inline-flex items-center gap-1.5 text-sm text-amber-600 font-medium">
+        <img src="svg/radiator-disabled.svg" style="width:16px;height:16px" aria-hidden="true" />${t('devices.heatPause')}</div>` : ''}
       ${humTxt ? `<div class="mt-1">${humTxt}</div>` : ''}`;
   } else if (temp && humidity) {
     body += `

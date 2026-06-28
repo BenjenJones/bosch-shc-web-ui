@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-06-28
+
+- (Dashboard) Thermostats show heating paused, due to open windows
+- (Messages) Archive active messages (mark as read)
+  - However, deleting an active-archived message, will cause it to reappear under active messages
+
 ## 2026-06-20
 
 - (Dashboard) Control heating circuits (`HEATING_CIRCUIT`) from the device card — AUTOMATIC/MANUAL mode toggle and a 5–30 °C target slider (`HeatingCircuit`, debounced PUT). New device type with radiator icon and sort/category placement.

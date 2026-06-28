@@ -91,6 +91,7 @@
     "devices.type.other": "Sonstige",
     "devices.windowsClosed": "Fenster geschlossen",
     "devices.windowsOpen": "{0} Fenster offen",
+    "devices.heatPause": "Heizpause",
     "devices.devicesOn": "{0} an",
     "devices.valve": "Ventil {0}%",
     "devices.commQuality": "Verbindungsqualität: {0} ({1})",
