@@ -2,6 +2,7 @@
 
 ## 2026-06-28
 
+- (System) fix wrong connected state
 - (Dashboard) Thermostats show heating paused, due to open windows
 - (Messages) Archive active messages (mark as read)
   - However, deleting an active-archived message, will cause it to reappear under active messages

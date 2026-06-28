@@ -1042,9 +1042,28 @@ app.delete('/api/messages/:id', wrap(async (req, res) => {
 let subscriptionId = null;
 const sseClients = new Set();
 
+// Whether the long-poll loop currently has a working line to the SHC. Drives
+// the status lamp in the UI (a green EventSource only proves the browser
+// reached *this* proxy, not that the proxy reached the SHC). In demo/test mode
+// (http) the poll loop doesn't run and the "SHC" is the demo server we're
+// serving from, so treat it as connected.
+let shcConnected = SHC_PROTOCOL !== 'https';
+
 function broadcast(events) {
   const payload = `data: ${JSON.stringify(events)}\n\n`;
   for (const c of sseClients) c.write(payload);
+}
+
+// Push the current SHC-connection status to one client (on connect) or, via
+// setShcConnected, to all of them when it flips.
+function sendStatus(client) {
+  client.write(`event: status\ndata: ${JSON.stringify({ connected: shcConnected })}\n\n`);
+}
+
+function setShcConnected(v) {
+  if (v === shcConnected) return;
+  shcConnected = v;
+  for (const c of sseClients) sendStatus(c);
 }
 
 async function jsonRpc(method, params) {
@@ -1067,11 +1086,13 @@ async function pollLoop() {
     try {
       const id = await ensureSubscription();
       const res = await jsonRpc('RE/longPoll', [id, 30]);
+      setShcConnected(true);
       if (Array.isArray(res.result) && res.result.length > 0) {
         broadcast(res.result);
       }
     } catch (err) {
       console.warn('Polling error, retrying in 3s:', err.message);
+      setShcConnected(false);
       subscriptionId = null;
       await new Promise((r) => setTimeout(r, 3000));
     }
@@ -1100,6 +1121,7 @@ app.get('/api/events', (req, res) => {
   res.flushHeaders();
   res.write(': connected\n\n');
   sseClients.add(res);
+  sendStatus(res); // tell the new client the current SHC status right away
   req.on('close', () => sseClients.delete(res));
 });
 

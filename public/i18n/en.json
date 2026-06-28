@@ -1,6 +1,7 @@
 {
     "header.connecting":   "Connecting …",
     "header.connected":    "SHC connected",
+    "header.disconnected":  "SHC unreachable",
     "header.refresh":      "Refresh",
     "header.liveStatus":   "Live status",
     "header.infoLine":     "SHC {0} · API {1} · SW {2}",

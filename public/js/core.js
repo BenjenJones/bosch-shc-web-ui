@@ -36,6 +36,10 @@ function t(key, ...args) {
 
 const state = {
   info: {},
+  // false until the first loadAll() finishes. Lets the header tell "still
+  // connecting" (initial paint) apart from "load finished but the SHC gave us
+  // nothing" (unreachable) — see applyStaticTexts.
+  loaded: false,
   rooms: [],
   devices: [],
   services: [],
@@ -194,15 +198,16 @@ function applyStaticTexts() {
     nb.classList.toggle('hover:bg-slate-100', !active);
     nb.title = t(active ? 'notify.on' : 'notify.off');
   }
-  // Info line: not yet loaded → "Connecting …", IP present → full info,
-  // otherwise (loaded but no IP) → plain "Connected"
+  // Info line: before the first load → "Connecting …"; loaded with real SHC
+  // info → full info line; loaded but the SHC returned nothing (unreachable) →
+  // "Disconnected". We key off shcIpAddress because that field only exists when
+  // /api/info actually answered.
   const i = state.info;
-  const loaded = i && Object.keys(i).length > 0;
-  $('#info-line').textContent = !loaded
+  $('#info-line').textContent = !state.loaded
     ? t('header.connecting')
     : (i.shcIpAddress
         ? t('header.infoLine', i.shcIpAddress, (i.apiVersions||[]).join(', '), i.softwareUpdateState?.swInstalledVersion ?? '-')
-        : t('header.connected'));
+        : t('header.disconnected'));
 }
 
 // =========================================================================
@@ -259,7 +264,10 @@ async function loadAll() {
   state.info        = info || {};
   state.rooms       = rooms || [];
   state.devices     = devices || [];
-  state.info.macAddress = state.devices.find(d => d.rootDeviceId)?.rootDeviceId;
+  // Only derive macAddress when /api/info actually answered. Assigning it on an
+  // empty info object would add a key and make the header think we're connected
+  // (Object.keys(info).length > 0) even when the SHC is unreachable.
+  if (info) state.info.macAddress = state.devices.find(d => d.rootDeviceId)?.rootDeviceId;
   state.services    = services || [];
   const byName = (a, b) => (a.name || a.id || '').localeCompare(b.name || b.id || '');
   state.scenarios   = (scenarios || []).sort(byName);
@@ -269,6 +277,7 @@ async function loadAll() {
   state.userdefinedstates = (userdefinedstates || []).sort(byName);
   state.intrusion   = intrusion;
   state.messageArchive = messageArchive || [];
+  state.loaded = true;
 
   applyStaticTexts();
   renderAll();

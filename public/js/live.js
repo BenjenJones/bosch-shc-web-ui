@@ -5,9 +5,25 @@ import { renderMessages, archiveMessage } from './messages.js';
 import { renderScenarios } from './scenarios.js';
 
 function connectEvents() {
+  // Full literal class strings per state — Tailwind's JIT only emits classes
+  // it can find verbatim in the source, so we can't build `bg-${x}-500`.
+  const DOT = {
+    emerald: 'inline-block w-2.5 h-2.5 rounded-full bg-emerald-500',
+    amber:   'inline-block w-2.5 h-2.5 rounded-full bg-amber-500',
+    rose:    'inline-block w-2.5 h-2.5 rounded-full bg-rose-500',
+  };
+  const dot = (color) => $('#event-dot').className = DOT[color];
   const ev = new EventSource('/api/events');
-  ev.onopen  = () => $('#event-dot').className = 'inline-block w-2.5 h-2.5 rounded-full bg-emerald-500';
-  ev.onerror = () => $('#event-dot').className = 'inline-block w-2.5 h-2.5 rounded-full bg-rose-500';
+  // EventSource open/error only tells us about the browser↔proxy link. The
+  // lamp should reflect the proxy↔SHC link, which the server reports via a
+  // `status` event. So: open → amber (link up, SHC status not known yet);
+  // status event → green/red per the server; error (proxy lost) → red.
+  ev.onopen  = () => dot('amber');
+  ev.onerror = () => dot('rose');
+  ev.addEventListener('status', (e) => {
+    let connected; try { connected = JSON.parse(e.data).connected; } catch { return; }
+    dot(connected ? 'emerald' : 'rose');
+  });
   ev.onmessage = (msg) => {
     let events; try { events = JSON.parse(msg.data); } catch { return; }
     let touchedDev = false, touchedMsg = false, touchedSec = false, touchedScn = false;
