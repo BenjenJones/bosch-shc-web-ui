@@ -12,6 +12,7 @@ on:
     branches: [main]
     paths:
       - CHANGELOG.md
+  workflow_dispatch: {}
 
 permissions:
   contents: write
@@ -32,12 +33,16 @@ jobs:
       # can't loop.
       - name: Commit if changed
         run: |
-          if git diff --quiet -- bosch-shc-ui/CHANGELOG.md; then
+          set -euo pipefail
+          # Stage first, then diff against HEAD: `git diff --quiet` alone misses
+          # an untracked file, so the very first sync (when the add-on copy
+          # doesn't exist yet) would look "unchanged" and never commit.
+          git add bosch-shc-ui/CHANGELOG.md
+          if git diff --cached --quiet; then
             echo "Add-on changelog already up to date."
             exit 0
           fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add bosch-shc-ui/CHANGELOG.md
           git commit -m "chore: sync changelog to add-on folder"
           git push

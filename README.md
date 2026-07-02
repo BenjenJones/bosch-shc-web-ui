@@ -243,3 +243,5 @@ For frontend iteration, `npm run watch:css` rebuilds `public/tailwind.css` on ev
 ## License
 
 MIT for this wrapper — see [LICENSE](LICENSE). The Bosch SHC API itself is governed by Bosch's terms (see the official repo).
+
+**Exception:** the OpenAPI specs under [`test/openapi/`](test/openapi/) (`*-local-openapi-v3.yml`) are **not** covered by the MIT license. They are verbatim, unmodified copies of Bosch's official API documentation, © Robert Bosch GmbH, licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode) and subject to [Bosch's Terms & Conditions](https://github.com/BoschSmartHome/bosch-shc-api-docs#terms-and-conditions). See [`test/openapi/NOTICE.md`](test/openapi/NOTICE.md). They are redistributed verbatim for non-commercial use only, as the contract source for the test suite's mock server.

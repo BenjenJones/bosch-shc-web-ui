@@ -19,3 +19,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+Exception: the OpenAPI specification files under test/openapi/
+(*-local-openapi-v3.yml) are NOT covered by the MIT license above. They are
+verbatim copies of Bosch's official Smart Home Local API documentation,
+(c) Robert Bosch GmbH, licensed under CC BY-NC-ND 4.0 and subject to Bosch's
+Terms & Conditions. See test/openapi/NOTICE.md for details.
