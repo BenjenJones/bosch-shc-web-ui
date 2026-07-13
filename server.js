@@ -1076,6 +1076,9 @@ async function jsonRpc(method, params) {
 async function ensureSubscription() {
   if (subscriptionId) return subscriptionId;
   const result = await jsonRpc('RE/subscribe', ['com/bosch/sh/remote/*', null]);
+  if (!result || result.error || !result.result) {
+    throw new Error(`subscribe failed: ${result && result.error ? (result.error.message || JSON.stringify(result.error)) : 'no result'}`);
+  }
   subscriptionId = result.result;
   console.log('✔ SHC subscription:', subscriptionId);
   return subscriptionId;
@@ -1086,6 +1089,16 @@ async function pollLoop() {
     try {
       const id = await ensureSubscription();
       const res = await jsonRpc('RE/longPoll', [id, 30]);
+      // The SHC returns a JSON-RPC error *in a 200 body* when the subscription
+      // is unknown/expired (e.g. after an SHC restart or a long idle gap). That
+      // doesn't throw, so without this check we'd keep long-polling a dead
+      // subscription forever: lamp stays green, zero events reach the UI. Drop
+      // the id and loop so ensureSubscription re-subscribes next iteration.
+      if (res && res.error) {
+        console.warn('longPoll subscription invalid, re-subscribing:', res.error.message || JSON.stringify(res.error));
+        subscriptionId = null;
+        continue;
+      }
       setShcConnected(true);
       if (Array.isArray(res.result) && res.result.length > 0) {
         broadcast(res.result);

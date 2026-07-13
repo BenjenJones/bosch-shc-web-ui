@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-07-13
+
+- (System) Fix live events silently stopping — the SHC returns a JSON-RPC error in a 200 body when a long-poll subscription expires (e.g. after an SHC restart), which wasn't detected, so the loop kept polling a dead subscription: connection lamp stayed green but no events reached the UI. Now the error is caught and the client re-subscribes automatically.
+
 ## 2026-06-28
 
 - (System) fix wrong connected state
