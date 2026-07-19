@@ -111,6 +111,20 @@ details[data-devcat][open]>summary .chevron {
     transform: rotate(180deg);
 }
 
+/* Message archive collapsible */
+details[data-arch-outer]>summary::-webkit-details-marker {
+    display: none;
+}
+
+details[data-arch-outer]>summary .chevron {
+    display: inline-block;
+    transition: transform .15s;
+}
+
+details[data-arch-outer][open]>summary .chevron {
+    transform: rotate(180deg);
+}
+
 /* The accordion sections are full-width; suppress the card hover-lift so they
    don't jump when the cursor passes over them. */
 details[data-section].card:hover {

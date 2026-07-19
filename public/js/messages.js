@@ -89,6 +89,49 @@ function archiveItem(m, dateLocale) {
     </li>`;
 }
 
+// Collapsed-state of the archive (whole list + per-day groups), persisted so it
+// survives the re-render each dismiss/delete triggers. Keys: 'outer' for the
+// whole archive, day-bucket ms for each day group.
+const ARCH_COLLAPSE_KEY = 'msgArchiveCollapsed';
+function loadArchCollapsed() {
+  try { return JSON.parse(localStorage.getItem(ARCH_COLLAPSE_KEY)) || {}; } catch { return {}; }
+}
+function saveArchCollapsed(o) {
+  try { localStorage.setItem(ARCH_COLLAPSE_KEY, JSON.stringify(o)); } catch { /* ignore */ }
+}
+
+// Day bucket key (local midnight ms) + human label for an archived message.
+function dayKey(m) {
+  const ts = Number(m.archivedAt || m.timestamp || 0);
+  const d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+function dayLabel(keyMs, dateLocale) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const diff = Math.round((today.getTime() - keyMs) / 86400000);
+  if (diff === 0) return t('messages.archive.today');
+  if (diff === 1) return t('messages.archive.yesterday');
+  return new Date(keyMs).toLocaleDateString(dateLocale, {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  });
+}
+
+// Group archived messages into day buckets, newest day first, newest message
+// first within each day.
+function groupByDay(archive) {
+  const buckets = new Map();
+  for (const m of archive) {
+    const k = dayKey(m);
+    if (!buckets.has(k)) buckets.set(k, []);
+    buckets.get(k).push(m);
+  }
+  return [...buckets.entries()]
+    .sort((a, b) => b[0] - a[0])
+    .map(([k, msgs]) => [k, msgs.sort((x, y) => (y.archivedAt||0) - (x.archivedAt||0))]);
+}
+
 // Move a message into the server-side archive. Updates local state
 // synchronously (so the next render shows it) and persists best-effort —
 // archiving must never block the dismiss it accompanies.
@@ -119,20 +162,43 @@ function renderMessages() {
       </ul>`
     : `<p class="text-slate-500">${t('messages.none')}</p>`;
 
-  // Second list: no-longer-active messages, newest archived first.
-  const archive = [...state.messageArchive].sort((a, b) => (b.archivedAt||0) - (a.archivedAt||0));
+  // Second list: no-longer-active messages, grouped by day, newest day first.
+  // Whole archive and each day group are collapsible; open/closed state is
+  // persisted in localStorage. Defaults: outer open, newest day open, rest shut.
+  const archive = [...state.messageArchive];
+  const days = groupByDay(archive);
+  // Drop stored collapse flags for days no longer present (each day-key is an
+  // absolute date, so without pruning localStorage grows without bound).
+  const collapsed = loadArchCollapsed();
+  const liveKeys = new Set(['outer', ...days.map(([k]) => String(k))]);
+  const pruned = Object.fromEntries(Object.entries(collapsed).filter(([k]) => liveKeys.has(k)));
+  if (Object.keys(pruned).length !== Object.keys(collapsed).length) saveArchCollapsed(pruned);
+  const isOpen = (key, dflt) => (key in pruned ? !pruned[key] : dflt);
+  const daysHtml = days.map(([k, msgs], i) => `
+    <details data-arch-day="${k}" class="bg-white rounded-lg border border-slate-200 overflow-hidden" ${isOpen(k, i === 0) ? 'open' : ''}>
+      <summary class="cursor-pointer select-none px-4 py-2.5 flex items-center gap-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+        <span class="flex-1">${dayLabel(k, dateLocale)}</span>
+        <span class="text-xs text-slate-400">${msgs.length}</span>
+      </summary>
+      <ul class="border-t border-slate-200 divide-y">
+        ${msgs.map(m => archiveItem(m, dateLocale)).join('')}
+      </ul>
+    </details>`).join('');
   const archiveHtml = `
     <div class="mt-8">
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="text-sm font-semibold text-slate-600">${t('messages.archive.title')}</h3>
-        ${archive.length ? `<button data-archive-clear
-          class="text-xs text-slate-400 hover:text-rose-600">${t('messages.archive.clear')}</button>` : ''}
-      </div>
       ${archive.length
-        ? `<ul class="bg-white rounded-lg border border-slate-200 divide-y">
-            ${archive.map(m => archiveItem(m, dateLocale)).join('')}
-          </ul>`
-        : `<p class="text-slate-500 text-sm">${t('messages.archive.none')}</p>`}
+        ? `<details data-arch-outer ${isOpen('outer', true) ? 'open' : ''}>
+            <summary class="cursor-pointer select-none mb-2 flex items-center gap-2 list-none">
+              <span class="chevron text-slate-400 text-xs transition-transform">▼</span>
+              <h3 class="text-sm font-semibold text-slate-600 flex-1">${t('messages.archive.title')}</h3>
+              <span class="text-xs text-slate-400">${archive.length}</span>
+              <button data-archive-clear
+                class="text-xs text-slate-400 hover:text-rose-600">${t('messages.archive.clear')}</button>
+            </summary>
+            <div class="space-y-2">${daysHtml}</div>
+          </details>`
+        : `<h3 class="text-sm font-semibold text-slate-600 mb-2">${t('messages.archive.title')}</h3>
+           <p class="text-slate-500 text-sm">${t('messages.archive.none')}</p>`}
     </div>`;
 
   $('#tab-messages').innerHTML = activeHtml + archiveHtml;
@@ -174,9 +240,12 @@ function renderMessages() {
     })
   );
 
-  // Clear the whole archive.
+  // Clear the whole archive. Sits inside the archive <summary>, so stop the
+  // click from also toggling the collapsible.
   const clearBtn = $('#tab-messages [data-archive-clear]');
-  if (clearBtn) clearBtn.addEventListener('click', async () => {
+  if (clearBtn) clearBtn.addEventListener('click', async e => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!confirm(t('messages.archive.clearConfirm'))) return;
     try {
       await api('/api/messages/archive', { method: 'DELETE' });
@@ -184,6 +253,19 @@ function renderMessages() {
       renderMessages();
     } catch (err) { alert(t('error.generic', err.message)); }
   });
+
+  // Persist archive collapse state (whole list + per-day groups).
+  const outer = $('#tab-messages details[data-arch-outer]');
+  if (outer) outer.addEventListener('toggle', () => {
+    const c = loadArchCollapsed();
+    c.outer = !outer.open;
+    saveArchCollapsed(c);
+  });
+  $$('#tab-messages details[data-arch-day]').forEach(d => d.addEventListener('toggle', () => {
+    const c = loadArchCollapsed();
+    c[d.dataset.archDay] = !d.open;
+    saveArchCollapsed(c);
+  }));
 }
 
 

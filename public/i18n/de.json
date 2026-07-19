@@ -156,6 +156,8 @@
     "messages.archive.delete": "Aus Archiv löschen",
     "messages.archive.clear": "Alle löschen",
     "messages.archive.clearConfirm": "Alle archivierten Nachrichten löschen?",
+    "messages.archive.today": "Heute",
+    "messages.archive.yesterday": "Gestern",
     "msg.SOFTWARE_UPDATE_AVAILABLE": "Software-Update verfügbar",
     "msg.LOW_BATTERY": "Batterie schwach",
     "msg.CRITICAL_LOW_BATTERY": "Batterie kritisch schwach",
