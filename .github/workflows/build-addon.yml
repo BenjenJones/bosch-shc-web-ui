@@ -23,13 +23,16 @@ jobs:
     # Fail fast if buildkit boot or a QEMU-emulated arm64 layer stalls, instead
     # of spinning until the 6h default. A cold multi-arch build is ~15-20 min.
     timeout-minutes: 40
+    # `secrets` can't be used in step `if:` — surface it via env, which can.
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
       - uses: actions/checkout@v4
 
       # Authenticate to Docker Hub before buildx so pulling the moby/buildkit
       # image (and base images) uses the account rate limit, not the anonymous
       # one that stalls the "booting builder" step. Skipped if no secret set.
-      - if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
+      - if: ${{ env.DOCKERHUB_USERNAME != '' }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
