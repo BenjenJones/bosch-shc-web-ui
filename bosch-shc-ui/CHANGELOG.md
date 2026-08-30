@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-30
+
+- (Build) Fix `npm start` failing when installed without dev dependencies (`npm install --omit=dev`) — the `prestart` CSS build needs the `tailwindcss` binary, so `@tailwindcss/cli` moved from `devDependencies` to `dependencies` ([#6](https://github.com/BenjenJones/bosch-shc-web-ui/issues/6)).
+- (Build) Apply non-breaking `npm audit fix` for dev tooling — fast-uri, js-yaml, nanoid and postcss advisories. Production deps remain at 0 vulnerabilities.
+
+## 2026-07-19
+
+- (Messages) Inactive messages are now grouped by day and collapsible — the whole archive plus each day is a foldable section, with the open/closed state remembered across reloads (per calendar day). The most recent day starts open.
+
 ## 2026-07-13
 
 - (System) Fix live events silently stopping — the SHC returns a JSON-RPC error in a 200 body when a long-poll subscription expires (e.g. after an SHC restart), which wasn't detected, so the loop kept polling a dead subscription: connection lamp stayed green but no events reached the UI. Now the error is caught and the client re-subscribes automatically.

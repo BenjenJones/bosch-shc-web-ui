@@ -5,7 +5,7 @@
 # The image tag used is this `version`, so it must match a published image
 # (push a git tag like v0.0.1 to build & publish ghcr.io/.../bosch-shc-web-ui:0.0.1).
 name: Bosch SHC Web UI
-version: "0.0.8"
+version: "0.0.9"
 slug: bosch_shc_web_ui
 description: Lokale Web-UI für den Bosch Smart Home Controller (SHC)
 url: https://github.com/BenjenJones/bosch-shc-web-ui
