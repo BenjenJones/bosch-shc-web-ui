@@ -117,6 +117,8 @@
     "battery.critical": "critical",
     "battery.insert":   "insert battery",
     "battery.mains":    "mains powered",
+    "fault.VALVE_NO_MOTOR_ERROR": "Valve: no motor contact",
+    "fault.VALVE_NO_BODY_ERROR": "Valve: not mounted",
     "scenarios.none":   "No scenarios.",
     "scenarios.tap":    "tap to trigger",
     "scenarios.scenariosH": "Scenarios ({0})",

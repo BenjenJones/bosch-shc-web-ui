@@ -117,6 +117,8 @@
     "battery.critical": "kritisch",
     "battery.insert": "Batterie einlegen",
     "battery.mains": "netzbetrieben",
+    "fault.VALVE_NO_MOTOR_ERROR": "Ventil: kein Motorkontakt",
+    "fault.VALVE_NO_BODY_ERROR": "Ventil: nicht montiert",
     "scenarios.none": "Keine Szenarien.",
     "scenarios.tap": "tippen zum Auslösen",
     "scenarios.scenariosH": "Szenarien ({0})",

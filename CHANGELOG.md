@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-10
+
+- (Dashboard) Fix battery badge showing "OK" for a device with low battery — the SHC reports `LOW_BATTERY` as a fault on the BatteryLevel *service*, not on the device. Faults are now read from the service, the device and active battery messages; unknown levels no longer show a full battery, and a cleared fault in a live event is no longer kept from the previous state.
+- (Dashboard) Show other device faults (any service's `faults`, e.g. TRV `VALVE_NO_MOTOR_ERROR`) as a red/amber badge on the device card; unknown fault codes are shown raw.
+
 ## 2026-08-30
 
 - (Build) Fix `npm start` failing when installed without dev dependencies (`npm install --omit=dev`) — the `prestart` CSS build needs the `tailwindcss` binary, so `@tailwindcss/cli` moved from `devDependencies` to `dependencies` ([#6](https://github.com/BenjenJones/bosch-shc-web-ui/issues/6)).

@@ -30,8 +30,13 @@ function connectEvents() {
     for (const e of events) {
       if (e['@type'] === 'DeviceServiceData') {
         const idx = state.services.findIndex(s => s.id === e.id && s.deviceId === e.deviceId);
-        if (idx >= 0) state.services[idx] = { ...state.services[idx], ...e };
-        else state.services.push(e);
+        if (idx >= 0) {
+          const merged = { ...state.services[idx], ...e };
+          // A cleared fault (e.g. battery replaced) arrives as an event without
+          // `faults` — drop the old one instead of keeping it via the merge.
+          if (!('faults' in e)) delete merged.faults;
+          state.services[idx] = merged;
+        } else state.services.push(e);
         touchedDev = true;
         // Update IDS state live
         if (e.deviceId === 'intrusionDetectionSystem' && e.id === 'IntrusionDetectionControl') {

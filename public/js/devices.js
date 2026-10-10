@@ -881,19 +881,24 @@ function renderDeviceCard(device) {
   }
   const meta = [];
   // Battery status. The real SHC only reports a *problem* — a low/critical
-  // battery surfaces as an entry in the device's `faults`; a healthy battery
-  // sends no level at all. So we treat the presence of a BatteryLevel service
-  // as "this device is battery-powered" and show OK unless a fault says
-  // otherwise. The demo (and some devices like the Outdoor Siren) instead
-  // expose BatteryLevel.state.warningLevel, which we honour as a fallback.
-  // Possible levels: OK, LOW_BATTERY, CRITICAL_LOW, CRITICAL_LOW_BATTERY,
-  // INSERT_BATTERY, NOT_AVAILABLE.
-  const faultEntries = Array.isArray(device.faults)
-    ? device.faults : (device.faults?.entries || []);
-  const batteryFault = faultEntries.find(f =>
-    f.type === 'LOW_BATTERY' || f.type === 'CRITICAL_LOW_BATTERY');
+  // battery surfaces as a `faults` entry on the BatteryLevel *service* (not in
+  // its state; some firmwares also put it on the device), plus an active
+  // LOW_BATTERY message; a healthy battery sends no level at all. So we treat
+  // the presence of a BatteryLevel service as "this device is battery-powered"
+  // and show OK unless a fault or message says otherwise. The demo (and some
+  // devices like the Outdoor Siren) instead expose
+  // BatteryLevel.state.warningLevel, which we honour as a fallback.
+  // Possible levels: OK, LOW_BATTERY, CRITICAL_LOW, CRITICAL_BATTERY,
+  // CRITICAL_LOW_BATTERY, INSERT_BATTERY, NOT_AVAILABLE.
+  const faultList = f => Array.isArray(f) ? f : (f?.entries || []);
+  const BATTERY_FAULTS = ['LOW_BATTERY', 'CRITICAL_LOW', 'CRITICAL_BATTERY', 'CRITICAL_LOW_BATTERY', 'INSERT_BATTERY'];
+  const batteryFault = [...faultList(battery?.faults), ...faultList(device.faults)]
+    .find(f => BATTERY_FAULTS.includes(f.type));
+  const batteryMsg = state.messages.find(m => isMessageActive(m) &&
+    m.sourceId === device.id && BATTERY_FAULTS.includes(m.messageCode?.name));
   const batteryLevel =
     batteryFault              ? batteryFault.type :
+    batteryMsg                ? batteryMsg.messageCode.name :
     battery?.state?.warningLevel ? battery.state.warningLevel :
     battery                   ? 'OK' : null;
   if (batteryLevel && batteryLevel !== 'NOT_AVAILABLE') {
@@ -901,13 +906,32 @@ function renderDeviceCard(device) {
       OK:                    { icon: 'battery-high', cls: 'text-emerald-700', label: t('battery.ok') },
       LOW_BATTERY:           { icon: 'battery-medium', cls: 'text-amber-700',   label: t('battery.low') },
       CRITICAL_LOW:          { icon: 'battery-low', cls: 'text-rose-700',    label: t('battery.critical') },
+      CRITICAL_BATTERY:      { icon: 'battery-low', cls: 'text-rose-700',    label: t('battery.critical') },
       CRITICAL_LOW_BATTERY:  { icon: 'battery-low', cls: 'text-rose-700',    label: t('battery.critical') },
       INSERT_BATTERY:        { icon: 'battery-off-outline',  cls: 'text-rose-700',    label: t('battery.insert') },
     };
-    const b = map[batteryLevel] || { icon: 'battery-high', cls: 'text-slate-600', label: batteryLevel };
+    // Unknown level: never pretend it's full — show a neutral half battery.
+    const b = map[batteryLevel] || { icon: 'battery-medium', cls: 'text-slate-600', label: batteryLevel };
     meta.push(`<span class="${b.cls} inline-flex items-center gap-1"><img src="svg/${b.icon}.svg" style="width:16px;height:16px" alt="" /> ${b.label}</span>`);
   }
   if (valve?.state?.position != null) meta.push(t('devices.valve', valve.state.position));
+
+  // Generic faults: any service (and the device itself) can carry
+  // `faults.entries[{type, category}]`, e.g. ValveTappet VALVE_NO_MOTOR_ERROR.
+  // Battery faults are already shown above. Unknown types fall back to the raw code.
+  const otherFaults = [...services.flatMap(s => faultList(s.faults)), ...faultList(device.faults)]
+    .filter((f, i, all) => f?.type && !BATTERY_FAULTS.includes(f.type)
+      && all.findIndex(g => g?.type === f.type) === i);
+  let faultHtml = '';
+  if (otherFaults.length) {
+    faultHtml = `<div class="mt-2 flex flex-wrap gap-1">${otherFaults.map(f => {
+      const isError = f.category !== 'WARNING';
+      const label = t('fault.' + f.type) === 'fault.' + f.type ? f.type : t('fault.' + f.type);
+      return `<span class="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-xs font-medium
+        ${isError ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-800'}" title="${escapeHtml(f.type)}">
+        <span class="w-1.5 h-1.5 rounded-full ${isError ? 'bg-rose-500' : 'bg-amber-500'}"></span>${escapeHtml(label)}</span>`;
+    }).join('')}</div>`;
+  }
 
   let cqHtml = '';
   if (communicationQuality?.state?.quality) {
@@ -940,6 +964,7 @@ function renderDeviceCard(device) {
                                             : 'bg-slate-100 text-slate-500'}">${device.status||''}</span>
         </div>
       </header>
+      ${faultHtml}
       ${body}
       ${meta.length ? `<div class="mt-2 text-xs text-slate-500 space-x-2">${meta.join(' · ')}</div>` : ''}
     </article>`;
