@@ -1,4 +1,4 @@
-import { state, $, $$, t, api, escapeHtml, roomName, deviceName, serviceOf, deviceUpdateInfo, saveCollapsedRooms, isMessageActive } from './core.js';
+import { state, $, $$, t, api, escapeHtml, roomName, deviceName, serviceOf, deviceUpdateInfo, deviceBatteryLevel, deviceFaults, saveCollapsedRooms, isMessageActive } from './core.js';
 import { severityFromMessage, messageTitle } from './messages.js';
 import { showModal, hideModal } from './modals.js';
 
@@ -654,6 +654,30 @@ function commQualityInfo(quality) {
   return map[quality] || { icon: 'wifi-off', cls: 'text-slate-400', label: quality || t('commQuality.unknown') };
 }
 
+// Battery level (see deviceBatteryLevel in core.js) → icon, colour, label.
+function batteryInfo(level) {
+  const map = {
+    OK:                    { icon: 'battery-high',        cls: 'text-emerald-700', label: t('battery.ok') },
+    LOW_BATTERY:           { icon: 'battery-medium',      cls: 'text-amber-700',   label: t('battery.low') },
+    CRITICAL_LOW:          { icon: 'battery-low',         cls: 'text-rose-700',    label: t('battery.critical') },
+    CRITICAL_BATTERY:      { icon: 'battery-low',         cls: 'text-rose-700',    label: t('battery.critical') },
+    CRITICAL_LOW_BATTERY:  { icon: 'battery-low',         cls: 'text-rose-700',    label: t('battery.critical') },
+    INSERT_BATTERY:        { icon: 'battery-off-outline', cls: 'text-rose-700',    label: t('battery.insert') },
+  };
+  // Unknown level: never pretend it's full — show a neutral half battery.
+  return map[level] || { icon: 'battery-medium', cls: 'text-slate-600', label: level };
+}
+
+// One fault entry ({type, category}) as a coloured chip. WARNING → amber,
+// everything else → rose. Unknown types fall back to the raw code.
+function faultChip(f) {
+  const isError = f.category !== 'WARNING';
+  const label = t('fault.' + f.type) === 'fault.' + f.type ? f.type : t('fault.' + f.type);
+  return `<span class="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-xs font-medium
+    ${isError ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-800'}" title="${escapeHtml(f.type)}">
+    <span class="w-1.5 h-1.5 rounded-full ${isError ? 'bg-rose-500' : 'bg-amber-500'}"></span>${escapeHtml(label)}</span>`;
+}
+
 // Air-quality / climate rating (GOOD | MEDIUM | BAD) → text colour.
 function ratingColor(rating) {
   return { GOOD: 'text-emerald-600', MEDIUM: 'text-amber-600', BAD: 'text-rose-600' }[rating]
@@ -681,7 +705,6 @@ function renderDeviceCard(device) {
   const climate  = services.find(s => s.id === 'RoomClimateControl');
   const temp     = services.find(s => s.id === 'TemperatureLevel');
   const humidity = services.find(s => s.id === 'HumidityLevel');
-  const battery  = services.find(s => s.id === 'BatteryLevel');
   const shutter  = services.find(s => s.id === 'ShutterContact');
   const shutterCtl = services.find(s => s.id === 'ShutterControl');
   const binary   = services.find(s => s.id === 'BinarySwitch');   // generic on/off (Hue, micromodule light/switch)
@@ -880,58 +903,18 @@ function renderDeviceCard(device) {
       </button>`;
   }
   const meta = [];
-  // Battery status. The real SHC only reports a *problem* — a low/critical
-  // battery surfaces as a `faults` entry on the BatteryLevel *service* (not in
-  // its state; some firmwares also put it on the device), plus an active
-  // LOW_BATTERY message; a healthy battery sends no level at all. So we treat
-  // the presence of a BatteryLevel service as "this device is battery-powered"
-  // and show OK unless a fault or message says otherwise. The demo (and some
-  // devices like the Outdoor Siren) instead expose
-  // BatteryLevel.state.warningLevel, which we honour as a fallback.
-  // Possible levels: OK, LOW_BATTERY, CRITICAL_LOW, CRITICAL_BATTERY,
-  // CRITICAL_LOW_BATTERY, INSERT_BATTERY, NOT_AVAILABLE.
-  const faultList = f => Array.isArray(f) ? f : (f?.entries || []);
-  const BATTERY_FAULTS = ['LOW_BATTERY', 'CRITICAL_LOW', 'CRITICAL_BATTERY', 'CRITICAL_LOW_BATTERY', 'INSERT_BATTERY'];
-  const batteryFault = [...faultList(battery?.faults), ...faultList(device.faults)]
-    .find(f => BATTERY_FAULTS.includes(f.type));
-  const batteryMsg = state.messages.find(m => isMessageActive(m) &&
-    m.sourceId === device.id && BATTERY_FAULTS.includes(m.messageCode?.name));
-  const batteryLevel =
-    batteryFault              ? batteryFault.type :
-    batteryMsg                ? batteryMsg.messageCode.name :
-    battery?.state?.warningLevel ? battery.state.warningLevel :
-    battery                   ? 'OK' : null;
+  const batteryLevel = deviceBatteryLevel(device);
   if (batteryLevel && batteryLevel !== 'NOT_AVAILABLE') {
-    const map = {
-      OK:                    { icon: 'battery-high', cls: 'text-emerald-700', label: t('battery.ok') },
-      LOW_BATTERY:           { icon: 'battery-medium', cls: 'text-amber-700',   label: t('battery.low') },
-      CRITICAL_LOW:          { icon: 'battery-low', cls: 'text-rose-700',    label: t('battery.critical') },
-      CRITICAL_BATTERY:      { icon: 'battery-low', cls: 'text-rose-700',    label: t('battery.critical') },
-      CRITICAL_LOW_BATTERY:  { icon: 'battery-low', cls: 'text-rose-700',    label: t('battery.critical') },
-      INSERT_BATTERY:        { icon: 'battery-off-outline',  cls: 'text-rose-700',    label: t('battery.insert') },
-    };
-    // Unknown level: never pretend it's full — show a neutral half battery.
-    const b = map[batteryLevel] || { icon: 'battery-medium', cls: 'text-slate-600', label: batteryLevel };
+    const b = batteryInfo(batteryLevel);
     meta.push(`<span class="${b.cls} inline-flex items-center gap-1"><img src="svg/${b.icon}.svg" style="width:16px;height:16px" alt="" /> ${b.label}</span>`);
   }
   if (valve?.state?.position != null) meta.push(t('devices.valve', valve.state.position));
 
-  // Generic faults: any service (and the device itself) can carry
-  // `faults.entries[{type, category}]`, e.g. ValveTappet VALVE_NO_MOTOR_ERROR.
   // Battery faults are already shown above. Unknown types fall back to the raw code.
-  const otherFaults = [...services.flatMap(s => faultList(s.faults)), ...faultList(device.faults)]
-    .filter((f, i, all) => f?.type && !BATTERY_FAULTS.includes(f.type)
-      && all.findIndex(g => g?.type === f.type) === i);
-  let faultHtml = '';
-  if (otherFaults.length) {
-    faultHtml = `<div class="mt-2 flex flex-wrap gap-1">${otherFaults.map(f => {
-      const isError = f.category !== 'WARNING';
-      const label = t('fault.' + f.type) === 'fault.' + f.type ? f.type : t('fault.' + f.type);
-      return `<span class="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded text-xs font-medium
-        ${isError ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-800'}" title="${escapeHtml(f.type)}">
-        <span class="w-1.5 h-1.5 rounded-full ${isError ? 'bg-rose-500' : 'bg-amber-500'}"></span>${escapeHtml(label)}</span>`;
-    }).join('')}</div>`;
-  }
+  const otherFaults = deviceFaults(device);
+  const faultHtml = otherFaults.length
+    ? `<div class="mt-2 flex flex-wrap gap-1">${otherFaults.map(faultChip).join('')}</div>`
+    : '';
 
   let cqHtml = '';
   if (communicationQuality?.state?.quality) {
@@ -1367,4 +1350,4 @@ function onColorChange(e) {
 }
 
 
-export { DEVICE_CATEGORIES, deviceCategory, deviceSortRank, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange, onHeatingSetpointChange, onShutterLevelChange, onDimmerLevelChange, onColorChange, onKeypadScenarioChange };
+export { DEVICE_CATEGORIES, deviceCategory, deviceSortRank, batteryInfo, faultChip, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange, onHeatingSetpointChange, onShutterLevelChange, onDimmerLevelChange, onColorChange, onKeypadScenarioChange };

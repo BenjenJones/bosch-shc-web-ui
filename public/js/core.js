@@ -5,6 +5,7 @@ import { renderDevices } from './devices.js';
 import { renderScenarios } from './scenarios.js';
 import { renderSecurity } from './security.js';
 import { renderMessages, messageTitle } from './messages.js';
+import { renderHealth } from './health.js';
 import { renderAdmin } from './admin.js';
 import { renderUsers } from './users.js';
 import { renderSessions } from './sessions.js';
@@ -162,8 +163,9 @@ function applyStaticTexts() {
   $('[data-tab="users"]').textContent     = t('tab.users');
   $('[data-tab="sessions"]').textContent  = t('tab.sessions');
   $('[data-tab="messages"] [data-tab-label]').textContent = t('tab.messages');
+  $('[data-tab="health"] [data-tab-label]').textContent   = t('tab.health');
   // Mobile dropdown mirrors the same labels (i18n applied here too)
-  for (const name of ['devices','scenarios','security','messages','admin','users','sessions']) {
+  for (const name of ['devices','scenarios','security','messages','health','admin','users','sessions']) {
     const opt = $(`#tab-select option[value="${name}"]`);
     if (opt) opt.textContent = t('tab.' + name);
   }
@@ -288,6 +290,7 @@ function renderAll() {
   renderScenarios();
   renderSecurity();
   renderMessages();
+  renderHealth();
   if (isAdmin()) {
     renderAdmin();
     renderUsers();
@@ -353,7 +356,42 @@ function deviceUpdateInfo(device) {
   };
 }
 
+// Battery status. The real SHC only reports a *problem* — a low/critical
+// battery surfaces as a `faults` entry on the BatteryLevel *service* (not in
+// its state; some firmwares also put it on the device), plus an active
+// LOW_BATTERY message; a healthy battery sends no level at all. So we treat
+// the presence of a BatteryLevel service as "this device is battery-powered"
+// and report OK unless a fault or message says otherwise. The demo (and some
+// devices like the Outdoor Siren) instead expose
+// BatteryLevel.state.warningLevel, which we honour as a fallback.
+// Possible levels: OK, LOW_BATTERY, CRITICAL_LOW, CRITICAL_BATTERY,
+// CRITICAL_LOW_BATTERY, INSERT_BATTERY, NOT_AVAILABLE. null = mains-powered.
+const BATTERY_FAULTS = ['LOW_BATTERY', 'CRITICAL_LOW', 'CRITICAL_BATTERY', 'CRITICAL_LOW_BATTERY', 'INSERT_BATTERY'];
+const faultList = f => Array.isArray(f) ? f : (f?.entries || []);
 
-const escapeHtml = (s) => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function deviceBatteryLevel(device) {
+  const battery = serviceOf(device.id, 'BatteryLevel');
+  const batteryFault = [...faultList(battery?.faults), ...faultList(device.faults)]
+    .find(f => BATTERY_FAULTS.includes(f.type));
+  const batteryMsg = state.messages.find(m => isMessageActive(m) &&
+    m.sourceId === device.id && BATTERY_FAULTS.includes(m.messageCode?.name));
+  return batteryFault                 ? batteryFault.type :
+         batteryMsg                   ? batteryMsg.messageCode.name :
+         battery?.state?.warningLevel ? battery.state.warningLevel :
+         battery                      ? 'OK' : null;
+}
 
-export { $, $$, I18N, loadI18N, t, state, isAdmin, toggleNotify, notifyNewMessage, saveCollapsedRooms, setTheme, setLang, applyStaticTexts, api, safeApi, loadAll, renderAll, serviceOf, roomName, deviceName, deviceUpdateInfo, escapeHtml, isMessageActive };
+// Generic faults: any service (and the device itself) can carry
+// `faults.entries[{type, category}]`, e.g. ValveTappet VALVE_NO_MOTOR_ERROR.
+// Battery faults are excluded (see deviceBatteryLevel); duplicates by type are
+// collapsed.
+function deviceFaults(device) {
+  const services = state.services.filter(s => s.deviceId === device.id);
+  return [...services.flatMap(s => faultList(s.faults)), ...faultList(device.faults)]
+    .filter((f, i, all) => f?.type && !BATTERY_FAULTS.includes(f.type)
+      && all.findIndex(g => g?.type === f.type) === i);
+}
+
+const escapeHtml =(s) => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+export { $, $$, I18N, loadI18N, t, state, isAdmin, toggleNotify, notifyNewMessage, saveCollapsedRooms, setTheme, setLang, applyStaticTexts, api, safeApi, loadAll, renderAll, serviceOf, roomName, deviceName, deviceUpdateInfo, deviceBatteryLevel, deviceFaults, escapeHtml, isMessageActive };

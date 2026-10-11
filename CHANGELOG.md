@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-11
+
+- (Health) New *Health* tab: summary tiles and an issue list for unreachable devices, low/critical batteries, device faults, poor signal and pending firmware updates (tiles filter the list), plus a list of all battery devices and of signal quality, worst first. The tab badge counts devices with warnings or errors and updates live.
+
 ## 2026-10-10
 
 - (Dashboard) Fix battery badge showing "OK" for a device with low battery — the SHC reports `LOW_BATTERY` as a fault on the BatteryLevel *service*, not on the device. Faults are now read from the service, the device and active battery messages; unknown levels no longer show a full battery, and a cleared fault in a live event is no longer kept from the previous state.

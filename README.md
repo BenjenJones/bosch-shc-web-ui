@@ -48,6 +48,12 @@ The proxy is required because browsers cannot present client certificates (mTLS)
 - Mute an active alarm
 - Toggle user-defined states (Present, Vacation, …)
 
+**Health**
+- Summary tiles: unreachable devices, battery, device faults, poor signal, firmware updates — click a tile to filter
+- Issue list sorted by severity, with the room and model of each device
+- All battery-powered devices and all devices' signal quality, worst first
+- Tab badge with the number of devices that need attention, updated live
+
 **Admin** (mirrors the app's *Settings* area)
 - Controller overview with firmware and update status
 - List and remove mobile devices / clients

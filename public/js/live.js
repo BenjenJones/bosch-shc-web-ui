@@ -3,6 +3,7 @@ import { renderDevices } from './devices.js';
 import { renderSecurity } from './security.js';
 import { renderMessages, archiveMessage } from './messages.js';
 import { renderScenarios } from './scenarios.js';
+import { renderHealth } from './health.js';
 
 function connectEvents() {
   // Full literal class strings per state — Tailwind's JIT only emits classes
@@ -73,7 +74,7 @@ function connectEvents() {
     }
     // Messages also drive the per-room marker on the Devices tab, so refresh
     // the device list when either devices or messages changed.
-    if (touchedDev || touchedMsg) renderDevices();
+    if (touchedDev || touchedMsg) { renderDevices(); renderHealth(); }
     if (touchedSec) renderSecurity();
     if (touchedMsg) renderMessages();
     if (touchedScn) renderScenarios();

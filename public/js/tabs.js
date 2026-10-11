@@ -2,7 +2,7 @@ import { $, $$, loadAll, setLang, setTheme, toggleNotify } from './core.js';
 import { loadUsers } from './users.js';
 import { loadSessions } from './sessions.js';
 
-const ALL_TABS = ['devices','scenarios','security','messages','admin','users','sessions'];
+const ALL_TABS = ['devices','scenarios','security','messages','health','admin','users','sessions'];
 
 function selectTab(name) {
   if (!ALL_TABS.includes(name)) return;
