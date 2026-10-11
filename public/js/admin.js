@@ -180,13 +180,13 @@ function renderAdmin() {
   // Aktionen verdrahten
   $$('#tab-admin [data-client-del]').forEach(b => b.addEventListener('click', () =>
     confirmModal(t('modal.confirmRmClient', b.dataset.clientName), async () => {
-      await api(`/api/clients/${encodeURIComponent(b.dataset.clientDel)}`, { method: 'DELETE' });
+      await api(`api/clients/${encodeURIComponent(b.dataset.clientDel)}`, { method: 'DELETE' });
       await loadAll();
     })));
 
   $('#tab-admin #room-add')?.addEventListener('click', () =>
     promptModal(t('modal.addRoom'), '', async (name) => {
-      await api('/api/rooms', {
+      await api('api/rooms', {
         method: 'POST',
         body: { '@type': 'room', name, iconId: 'icon_room_misc' },
       });
@@ -196,7 +196,7 @@ function renderAdmin() {
   $$('#tab-admin [data-room-rename]').forEach(b => b.addEventListener('click', () =>
     promptModal(t('modal.renameRoom'), b.dataset.name, async (newName) => {
       const room = state.rooms.find(r => r.id === b.dataset.roomRename);
-      await api(`/api/rooms/${encodeURIComponent(b.dataset.roomRename)}`, {
+      await api(`api/rooms/${encodeURIComponent(b.dataset.roomRename)}`, {
         method: 'PUT',
         body: { '@type': 'room', id: room?.id, iconId: room?.iconId, name: newName },
       });
@@ -205,13 +205,13 @@ function renderAdmin() {
 
   $$('#tab-admin [data-room-del]').forEach(b => b.addEventListener('click', () =>
     confirmModal(t('modal.confirmRmRoom', b.dataset.name), async () => {
-      await api(`/api/rooms/${encodeURIComponent(b.dataset.roomDel)}`, { method: 'DELETE' });
+      await api(`api/rooms/${encodeURIComponent(b.dataset.roomDel)}`, { method: 'DELETE' });
       await loadAll();
     })));
 
   $$('#tab-admin [data-device-room]').forEach(sel => sel.addEventListener('change', async () => {
     try {
-      await api(`/api/devices/${encodeURIComponent(sel.dataset.deviceRoom)}`,
+      await api(`api/devices/${encodeURIComponent(sel.dataset.deviceRoom)}`,
         { method: 'PUT', body: { '@type': 'device', roomId: sel.value } });
       await loadAll();
     } catch (err) { alert(t('error.generic', err.message)); }
@@ -219,14 +219,14 @@ function renderAdmin() {
 
   $$('#tab-admin [data-device-rename]').forEach(b => b.addEventListener('click', () =>
     promptModal(t('modal.renameDevice'), b.dataset.name, async (newName) => {
-      await api(`/api/devices/${encodeURIComponent(b.dataset.deviceRename)}`,
+      await api(`api/devices/${encodeURIComponent(b.dataset.deviceRename)}`,
         { method: 'PUT', body: { '@type': 'device', name: newName } });
       await loadAll();
     })));
 
   $$('#tab-admin [data-device-del]').forEach(b => b.addEventListener('click', () =>
     confirmModal(t('modal.confirmRmDevice', b.dataset.name), async () => {
-      await api(`/api/devices/${encodeURIComponent(b.dataset.deviceDel)}`, { method: 'DELETE' });
+      await api(`api/devices/${encodeURIComponent(b.dataset.deviceDel)}`, { method: 'DELETE' });
       await loadAll();
     })));
 

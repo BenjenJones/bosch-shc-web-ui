@@ -1070,7 +1070,7 @@ async function onDeviceAction(e) {
     const newState = btn.dataset.on === 'true' ? 'OFF' : 'ON';
     btn.classList.add('pulse');
     try {
-      await api(`/api/devices/${encodeURIComponent(device)}/services/PowerSwitch/state`, {
+      await api(`api/devices/${encodeURIComponent(device)}/services/PowerSwitch/state`, {
         method: 'PUT',
         body: { '@type': 'powerSwitchState', switchState: newState },
       });
@@ -1082,7 +1082,7 @@ async function onDeviceAction(e) {
     const newMode = btn.dataset.on === 'true' ? 'MODE_NORMAL' : 'MODE_SILENT';
     btn.classList.add('pulse');
     try {
-      await api(`/api/devices/${encodeURIComponent(device)}/services/SilentMode/state`, {
+      await api(`api/devices/${encodeURIComponent(device)}/services/SilentMode/state`, {
         method: 'PUT',
         body: { '@type': 'silentModeState', mode: newMode },
       });
@@ -1097,7 +1097,7 @@ async function onDeviceAction(e) {
     const newValue = btn.dataset.on === 'true' ? def.offValue : def.onValue;
     btn.classList.add('pulse');
     try {
-      await api(`/api/devices/${encodeURIComponent(device)}/services/${svcId}/state`, {
+      await api(`api/devices/${encodeURIComponent(device)}/services/${svcId}/state`, {
         method: 'PUT',
         body: { '@type': def.type, [def.field]: newValue },
       });
@@ -1109,7 +1109,7 @@ async function onDeviceAction(e) {
     const level = parseFloat(btn.dataset.level); // 1=open, 0=closed
     btn.classList.add('pulse');
     try {
-      await api(`/api/devices/${encodeURIComponent(device)}/services/ShutterControl/state`, {
+      await api(`api/devices/${encodeURIComponent(device)}/services/ShutterControl/state`, {
         method: 'PUT',
         body: { '@type': 'shutterControlState', level },
       });
@@ -1121,7 +1121,7 @@ async function onDeviceAction(e) {
     const on = !(btn.dataset.on === 'true');
     btn.classList.add('pulse');
     try {
-      await api(`/api/devices/${encodeURIComponent(device)}/services/BinarySwitch/state`, {
+      await api(`api/devices/${encodeURIComponent(device)}/services/BinarySwitch/state`, {
         method: 'PUT',
         body: { '@type': 'binarySwitchState', on },
       });
@@ -1132,7 +1132,7 @@ async function onDeviceAction(e) {
   } else if (action === 'impulse') {
     btn.classList.add('pulse');
     try {
-      await api(`/api/devices/${encodeURIComponent(device)}/services/ImpulseSwitch/state`, {
+      await api(`api/devices/${encodeURIComponent(device)}/services/ImpulseSwitch/state`, {
         method: 'PUT',
         body: {
           '@type': 'impulseSwitchState',
@@ -1147,7 +1147,7 @@ async function onDeviceAction(e) {
     // operationState=STOPPED (same as the Bosch app / boschshcpy).
     btn.classList.add('pulse');
     try {
-      await api(`/api/devices/${encodeURIComponent(device)}/services/ShutterControl/state`, {
+      await api(`api/devices/${encodeURIComponent(device)}/services/ShutterControl/state`, {
         method: 'PUT',
         body: { '@type': 'shutterControlState', operationState: 'STOPPED' },
       });
@@ -1159,7 +1159,7 @@ async function onDeviceAction(e) {
     const boostMode = btn.dataset.on !== 'true';
     btn.classList.add('pulse');
     try {
-      await api(`/api/devices/${encodeURIComponent(device)}/services/RoomClimateControl/state`, {
+      await api(`api/devices/${encodeURIComponent(device)}/services/RoomClimateControl/state`, {
         method: 'PUT',
         body: { '@type': 'climateControlState', boostMode },
       });
@@ -1171,7 +1171,7 @@ async function onDeviceAction(e) {
     const mode = btn.dataset.mode; // AUTOMATIC | MANUAL
     btn.classList.add('pulse');
     try {
-      await api(`/api/devices/${encodeURIComponent(device)}/services/HeatingCircuit/state`, {
+      await api(`api/devices/${encodeURIComponent(device)}/services/HeatingCircuit/state`, {
         method: 'PUT',
         body: { '@type': 'heatingCircuitState', operationMode: mode },
       });
@@ -1292,7 +1292,7 @@ function openDeviceSettings(deviceId) {
   // Write a state change and mirror it locally so the card reflects it on close.
   const put = async (svcId, body, el) => {
     try {
-      await api(`/api/devices/${encodeURIComponent(deviceId)}/services/${svcId}/state`, { method: 'PUT', body });
+      await api(`api/devices/${encodeURIComponent(deviceId)}/services/${svcId}/state`, { method: 'PUT', body });
       const s = serviceOf(deviceId, svcId);
       if (s) s.state = { ...(s.state || {}), ...body };
       renderDevices();
@@ -1347,7 +1347,7 @@ function onTemperatureChange(e) {
   tempDebounce.set(deviceId, setTimeout(async () => {
     tempDebounce.delete(deviceId);
     try {
-      await api(`/api/devices/${encodeURIComponent(deviceId)}/services/RoomClimateControl/state`, {
+      await api(`api/devices/${encodeURIComponent(deviceId)}/services/RoomClimateControl/state`, {
         method: 'PUT',
         body: { '@type': 'climateControlState', setpointTemperature: value },
       });
@@ -1372,7 +1372,7 @@ function onHeatingSetpointChange(e) {
   heatDebounce.set(deviceId, setTimeout(async () => {
     heatDebounce.delete(deviceId);
     try {
-      await api(`/api/devices/${encodeURIComponent(deviceId)}/services/HeatingCircuit/state`, {
+      await api(`api/devices/${encodeURIComponent(deviceId)}/services/HeatingCircuit/state`, {
         method: 'PUT',
         body: { '@type': 'heatingCircuitState', setpointTemperature: value },
       });
@@ -1394,7 +1394,7 @@ function onShutterLevelChange(e) {
   shutterDebounce.set(deviceId, setTimeout(async () => {
     shutterDebounce.delete(deviceId);
     try {
-      await api(`/api/devices/${encodeURIComponent(deviceId)}/services/ShutterControl/state`, {
+      await api(`api/devices/${encodeURIComponent(deviceId)}/services/ShutterControl/state`, {
         method: 'PUT',
         body: { '@type': 'shutterControlState', level },
       });
@@ -1413,7 +1413,7 @@ function onShutterLevelChange(e) {
 async function putShutterGroup(scope, body) {
   const devs = shutterDevices(scope === 'all' ? null : scope);
   const results = await Promise.allSettled(devs.map(d =>
-    api(`/api/devices/${encodeURIComponent(d.id)}/services/ShutterControl/state`, {
+    api(`api/devices/${encodeURIComponent(d.id)}/services/ShutterControl/state`, {
       method: 'PUT',
       body: { '@type': 'shutterControlState', ...body },
     })));
@@ -1457,7 +1457,7 @@ function onDimmerLevelChange(e) {
   dimmerDebounce.set(deviceId, setTimeout(async () => {
     dimmerDebounce.delete(deviceId);
     try {
-      await api(`/api/devices/${encodeURIComponent(deviceId)}/services/MultiLevelSwitch/state`, {
+      await api(`api/devices/${encodeURIComponent(deviceId)}/services/MultiLevelSwitch/state`, {
         method: 'PUT',
         body: { '@type': 'multiLevelSwitchState', level },
       });
@@ -1481,7 +1481,7 @@ async function onKeypadScenarioChange(e) {
   if (value) assoc[key] = value; else delete assoc[key];
   const newState = { ...(svc.state || {}), '@type': 'keypadTriggerState', scenarioIdAssociations: assoc };
   try {
-    await api(`/api/devices/${encodeURIComponent(deviceId)}/services/KeypadTrigger/state`, {
+    await api(`api/devices/${encodeURIComponent(deviceId)}/services/KeypadTrigger/state`, {
       method: 'PUT',
       body: newState,
     });
@@ -1500,7 +1500,7 @@ function onColorChange(e) {
   const rgb = (0xff << 24) | (r << 16) | (g << 8) | b; // signed 32-bit
   (async () => {
     try {
-      await api(`/api/devices/${encodeURIComponent(deviceId)}/services/HSBColorActuator/state`, {
+      await api(`api/devices/${encodeURIComponent(deviceId)}/services/HSBColorActuator/state`, {
         method: 'PUT',
         body: { '@type': 'colorState', rgb },
       });

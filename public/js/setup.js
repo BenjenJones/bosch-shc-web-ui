@@ -95,7 +95,7 @@ function wireSetupWizard() {
     const originalLabel = btn.textContent;
     btn.disabled = true; btn.textContent = t('setup.pairBusy');
     try {
-      await postJSON('/api/setup', {
+      await postJSON('api/setup', {
         shcIp:         setupDraft.shcIp,
         password,
         authEnabled:   setupDraft.authEnabled,

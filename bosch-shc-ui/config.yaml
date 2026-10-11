@@ -19,6 +19,15 @@ init: false
 # /data is provided and persisted by the Supervisor automatically; the image
 # points BOSCH_SHC_DATA_DIR there, so pairing/auth/certs survive restarts and
 # updates.
+# Sidebar panel via HA ingress (HA proxies the UI; no open port needed for
+# it). Ingress talks plain HTTP to the add-on, so don't enable uiTls here.
+# The UI's own login still applies inside the panel.
+ingress: true
+ingress_port: 3000
+panel_icon: mdi:shield-home
+panel_title: Bosch SHC
+# Direct access on port 3000 stays available (standalone / other devices);
+# clear the host port in the add-on's Network settings to turn it off.
 ports:
   3000/tcp: 3000
 ports_description:

@@ -4,7 +4,7 @@ import { loadSessions } from './sessions.js';
 
 async function loadUsers() {
   if (!isAdmin()) return;
-  try { state.users = await api('/api/auth/users') || []; }
+  try { state.users = await api('api/auth/users') || []; }
   catch (_) { state.users = []; }
   renderUsers();
 }
@@ -44,7 +44,7 @@ function renderUsers() {
   $('#user-new').onclick = openCreateUserModal;
   $$('#tab-users [data-user-del]').forEach(b => b.addEventListener('click', () =>
     confirmModal(t('users.confirmDelete', b.dataset.userDel), async () => {
-      await api(`/api/auth/users/${encodeURIComponent(b.dataset.userDel)}`, { method: 'DELETE' });
+      await api(`api/auth/users/${encodeURIComponent(b.dataset.userDel)}`, { method: 'DELETE' });
       await loadUsers();
       await loadSessions();
     })));
@@ -80,7 +80,7 @@ function openCreateUserModal() {
     if (!name) { err.textContent = t('auth.allFieldsRequired'); err.classList.remove('hidden'); return; }
     if (pass.length < 4) { err.textContent = t('auth.passwordTooShort'); err.classList.remove('hidden'); return; }
     try {
-      await api('/api/auth/users', { method: 'POST', body: { username: name, password: pass, role } });
+      await api('api/auth/users', { method: 'POST', body: { username: name, password: pass, role } });
       hideModal();
       await loadUsers();
     } catch (e) {
@@ -110,7 +110,7 @@ function openResetPasswordModal(username) {
     const err = $('#rp-err'); err.classList.add('hidden');
     if (pass.length < 4) { err.textContent = t('auth.passwordTooShort'); err.classList.remove('hidden'); return; }
     try {
-      await api(`/api/auth/users/${encodeURIComponent(username)}/reset-password`,
+      await api(`api/auth/users/${encodeURIComponent(username)}/reset-password`,
         { method: 'POST', body: { password: pass } });
       hideModal();
       await loadUsers();

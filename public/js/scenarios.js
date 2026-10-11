@@ -245,7 +245,7 @@ async function submitScenario() {
   const body = { '@type': 'scenario', name, iconId: d.iconId, actions };
   if (d.id) body.id = d.id;
   try {
-    await api(d.id ? `/api/scenarios/${encodeURIComponent(d.id)}` : '/api/scenarios',
+    await api(d.id ? `api/scenarios/${encodeURIComponent(d.id)}` : 'api/scenarios',
       { method: d.id ? 'PUT' : 'POST', body });
     hideModal();
     await loadAll();
@@ -350,7 +350,7 @@ function renderScenarios() {
   $$('#tab-scenarios [data-scenario]').forEach(b =>
     b.addEventListener('click', async () => {
       try {
-        await api(`/api/scenarios/${encodeURIComponent(b.dataset.scenario)}/trigger`, { method: 'POST' });
+        await api(`api/scenarios/${encodeURIComponent(b.dataset.scenario)}/trigger`, { method: 'POST' });
         b.classList.add('pulse');
         setTimeout(() => b.classList.remove('pulse'), 1500);
       } catch (err) { alert(t('error.generic', err.message)); }
@@ -366,14 +366,14 @@ function renderScenarios() {
 
   $$('#tab-scenarios [data-scenario-del]').forEach(b => b.addEventListener('click', () =>
     confirmModal(t('modal.confirmRmScenario', b.dataset.name), async () => {
-      await api(`/api/scenarios/${encodeURIComponent(b.dataset.scenarioDel)}`, { method: 'DELETE' });
+      await api(`api/scenarios/${encodeURIComponent(b.dataset.scenarioDel)}`, { method: 'DELETE' });
       await loadAll();
     })));
 
   $$('#tab-scenarios [data-uds]').forEach(b => b.addEventListener('click', async () => {
     const newState = !(b.dataset.on === 'true');
     try {
-      await api(`/api/userdefinedstates/${encodeURIComponent(b.dataset.uds)}/state`,
+      await api(`api/userdefinedstates/${encodeURIComponent(b.dataset.uds)}/state`,
         { method: 'PUT', body: newState });
       const u = state.userdefinedstates.find(x => x.id === b.dataset.uds);
       if (u) u.state = newState;
@@ -383,7 +383,7 @@ function renderScenarios() {
 
   $('#tab-scenarios #uds-add')?.addEventListener('click', () =>
     promptModal(t('modal.newState'), '', async (name) => {
-      await api('/api/userdefinedstates', {
+      await api('api/userdefinedstates', {
         method: 'POST',
         body: { '@type': 'userDefinedState', name, state: false },
       });
@@ -392,7 +392,7 @@ function renderScenarios() {
 
   $$('#tab-scenarios [data-uds-del]').forEach(b => b.addEventListener('click', () =>
     confirmModal(t('modal.confirmRmState', b.dataset.name), async () => {
-      await api(`/api/userdefinedstates/${encodeURIComponent(b.dataset.udsDel)}`, { method: 'DELETE' });
+      await api(`api/userdefinedstates/${encodeURIComponent(b.dataset.udsDel)}`, { method: 'DELETE' });
       await loadAll();
     })));
 
@@ -401,7 +401,7 @@ function renderScenarios() {
     const existing = state.automations.find(x => x.id === b.dataset.autoToggle);
     if (!existing) return;
     try {
-      await api(`/api/automations/${encodeURIComponent(b.dataset.autoToggle)}`,
+      await api(`api/automations/${encodeURIComponent(b.dataset.autoToggle)}`,
         { method: 'PUT', body: { ...existing, enabled } });
       existing.enabled = enabled;
       renderScenarios();
@@ -410,7 +410,7 @@ function renderScenarios() {
 
   $$('#tab-scenarios [data-auto-del]').forEach(b => b.addEventListener('click', () =>
     confirmModal(t('modal.confirmRmAutomation', b.dataset.name), async () => {
-      await api(`/api/automations/${encodeURIComponent(b.dataset.autoDel)}`, { method: 'DELETE' });
+      await api(`api/automations/${encodeURIComponent(b.dataset.autoDel)}`, { method: 'DELETE' });
       await loadAll();
     })));
 
@@ -429,7 +429,7 @@ function renderScenarios() {
     const { id, ...body } = structuredClone(src);
     body.name = t('admin.copyOf', src.name || src.id);
     try {
-      await api('/api/automations', { method: 'POST', body });
+      await api('api/automations', { method: 'POST', body });
       await loadAll();
     } catch (err) { alert(t('error.generic', err.message)); }
   }));

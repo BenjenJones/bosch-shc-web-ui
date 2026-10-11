@@ -229,7 +229,7 @@ async function api(path, opts = {}) {
   });
   // Auth dropouts (session revoked by admin, server restart with auth.json gone, …)
   // bounce the user back to the login screen instead of crashing the UI.
-  if (res.status === 401 && state.auth.enabled && !path.startsWith('/api/auth/')) {
+  if (res.status === 401 && state.auth.enabled && !path.startsWith('api/auth/')) {
     state.auth.authenticated = false;
     state.auth.user = null;
     showLogin();
@@ -256,17 +256,17 @@ async function loadAll() {
   // /api/clients is admin-only; non-admins skip it (the server would return 403)
   const [info, rooms, devices, services, scenarios, messages,
          clients, automations, userdefinedstates, intrusion, messageArchive] = await Promise.all([
-    safeApi('/api/info'),
-    safeApi('/api/rooms'),
-    safeApi('/api/devices'),
-    safeApi('/api/services'),
-    safeApi('/api/scenarios'),
-    safeApi('/api/messages'),
-    isAdmin() ? safeApi('/api/clients') : Promise.resolve([]),
-    safeApi('/api/automations'),
-    safeApi('/api/userdefinedstates'),
-    safeApi('/api/intrusion'),
-    safeApi('/api/messages/archive'),
+    safeApi('api/info'),
+    safeApi('api/rooms'),
+    safeApi('api/devices'),
+    safeApi('api/services'),
+    safeApi('api/scenarios'),
+    safeApi('api/messages'),
+    isAdmin() ? safeApi('api/clients') : Promise.resolve([]),
+    safeApi('api/automations'),
+    safeApi('api/userdefinedstates'),
+    safeApi('api/intrusion'),
+    safeApi('api/messages/archive'),
   ]);
   state.info        = info || {};
   state.rooms       = rooms || [];

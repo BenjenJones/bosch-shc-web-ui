@@ -14,7 +14,7 @@ function connectEvents() {
     rose:    'inline-block w-2.5 h-2.5 rounded-full bg-rose-500',
   };
   const dot = (color) => $('#event-dot').className = DOT[color];
-  const ev = new EventSource('/api/events');
+  const ev = new EventSource('api/events');
   // EventSource open/error only tells us about the browser↔proxy link. The
   // lamp should reflect the proxy↔SHC link, which the server reports via a
   // `status` event. So: open → amber (link up, SHC status not known yet);

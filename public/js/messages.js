@@ -140,7 +140,7 @@ async function archiveMessage(m) {
   const entry = { ...m, archivedAt: m.archivedAt || Date.now() };
   state.messageArchive = [entry, ...state.messageArchive.filter(x => x.id !== m.id)];
   try {
-    await api('/api/messages/archive', { method: 'POST', body: entry });
+    await api('api/messages/archive', { method: 'POST', body: entry });
   } catch (_) { /* keep the optimistic local copy; it'll reconcile on reload */ }
 }
 
@@ -210,7 +210,7 @@ function renderMessages() {
       const id = b.dataset.dismiss;
       const msg = state.messages.find(x => x.id === id);
       try {
-        await api(`/api/messages/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        await api(`api/messages/${encodeURIComponent(id)}`, { method: 'DELETE' });
       } catch (err) {
         // The SHC won't delete some system messages (update/fault notices tied
         // to an active condition). Treat dismiss as "mark read": archive it
@@ -233,7 +233,7 @@ function renderMessages() {
     b.addEventListener('click', async () => {
       const id = b.dataset.archiveDel;
       try {
-        await api(`/api/messages/archive/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        await api(`api/messages/archive/${encodeURIComponent(id)}`, { method: 'DELETE' });
         state.messageArchive = state.messageArchive.filter(x => x.id !== id);
         renderMessages();
       } catch (err) { alert(t('error.generic', err.message)); }
@@ -248,7 +248,7 @@ function renderMessages() {
     e.stopPropagation();
     if (!confirm(t('messages.archive.clearConfirm'))) return;
     try {
-      await api('/api/messages/archive', { method: 'DELETE' });
+      await api('api/messages/archive', { method: 'DELETE' });
       state.messageArchive = [];
       renderMessages();
     } catch (err) { alert(t('error.generic', err.message)); }

@@ -4,7 +4,7 @@ import { connectEvents } from './live.js';
 
 async function loadAuthStatus() {
   try {
-    const res = await fetch('/api/auth/status', { credentials: 'same-origin' });
+    const res = await fetch('api/auth/status', { credentials: 'same-origin' });
     state.auth = await res.json();
   } catch (_) {
     state.auth = { enabled: false, authenticated: true, user: null };
@@ -84,7 +84,7 @@ async function submitLogin(e) {
         errEl.classList.remove('hidden');
         return;
       }
-      const res = await fetch('/api/auth/change-password', {
+      const res = await fetch('api/auth/change-password', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
@@ -105,7 +105,7 @@ async function submitLogin(e) {
     } else {
       const username = $('#login-user').value.trim();
       const password = $('#login-pass').value;
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('api/auth/login', {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
@@ -136,7 +136,7 @@ async function submitLogin(e) {
 
 async function logout() {
   try {
-    await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+    await fetch('api/auth/logout', { method: 'POST', credentials: 'same-origin' });
   } catch (_) { /* ignore */ }
   // Hard reload - simplest way to drop SSE/state and re-enter the login flow.
   location.reload();
@@ -188,7 +188,7 @@ function openChangePasswordModal() {
     if (n.length < 4) { err.textContent = t('auth.passwordTooShort'); err.classList.remove('hidden'); return; }
     if (n !== r)   { err.textContent = t('auth.passwordsMismatch'); err.classList.remove('hidden'); return; }
     try {
-      await api('/api/auth/change-password', { method: 'POST', body: { oldPassword: o, newPassword: n } });
+      await api('api/auth/change-password', { method: 'POST', body: { oldPassword: o, newPassword: n } });
       hideModal();
       alert(t('auth.changeOk'));
     } catch (e) {

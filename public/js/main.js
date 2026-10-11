@@ -34,7 +34,7 @@ if ('serviceWorker' in navigator && window.isSecureContext) {
     // /api/setup/* endpoints) will respond, so we'd just see errors. Show
     // the wizard instead and bail out of the normal boot path.
     try {
-      const r = await fetch('/api/setup/status');
+      const r = await fetch('api/setup/status');
       const data = await r.json();
       if (data.needed) {
         applySetupTexts();

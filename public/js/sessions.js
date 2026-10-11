@@ -3,7 +3,7 @@ import { confirmModal } from './modals.js';
 
 async function loadSessions() {
   if (!isAdmin()) return;
-  try { state.sessions = await api('/api/auth/sessions') || []; }
+  try { state.sessions = await api('api/auth/sessions') || []; }
   catch (_) { state.sessions = []; }
   renderSessions();
 }
@@ -42,7 +42,7 @@ function renderSessions() {
 
   $$('#tab-sessions [data-session-del]').forEach(b => b.addEventListener('click', () =>
     confirmModal(t('sessions.confirmInvalidate'), async () => {
-      await api(`/api/auth/sessions/${encodeURIComponent(b.dataset.sessionDel)}`, { method: 'DELETE' });
+      await api(`api/auth/sessions/${encodeURIComponent(b.dataset.sessionDel)}`, { method: 'DELETE' });
       await loadSessions();
     })));
 }

@@ -163,9 +163,15 @@ This publishes `ghcr.io/benjenjones/bosch-shc-web-ui:0.0.1` for `amd64` and `aar
 1. **Settings → Add-ons → Add-on Store → ⋮ → Repositories** and add
    `https://github.com/BenjenJones/bosch-shc-web-ui`.
 2. Open **Bosch SHC Web UI → Install**, then **Start**.
-3. Open `http://<home-assistant-ip>:3000` and run the pairing wizard.
+3. Open **Bosch SHC** in the HA sidebar (or **Open Web UI**) and run the pairing wizard. Direct access via `http://<home-assistant-ip>:3000` works as well.
 
 The Supervisor provides and persists `/data` automatically, so pairing survives add-on restarts and updates.
+
+**Sidebar panel (ingress):** the add-on registers an ingress panel, so the UI opens inside Home Assistant — through HA's own URL, including remote access and HTTPS (which also enables installing it as an app, see PWA). Notes:
+- The UI's own login (if enabled) still applies inside the panel.
+- Ingress talks plain HTTP to the add-on — don't set `uiTls` when running as add-on.
+- Port 3000 stays open for direct/standalone access; clear the host port in the add-on's *Network* settings if you only want the panel.
+- The UI uses relative URLs only, so it also works behind any reverse proxy under a sub-path.
 
 ## Demo mode
 

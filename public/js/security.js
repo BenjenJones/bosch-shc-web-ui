@@ -64,7 +64,7 @@ function renderSecurity() {
     const value = b.dataset.ids;
     const body = { value };
     if (b.dataset.profile != null) body.activeProfile = b.dataset.profile;
-    try { await api('/api/intrusion/state', { method: 'PUT', body }); }
+    try { await api('api/intrusion/state', { method: 'PUT', body }); }
     catch (err) { alert('Fehler: ' + err.message); }
   }));
 }

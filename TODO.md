@@ -16,7 +16,7 @@ HA-specific behaviour is always an optional extra detected at runtime.
       to the home screen.
 - [x] **Favourites / kiosk view** — pin devices and scenarios; compact view
       with large buttons for wall tablets.
-- [ ] **Home Assistant ingress** — optional sidebar panel via the Supervisor
+- [x] **Home Assistant ingress** — optional sidebar panel via the Supervisor
       (`ingress: true`). Requires all UI/API URLs to be relative so the app
       works under `/api/hassio_ingress/<token>/` *and* at `/` standalone.
 - [ ] **History & charts** — record SSE events (temperature, humidity, power,

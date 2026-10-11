@@ -183,3 +183,24 @@ describe('newToken', () => {
     expect(internals.newToken()).not.toBe(internals.newToken());
   });
 });
+
+describe('HA ingress detection / frame-ancestors', () => {
+  // Only the Supervisor (fixed hassio address) may relax framing to 'self';
+  // the X-Ingress-Path header alone from any other client must not.
+  const req = (ip, headers = {}) => ({ socket: { remoteAddress: ip }, headers });
+
+  test('Supervisor + X-Ingress-Path → ingress', () => {
+    expect(internals.isIngressRequest(req('172.30.32.2', { 'x-ingress-path': '/api/hassio_ingress/x' }))).toBe(true);
+    expect(internals.isIngressRequest(req('::ffff:172.30.32.2', { 'x-ingress-path': '/x' }))).toBe(true);
+  });
+
+  test('header from another address or missing header → not ingress', () => {
+    expect(internals.isIngressRequest(req('192.168.1.20', { 'x-ingress-path': '/x' }))).toBe(false);
+    expect(internals.isIngressRequest(req('172.30.32.2'))).toBe(false);
+  });
+
+  test('ingress requests may be framed by self, others keep the default', () => {
+    expect(internals.frameAncestorsFor(req('172.30.32.2', { 'x-ingress-path': '/x' }))).toBe("'self'");
+    expect(internals.frameAncestorsFor(req('192.168.1.20'))).toBe("'none'");
+  });
+});

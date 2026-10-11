@@ -76,7 +76,7 @@ function renderFavoritesSection() {
 
 async function triggerScenario(btn) {
   try {
-    await api(`/api/scenarios/${encodeURIComponent(btn.dataset.favScenario)}/trigger`, { method: 'POST' });
+    await api(`api/scenarios/${encodeURIComponent(btn.dataset.favScenario)}/trigger`, { method: 'POST' });
     btn.classList.add('pulse');
     setTimeout(() => btn.classList.remove('pulse'), 1500);
   } catch (err) { alert(t('error.generic', err.message)); }

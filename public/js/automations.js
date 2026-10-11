@@ -502,7 +502,7 @@ async function submitAutomation() {
   };
   if (d.id) body.id = d.id;
   try {
-    await api(d.id ? `/api/automations/${encodeURIComponent(d.id)}` : '/api/automations',
+    await api(d.id ? `api/automations/${encodeURIComponent(d.id)}` : 'api/automations',
       { method: d.id ? 'PUT' : 'POST', body });
     hideModal();
     await loadAll();

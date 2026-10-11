@@ -42,6 +42,23 @@ function resolveFrameAncestors() {
   return "'none'";
 }
 const FRAME_ANCESTORS = resolveFrameAncestors();
+
+// Home Assistant ingress (add-on sidebar panel). The Supervisor proxies the
+// panel from its fixed address on the internal hassio network and adds
+// X-Ingress-Path; HA then shows the page in an iframe on its own origin —
+// which, being proxied, is also this page's origin. So for genuine ingress
+// requests framing by 'self' must be allowed; everything else keeps the
+// configured frame_ancestors. The UI uses relative URLs throughout, so it
+// works under the ingress sub-path without knowing it.
+const HA_SUPERVISOR_IP = '172.30.32.2';
+function isIngressRequest(req) {
+  const ip = String(req.socket?.remoteAddress || '').replace(/^::ffff:/, '');
+  return ip === HA_SUPERVISOR_IP && typeof req.headers['x-ingress-path'] === 'string';
+}
+function frameAncestorsFor(req) {
+  if (!isIngressRequest(req)) return FRAME_ANCESTORS;
+  return FRAME_ANCESTORS === "'none'" ? "'self'" : `'self' ${FRAME_ANCESTORS}`;
+}
 const MESSAGE_ARCHIVE_MAX  = 500; // cap so a chatty SHC can't grow the file forever
 
 // =========================================================================
@@ -288,7 +305,7 @@ app.use((req, res, next) => {
     "connect-src 'self'",
     "base-uri 'self'",
     "form-action 'self'",
-    `frame-ancestors ${FRAME_ANCESTORS}`,
+    `frame-ancestors ${frameAncestorsFor(req)}`,
     "object-src 'none'",
   ].join('; '));
   next();
@@ -1186,5 +1203,5 @@ if (!process.env.BOSCH_SHC_NO_LISTEN) {
 module.exports = {
   app, shcRequest,
   // Internals exposed for unit tests — pure functions, no live state.
-  _internals: { hashPassword, verifyPassword, readCookie, adaptIntrusionState, publicUser, newToken },
+  _internals: { hashPassword, verifyPassword, readCookie, adaptIntrusionState, publicUser, newToken, isIngressRequest, frameAncestorsFor },
 };
