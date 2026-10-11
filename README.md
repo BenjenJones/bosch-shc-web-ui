@@ -36,6 +36,8 @@ The proxy is required because browsers cannot present client certificates (mTLS)
 - Heating setpoint (RoomClimateControl) including humidity
 - Temperature, window/door contact, power consumption, battery status
 - Communication-quality indicator (Wi-Fi-strength icon, color-coded)
+- Grouped shutter control per room and for all shutters (open / stop / close, average-position slider)
+- Heating boost toggle (where supported), active boost shown in the room header
 - Camera controls: privacy mode, push notifications, light (where supported)
 - **Live updates** without reload via long polling
 

@@ -283,7 +283,14 @@ function renderDeviceList() {
       </div>
     </section>` : '';
 
-  $('#device-list').innerHTML = discoveredHtml + [...byRoom.entries()]
+  // All-shutters bar: only worth it with at least two motorised shutters.
+  const allShutters = shutterDevices(null);
+  const allShuttersHtml = allShutters.length >= 2 ? `
+    <section class="mb-4 bg-white rounded-lg border border-slate-200 px-4 py-2">
+      ${renderShutterGroup('all', allShutters, t('devices.allShutters', allShutters.length))}
+    </section>` : '';
+
+  $('#device-list').innerHTML = discoveredHtml + allShuttersHtml + [...byRoom.entries()]
     .sort((a, b) => roomName(a[0]).localeCompare(roomName(b[0]), 'de'))
     .map(([rId, devs]) => {
       // When any filter is active, always open matching rooms
@@ -298,7 +305,10 @@ function renderDeviceList() {
             <span class="normal-case text-[11px] text-slate-400">(${devs.length})</span>
             ${renderRoomMessageBadge(rId)}
           </h2>
-          ${renderRoomClimateBadge(rId)}
+          <div class="flex flex-col gap-1 w-full sm:w-auto sm:items-end">
+            ${renderRoomClimateBadge(rId)}
+            ${renderRoomShutterGroup(rId)}
+          </div>
         </summary>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           ${devs.map(safeRenderDeviceCard).join('')}
@@ -350,6 +360,19 @@ function renderDeviceList() {
     if (out) out.textContent = e.currentTarget.value + '°';
   }));
   $$('#device-list [data-shutter-level]').forEach(el => el.addEventListener('change', onShutterLevelChange));
+  // Live position readout while dragging the card slider.
+  $$('#device-list [data-shutter-level]').forEach(el => el.addEventListener('input', e => {
+    const out = e.currentTarget.closest('.card')?.querySelector('[data-shutter-out]');
+    if (out) out.textContent = t('devices.shutterPosition', e.currentTarget.value);
+  }));
+  $$('#device-list [data-shutter-group-action]').forEach(el => el.addEventListener('click', onShutterGroupAction));
+  $$('#device-list [data-shutter-group-level]').forEach(el => {
+    el.addEventListener('input', e => {
+      const out = e.currentTarget.closest('[data-shutter-group]')?.querySelector('[data-shutter-group-out]');
+      if (out) out.textContent = e.currentTarget.value + '%';
+    });
+    el.addEventListener('change', onShutterGroupLevelChange);
+  });
   $$('#device-list [data-dimmer-level]').forEach(el => el.addEventListener('change', onDimmerLevelChange));
   $$('#device-list [data-color-set]').forEach(el => el.addEventListener('change', onColorChange));
   // Remember the open/closed state on user interaction (not while filtering)
@@ -435,9 +458,12 @@ function renderRoomClimateBadge(roomId) {
   const heatPaused = !!(rccDevice
     && serviceOf(rccDevice.id, 'RoomClimateControl')?.state?.ventilationMode);
 
+  const boost = !!(rccDevice
+    && serviceOf(rccDevice.id, 'RoomClimateControl')?.state?.boostMode);
+
   const tVal = tempSvc?.state?.temperature;
   const hVal = humSvc?.state?.humidity;
-  if (tVal == null && hVal == null && contactSvcs.length === 0 && onCount === 0 && !heatPaused) return '';
+  if (tVal == null && hVal == null && contactSvcs.length === 0 && onCount === 0 && !heatPaused && !boost) return '';
 
   const parts = [];
   if (tVal != null) parts.push(`<span class="tabular-nums">${tVal.toFixed(1)}°C</span>`);
@@ -467,6 +493,13 @@ function renderRoomClimateBadge(roomId) {
       `<img src="svg/radiator-disabled.svg" style="width:14px;height:14px" aria-hidden="true" />${label}</span>`
     );
   }
+  if (boost) {
+    const label = t('devices.boostActive');
+    parts.push(
+      `<span class="flex items-center gap-1 text-rose-600 font-medium" title="${escapeHtml(label)}">` +
+      `<span class="icon-mask" style="width:14px;height:14px;mask-image:url(svg/fire.svg);-webkit-mask-image:url(svg/fire.svg)" aria-hidden="true"></span>${label}</span>`
+    );
+  }
   // Mobile: wrap parts onto multiple lines and drop the dot separators so they
   // don't crowd. Desktop (sm+) keeps the original single-line · separated look.
   const sep = '<span class="hidden sm:inline" aria-hidden="true">·</span>';
@@ -481,6 +514,47 @@ function renderRoomClimateBadge(roomId) {
     : '';
 
   return `<div class="flex flex-col gap-1 w-full sm:w-auto sm:items-end">${info}${slider}</div>`;
+}
+
+// Motorised shutters (ShutterControl with a state) in a room, or in all rooms
+// when roomId is null. Same visibility rules as the device list.
+function shutterDevices(roomId) {
+  return state.devices.filter(d => d.roomId && d.status !== 'DISCOVERED'
+    && (roomId == null || d.roomId === roomId)
+    && serviceOf(d.id, 'ShutterControl')?.state);
+}
+
+// Group control for several shutters: average position slider + open/stop/
+// close. `scope` is a room id or 'all'; the device set is re-resolved from it
+// on every action, so the markup carries no id lists. data-room-setpoint keeps
+// clicks inside a room <summary> from toggling the room.
+function renderShutterGroup(scope, devs, label) {
+  const avg = Math.round(devs.reduce((sum, d) =>
+    sum + (serviceOf(d.id, 'ShutterControl').state.level ?? 0), 0) / devs.length * 100);
+  const btn = (action, glyph, titleKey) =>
+    `<button type="button" data-shutter-group-action="${action}" data-group="${scope}" title="${t(titleKey)}"
+       class="shrink-0 w-7 h-7 flex items-center justify-center rounded-md border border-slate-300
+              text-slate-600 hover:bg-slate-100 active:bg-slate-200 text-xs leading-none">${glyph}</button>`;
+  return `
+    <div class="flex items-center gap-1.5 w-full" data-shutter-group="${scope}" data-room-setpoint>
+      <span class="text-xs text-slate-600 shrink-0 inline-flex items-center gap-1">
+        <img src="svg/window-shutter.svg" style="width:14px;height:14px" alt="" />${label}</span>
+      <input type="range" min="0" max="100" step="1" value="${avg}"
+        data-shutter-group-level data-group="${scope}" title="${t('devices.shutterAvg')}"
+        class="flex-1 min-w-[4rem] accent-sky-600 cursor-pointer" />
+      <span class="tabular-nums text-xs w-9 text-right" data-shutter-group-out>${avg}%</span>
+      ${btn('open', '▲', 'devices.shutterOpen')}
+      ${btn('stop', '■', 'devices.shutterStop')}
+      ${btn('close', '▼', 'devices.shutterClose')}
+    </div>`;
+}
+
+// Room summary: group control once a room has at least two shutters (a single
+// one is already fully controllable on its card).
+function renderRoomShutterGroup(roomId) {
+  const devs = shutterDevices(roomId);
+  if (devs.length < 2) return '';
+  return `<div class="w-full sm:w-96">${renderShutterGroup(roomId, devs, t('devices.shutterGroup', devs.length))}</div>`;
 }
 
 // Temperature setpoint slider for RoomClimateControl. Shared by the device card
@@ -502,6 +576,17 @@ function renderSetpointControl(deviceId, setpoint, { compact = false } = {}) {
       ${btn(1, '+')}
       <span class="tabular-nums text-sm font-medium w-12 text-right" data-temp-out>${val}°</span>
     </div>`;
+}
+
+// Boost toggle for a RoomClimateControl that reports supportsBoostMode: heats
+// at full power for a short time (duration is set in the Bosch app).
+function renderBoostButton(deviceId, on) {
+  return `<button data-action="toggle-boost" data-device="${deviceId}" data-on="${on}"
+    title="${t('devices.boostTitle')}"
+    class="mt-2 mr-1 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium
+    ${on ? 'bg-rose-100 text-rose-800 hover:bg-rose-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+    <span class="icon-mask" style="width:14px;height:14px;mask-image:url(svg/fire.svg);-webkit-mask-image:url(svg/fire.svg)" aria-hidden="true"></span>
+    ${t(on ? 'devices.boostActive' : 'devices.boost')}</button>`;
 }
 
 // HeatingCircuit control: AUTOMATIC/MANUAL mode toggle + target slider. The
@@ -811,6 +896,7 @@ function renderDeviceCard(device) {
       </div>
       ${climate.state?.ventilationMode ? `<div class="mt-1.5 inline-flex items-center gap-1.5 text-sm text-amber-600 font-medium">
         <img src="svg/radiator-disabled.svg" style="width:16px;height:16px" aria-hidden="true" />${t('devices.heatPause')}</div>` : ''}
+      ${climate.state?.supportsBoostMode ? renderBoostButton(device.id, climate.state.boostMode === true) : ''}
       ${humTxt ? `<div class="mt-1">${humTxt}</div>` : ''}`;
   } else if (temp && humidity) {
     body += `
@@ -841,7 +927,7 @@ function renderDeviceCard(device) {
     body += `
       <div class="mt-2">
         <div class="flex items-baseline gap-2">
-          <span class="text-sm text-slate-600">${t('devices.shutterPosition', pct)}</span>
+          <span class="text-sm text-slate-600" data-shutter-out>${t('devices.shutterPosition', pct)}</span>
           ${opTxt ? `<span class="text-xs text-sky-700 inline-flex items-center gap-1">
             <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>${opTxt}</span>` : ''}
         </div>
@@ -1047,6 +1133,18 @@ async function onDeviceAction(e) {
       });
       const svc = serviceOf(device, 'ShutterControl');
       if (svc) svc.state = { ...(svc.state || {}), operationState: 'STOPPED' };
+      renderDevices();
+    } catch (err) { alert(t('error.generic', err.message)); }
+  } else if (action === 'toggle-boost') {
+    const boostMode = btn.dataset.on !== 'true';
+    btn.classList.add('pulse');
+    try {
+      await api(`/api/devices/${encodeURIComponent(device)}/services/RoomClimateControl/state`, {
+        method: 'PUT',
+        body: { '@type': 'climateControlState', boostMode },
+      });
+      const svc = serviceOf(device, 'RoomClimateControl');
+      if (svc) svc.state = { ...(svc.state || {}), boostMode };
       renderDevices();
     } catch (err) { alert(t('error.generic', err.message)); }
   } else if (action === 'heat-mode') {
@@ -1282,7 +1380,50 @@ function onShutterLevelChange(e) {
       });
       const svc = serviceOf(deviceId, 'ShutterControl');
       if (svc) svc.state = { ...(svc.state || {}), '@type': 'shutterControlState', level };
+      // Re-render so the room/all group averages follow (the demo SHC emits
+      // no live events).
+      renderDevices();
     } catch (err) { alert(t('error.generic', err.message)); }
+  }, 700));
+}
+
+// Send one ShutterControl state to every shutter of a group in parallel. A
+// failing shutter doesn't stop the others; successes are mirrored locally
+// (the demo SHC emits no live events) and failures reported once.
+async function putShutterGroup(scope, body) {
+  const devs = shutterDevices(scope === 'all' ? null : scope);
+  const results = await Promise.allSettled(devs.map(d =>
+    api(`/api/devices/${encodeURIComponent(d.id)}/services/ShutterControl/state`, {
+      method: 'PUT',
+      body: { '@type': 'shutterControlState', ...body },
+    })));
+  results.forEach((r, i) => {
+    if (r.status !== 'fulfilled') return;
+    const svc = serviceOf(devs[i].id, 'ShutterControl');
+    if (svc) svc.state = { ...(svc.state || {}), ...body };
+  });
+  renderDevices();
+  const failed = results.filter(r => r.status === 'rejected');
+  if (failed.length) alert(t('devices.shutterGroupFailed', failed.length, devs.length, failed[0].reason?.message || ''));
+}
+
+function onShutterGroupAction(e) {
+  const { shutterGroupAction: action, group } = e.currentTarget.dataset;
+  e.currentTarget.classList.add('pulse');
+  // No documented stop endpoint; see the single-shutter 'shutter-stop' action.
+  putShutterGroup(group, action === 'stop' ? { operationState: 'STOPPED' }
+                                          : { level: action === 'open' ? 1 : 0 });
+}
+
+// Debounced like the single-shutter slider, keyed by group scope.
+const shutterGroupDebounce = new Map();
+function onShutterGroupLevelChange(e) {
+  const group = e.currentTarget.dataset.group;
+  const level = parseInt(e.currentTarget.value, 10) / 100;
+  clearTimeout(shutterGroupDebounce.get(group));
+  shutterGroupDebounce.set(group, setTimeout(() => {
+    shutterGroupDebounce.delete(group);
+    putShutterGroup(group, { level });
   }, 700));
 }
 

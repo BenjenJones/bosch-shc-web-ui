@@ -65,6 +65,28 @@ const store = {
   },
 };
 
+// Zusätzliche Rollläden, damit die Gruppensteuerung (Raum mit ≥2 Rollläden,
+// "Alle Rollläden") im Demo sichtbar ist. Der echte Export hat nur einen BBL;
+// hier beim Laden geklont statt im Datensatz, damit `npm run demo:build` sie
+// nicht wieder entfernt.
+(function addDemoShutters() {
+  const tpl = store.devices.find(d => d.deviceModel === 'BBL');
+  const tplSvc = tpl && store.services.find(s => s.deviceId === tpl.id && s.id === 'ShutterControl');
+  if (!tplSvc) return;
+  const extra = [
+    { roomId: 'hz_7', name: 'Rollladen 2', level: 1 },
+    { roomId: 'hz_4', name: 'Rollladen 3', level: 0 },
+    { roomId: 'hz_4', name: 'Rollladen 4', level: 0.3 },
+    { roomId: 'hz_4', name: 'Rollladen 5', level: 0.75 },
+  ];
+  extra.forEach((e, i) => {
+    const id = `hdm:HomeMaticIP:DEMO0000000000000000000${i + 2}`;
+    store.devices.push({ ...tpl, id, roomId: e.roomId, name: e.name, serial: `DEMOBBL0000000${i + 2}` });
+    store.services.push({ ...tplSvc, deviceId: id, path: `/devices/${id}/services/ShutterControl`,
+      state: { ...tplSvc.state, level: e.level } });
+  });
+})();
+
 const notFound = (msg = 'not found') => { throw Object.assign(new Error(msg), { status: 404 }); };
 const findDevice = (id) => store.devices.find(d => d.id === id);
 

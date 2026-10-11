@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- (Dashboard) Grouped shutter control: rooms with two or more shutters get open/stop/close buttons and an average-position slider in the room header; with two or more shutters overall, an "All shutters" bar sits above the rooms. A shutter that fails doesn't stop the others; failures are reported once.
+- (Dashboard) Boost mode: room climate controls that support it show a Boost toggle on the card, and an active boost is shown in the room header.
 - (Health) New *Health* tab: summary tiles and an issue list for unreachable devices, low/critical batteries, device faults, poor signal and pending firmware updates (tiles filter the list), plus a list of all battery devices and of signal quality, worst first. The tab badge counts devices with warnings or errors and updates live.
 
 ## 2026-10-10
