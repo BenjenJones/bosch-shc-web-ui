@@ -279,6 +279,7 @@ For frontend iteration, `npm run watch:css` rebuilds `public/tailwind.css` on ev
 | Server start: `auth.json is missing` | `authEnabled` is true in `config.json` but `auth.json` was deleted — re-run `npm run setup`                |
 | UI loads but no devices              | inspect `/api/devices` in the browser DevTools → Network                                                   |
 | Live indicator red                   | long-polling broke — or the session was revoked; check the server logs / refresh and re-login              |
+| `ssl/tls alert certificate unknown`, red banner "SHC no longer recognises this installation" | the SHC rejects our client certificate — another install paired with the same client id, or the client was removed in the Bosch app. Use **Re-pair** in the banner or under *Admin → Controller* (keeps users, history, settings). Since this version every pairing gets its own client id (`oss_bosch_shc_web_ui_xxxxxx`), so installs no longer kick each other out |
 | Forgot the admin password            | run `npm run setup:auth` — it rewrites the admin in `auth.json`, keeps existing regular users, and clears all sessions, without re-pairing the SHC |
 | `503` from SHC on a `PUT`            | usually a wrong payload schema — open the device's *info* (ⓘ) in **Admin** to see the actual service state |
 

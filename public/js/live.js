@@ -4,6 +4,7 @@ import { renderSecurity } from './security.js';
 import { renderMessages, archiveMessage } from './messages.js';
 import { renderScenarios } from './scenarios.js';
 import { renderHealth } from './health.js';
+import { renderPairingBanner } from './pairing.js';
 
 function connectEvents() {
   // Full literal class strings per state — Tailwind's JIT only emits classes
@@ -22,8 +23,12 @@ function connectEvents() {
   ev.onopen  = () => dot('amber');
   ev.onerror = () => dot('rose');
   ev.addEventListener('status', (e) => {
-    let connected; try { connected = JSON.parse(e.data).connected; } catch { return; }
-    dot(connected ? 'emerald' : 'rose');
+    let s; try { s = JSON.parse(e.data); } catch { return; }
+    dot(s.connected ? 'emerald' : 'rose');
+    if (!!s.pairingLost !== !!state.pairing.lost) {
+      state.pairing.lost = !!s.pairingLost;
+      renderPairingBanner();
+    }
   });
   ev.onmessage = (msg) => {
     let events; try { events = JSON.parse(msg.data); } catch { return; }

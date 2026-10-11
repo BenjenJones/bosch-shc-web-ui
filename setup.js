@@ -30,9 +30,17 @@ const KEY_FILE    = path.join(CERT_DIR, 'client-key.pem');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const AUTH_FILE   = path.join(DATA_DIR, 'auth.json');
 
-// Per Bosch terms: client id must start with "oss_"
+// Per Bosch terms: client id must start with "oss_". CLIENT_ID is the legacy
+// fixed id; new pairings get a per-install id (newClientId) because the SHC
+// keeps one certificate per client id — a second install pairing with the
+// same id silently replaces the first one's certificate, which then fails
+// with "certificate unknown".
 const CLIENT_ID   = 'oss_bosch_shc_web_ui';
 const CLIENT_NAME = 'oss_bosch_shc_web_ui';
+
+function newClientId() {
+  return `${CLIENT_ID}_${crypto.randomBytes(3).toString('hex')}`;
+}
 
 // =========================================================================
 //  Shared helpers — used by the CLI flow and the web wizard alike.
@@ -53,6 +61,23 @@ function ensureCerts() {
   return { generated: true };
 }
 
+// Fresh key pair for a new pairing (new client id). Existing files are kept
+// as *.bak so a failed pairing can be rolled back (restoreCertBackup).
+function freshCerts() {
+  fs.mkdirSync(CERT_DIR, { recursive: true });
+  for (const f of [CERT_FILE, KEY_FILE]) {
+    if (fs.existsSync(f)) fs.copyFileSync(f, f + '.bak');
+    if (fs.existsSync(f)) fs.unlinkSync(f);
+  }
+  return ensureCerts();
+}
+
+function restoreCertBackup() {
+  for (const f of [CERT_FILE, KEY_FILE]) {
+    if (fs.existsSync(f + '.bak')) fs.copyFileSync(f + '.bak', f);
+  }
+}
+
 function formatCertForBosch(pem) {
   // Bosch expects the cert string with \r before/after the BEGIN/END lines
   // and no CR/LF inside (see the Bosch Postman docs).
@@ -63,11 +88,11 @@ function formatCertForBosch(pem) {
   return `-----BEGIN CERTIFICATE-----\r${oneLine}\r-----END CERTIFICATE-----`;
 }
 
-function registerClient(shcIp, password, certPem) {
+function registerClient(shcIp, password, certPem, clientId = CLIENT_ID) {
   const body = JSON.stringify({
     '@type': 'client',
-    id: CLIENT_ID,
-    name: CLIENT_NAME,
+    id: clientId,
+    name: clientId,
     primaryRole: 'ROLE_RESTRICTED_CLIENT',
     certificate: formatCertForBosch(certPem),
   });
@@ -108,12 +133,12 @@ function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
   return { salt, passwordHash: hash };
 }
 
-function writeConfig({ shcIp, authEnabled }) {
+function writeConfig({ shcIp, authEnabled, clientId = CLIENT_ID }) {
   const config = {
     shcIp,
     certPath: path.relative(DATA_DIR, CERT_FILE),
     keyPath:  path.relative(DATA_DIR, KEY_FILE),
-    clientId: CLIENT_ID,
+    clientId,
     uiPort: 3000,
     authEnabled: !!authEnabled,
   };
@@ -154,8 +179,8 @@ function removeAuthFile() {
 module.exports = {
   DATA_DIR,
   CERT_DIR, CERT_FILE, KEY_FILE, CONFIG_FILE, AUTH_FILE,
-  CLIENT_ID, CLIENT_NAME,
-  ensureCerts, formatCertForBosch, registerClient,
+  CLIENT_ID, CLIENT_NAME, newClientId,
+  ensureCerts, freshCerts, restoreCertBackup, formatCertForBosch, registerClient,
   hashPassword, writeConfig, writeAuth, removeAuthFile,
 };
 
@@ -199,8 +224,11 @@ if (require.main === module) {
     const shcIp = await ask('IP address of your Bosch SHC (e.g. 192.168.1.50): ');
     if (!shcIp) throw new Error('No IP provided.');
 
-    const { generated } = ensureCerts();
-    console.log(generated ? '✔ Certificates generated.' : '✔ Certificates already exist in ./certs');
+    // Every pairing registers a new client id with a fresh certificate, so
+    // pairing this install never kicks out another one (and vice versa).
+    const clientId = newClientId();
+    freshCerts();
+    console.log(`✔ Certificate generated for client ${clientId}.`);
     const certPem = fs.readFileSync(CERT_FILE, 'utf8');
 
     console.log('\n⚠  Now press the front button on the SHC until the LED blinks');
@@ -211,7 +239,13 @@ if (require.main === module) {
     process.stdout.write('\n');
 
     console.log('⏳ Registering client with the SHC …');
-    const result = await registerClient(shcIp, password, certPem);
+    let result;
+    try {
+      result = await registerClient(shcIp, password, certPem, clientId);
+    } catch (err) {
+      restoreCertBackup();
+      throw err;
+    }
     console.log(`✔ Registration successful (HTTP ${result.status}).`);
 
     console.log('\n--- Optional: protect the UI with a login ---');
@@ -224,7 +258,7 @@ if (require.main === module) {
       adminPassword = await askNewPassword();
     }
 
-    writeConfig({ shcIp, authEnabled });
+    writeConfig({ shcIp, authEnabled, clientId });
     console.log('✔ config.json saved.');
 
     if (authEnabled) {

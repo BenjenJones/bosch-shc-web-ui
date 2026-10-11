@@ -204,3 +204,16 @@ describe('HA ingress detection / frame-ancestors', () => {
     expect(internals.frameAncestorsFor(req('192.168.1.20'))).toBe("'none'");
   });
 });
+
+describe('isCertRejected', () => {
+  // TLS alerts the SHC sends when it no longer knows our client certificate
+  // (another install re-registered the same client id, or the client was removed).
+  test.each([
+    'write EPROTO A0137A98:error:0A000416:SSL routines:ssl3_read_bytes:ssl/tls alert certificate unknown:../deps/openssl/openssl/ssl/record/rec_layer_s3.c:918:SSL alert number 46',
+    'SSL routines:ssl3_read_bytes:sslv3 alert bad certificate:SSL alert number 42',
+    'tlsv1 alert unknown ca: SSL alert number 48',
+  ])('detects %s', (msg) => expect(internals.isCertRejected(new Error(msg))).toBe(true));
+
+  test.each(['connect ECONNREFUSED 192.168.1.5:8444', 'Timeout', 'SHC 401', 'SSL alert number 460'])(
+    'ignores %s', (msg) => expect(internals.isCertRejected(new Error(msg))).toBe(false));
+});

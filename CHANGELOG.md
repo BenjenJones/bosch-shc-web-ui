@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-11 - 2
+
+- (Pairing) Fix: two installations (e.g. HA add-on and a local server) paired with the same fixed client id, so pairing one silently invalidated the other ("certificate unknown"). Every new pairing now registers its own client id (`oss_bosch_shc_web_ui_xxxxxx`) with a fresh certificate. When the SHC rejects the certificate, the UI shows a banner and admins can **re-pair** in place (banner or *Admin → Controller*) without losing users, history or settings. Existing pairings keep working unchanged.
+
 ## 2026-10-11
 
 - (Dashboard) Calmer device cards: the header shows only name and signal (status pill only when a device is not available); favourite, history and settings moved to a footer next to battery/valve. The virtual room climate controller is titled "Room climate".

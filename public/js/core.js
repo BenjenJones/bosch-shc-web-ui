@@ -7,6 +7,7 @@ import { renderSecurity } from './security.js';
 import { renderMessages, messageTitle } from './messages.js';
 import { renderHealth } from './health.js';
 import { loadEnergy } from './energy.js';
+import { renderPairingBanner } from './pairing.js';
 import { renderAdmin } from './admin.js';
 import { renderUsers } from './users.js';
 import { renderSessions } from './sessions.js';
@@ -58,6 +59,9 @@ const state = {
   // Server-side sensor history (SQLite) usable? false on Node < 22.5 or when
   // the DB can't be opened — chart buttons/sparklines are hidden then.
   historyAvailable: false,
+  // { lost, clientId, shcIp } from /api/setup/status; `lost` = SHC rejects
+  // our client certificate (see js/pairing.js).
+  pairing: { lost: false, clientId: null, shcIp: null },
   // Collapsible rooms: set of room ids currently collapsed. Persisted via
   // saveCollapsedRooms() — survives reloads so the user doesn't have to
   // re-collapse the same rooms every session.
@@ -260,7 +264,7 @@ const safeApi = (p, o) => api(p, o).catch(() => null);
 async function loadAll() {
   // /api/clients is admin-only; non-admins skip it (the server would return 403)
   const [info, rooms, devices, services, scenarios, messages,
-         clients, automations, userdefinedstates, intrusion, messageArchive, historyProbe] = await Promise.all([
+         clients, automations, userdefinedstates, intrusion, messageArchive, historyProbe, setupStatus] = await Promise.all([
     safeApi('api/info'),
     safeApi('api/rooms'),
     safeApi('api/devices'),
@@ -273,6 +277,7 @@ async function loadAll() {
     safeApi('api/intrusion'),
     safeApi('api/messages/archive'),
     safeApi('api/history/spark'),
+    safeApi('api/setup/status'),
   ]);
   state.info        = info || {};
   state.rooms       = rooms || [];
@@ -291,6 +296,7 @@ async function loadAll() {
   state.intrusion   = intrusion;
   state.messageArchive = messageArchive || [];
   state.historyAvailable = !!historyProbe?.available;
+  state.pairing = { lost: !!setupStatus?.pairingLost, clientId: setupStatus?.clientId || null, shcIp: setupStatus?.shcIp || null };
   state.loaded = true;
 
   applyStaticTexts();
@@ -298,6 +304,7 @@ async function loadAll() {
 }
 
 function renderAll() {
+  renderPairingBanner();
   renderDevices();
   renderScenarios();
   renderSecurity();

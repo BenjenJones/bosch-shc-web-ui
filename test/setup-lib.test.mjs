@@ -63,3 +63,13 @@ describe('setup.hashPassword', () => {
     expect(a.passwordHash).not.toBe(b.passwordHash);
   });
 });
+
+describe('setup.newClientId', () => {
+  // Per-install ids stop two installs (e.g. HA add-on + local dev) from
+  // replacing each other's certificate on the SHC.
+  test('keeps the oss_ prefix and differs per call', () => {
+    const a = setup.newClientId(), b = setup.newClientId();
+    expect(a).toMatch(/^oss_bosch_shc_web_ui_[0-9a-f]{6}$/);
+    expect(a).not.toBe(b);
+  });
+});

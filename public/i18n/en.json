@@ -547,5 +547,15 @@
     "energy.noMeters": "No devices with energy metering (e.g. smart plugs) found.",
     "energy.tariffs": "Electricity price ({0})",
     "energy.tariffHint": "Price per kWh from the given date — add a row when your tariff changes. Costs use the price valid on each day.",
-    "energy.addTariff": "+ Price from date"
+    "energy.addTariff": "+ Price from date",
+    "pairing.lostTitle": "The SHC no longer recognises this installation",
+    "pairing.lostHint": "Its client certificate is rejected — usually because another installation paired with the same id, or the client was removed in the Bosch app. Re-pairing keeps users, history and settings.",
+    "pairing.lostHintUser": "The SHC rejects this installation's client certificate. An admin needs to re-pair the UI.",
+    "pairing.repair": "Re-pair",
+    "pairing.repairTitle": "Re-pair with the SHC",
+    "pairing.repairIntro": "Registers this installation with a new, unique id and a new certificate. Users, history and settings are kept. You can remove the old entry in the Bosch app under “Mobile devices” afterwards.",
+    "pairing.done": "Paired as {0} — reloading …",
+    "pairing.clientId": "Client id",
+    "pairing.rejected": "rejected",
+    "pairing.adminHint": "Re-pairing assigns a new id, e.g. when the SHC rejects the certificate."
   }

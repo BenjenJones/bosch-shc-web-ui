@@ -246,6 +246,23 @@ function requireAdmin(req, res, next) {
  *  short-circuits everything except /api/setup/* and /api/auth/status before
  *  it can get here, so in practice that only happens if you call shcRequest
  *  directly. */
+// The SHC answers a TLS handshake with an unknown/replaced client certificate
+// with a TLS alert (46 certificate_unknown, 42 bad_certificate, 48
+// unknown_ca). That means this install is no longer paired — typically
+// because another install registered the same client id, or the client was
+// removed in the Bosch app. Surfaced to the UI as `pairingLost`.
+function isCertRejected(err) {
+  return /certificate unknown|bad certificate|unknown ca|alert number (42|46|48)\b/i.test(String(err?.message || ''));
+}
+
+let pairingLost = false;
+function setPairingLost(v) {
+  if (v === pairingLost) return;
+  pairingLost = v;
+  if (v) console.warn('⚠ SHC rejects our client certificate — this install is no longer paired. Re-pair via the UI (Admin → Controller).');
+  for (const c of sseClients) sendStatus(c);
+}
+
 function shcRequest(method, urlPath, { body, port = SHC_PORT, timeoutMs = 35000 } = {}) {
   return new Promise((resolve, reject) => {
     const data = body !== undefined && body !== null
@@ -271,6 +288,8 @@ function shcRequest(method, urlPath, { body, port = SHC_PORT, timeoutMs = 35000 
         res.on('end', () => {
           let parsed = chunks;
           try { parsed = JSON.parse(chunks); } catch (_) { /* not JSON */ }
+          // Any HTTP answer means the TLS handshake (and so our cert) passed.
+          setPairingLost(false);
           if (res.statusCode >= 200 && res.statusCode < 300) {
             resolve(parsed);
           } else {
@@ -282,7 +301,10 @@ function shcRequest(method, urlPath, { body, port = SHC_PORT, timeoutMs = 35000 
       }
     );
     req.on('timeout', () => req.destroy(new Error('Timeout')));
-    req.on('error', reject);
+    req.on('error', (err) => {
+      if (isCertRejected(err)) setPairingLost(true);
+      reject(err);
+    });
     if (data) req.write(data);
     req.end();
   });
@@ -353,6 +375,9 @@ app.get('/api/setup/status', (_req, res) => {
   res.json({
     needed: !isReady(),
     hasCerts: fs.existsSync(setupLib.CERT_FILE) && fs.existsSync(setupLib.KEY_FILE),
+    pairingLost,
+    clientId: config?.clientId || null,
+    shcIp:    config?.shcIp || null,
   });
 });
 
@@ -384,8 +409,11 @@ app.post('/api/setup', wrap(async (req, res) => {
 
   // Cert generation first — if openssl isn't around we want to fail before
   // touching the SHC (it would only timeout otherwise).
+  // Each pairing gets its own client id + fresh certificate, so pairing this
+  // install never invalidates another one paired with the same SHC.
+  const clientId = setupLib.newClientId();
   try {
-    setupLib.ensureCerts();
+    setupLib.freshCerts();
   } catch (err) {
     return res.status(500).json({
       error: 'cert generation failed — is openssl on PATH?',
@@ -399,8 +427,9 @@ app.post('/api/setup', wrap(async (req, res) => {
   // mode. Pass the upstream status through so the wizard can surface a
   // useful message instead of a generic 5xx.
   try {
-    await setupLib.registerClient(shcIp, password, certPem);
+    await setupLib.registerClient(shcIp, password, certPem, clientId);
   } catch (err) {
+    setupLib.restoreCertBackup();
     return res.status(err.status || 502).json({
       error: 'SHC registration failed',
       status: err.status, detail: err.body || err.message,
@@ -415,7 +444,7 @@ app.post('/api/setup', wrap(async (req, res) => {
   } else {
     setupLib.removeAuthFile();
   }
-  setupLib.writeConfig({ shcIp, authEnabled });
+  setupLib.writeConfig({ shcIp, authEnabled, clientId });
 
   initRuntime();
   kickPollLoop();
@@ -545,6 +574,9 @@ app.get('/api/setup/status', (_req, res) => {
   res.json({
     needed:   !isReady(),
     hasCerts: fs.existsSync(setupLib.CERT_FILE) && fs.existsSync(setupLib.KEY_FILE),
+    pairingLost,
+    clientId: config?.clientId || null,
+    shcIp:    config?.shcIp || null,
   });
 });
 
@@ -561,8 +593,9 @@ app.post('/api/setup/register', wrap(async (req, res) => {
   if (!shcIp)                                    return res.status(400).json({ error: 'shcIp required' });
   if (typeof password !== 'string' || !password) return res.status(400).json({ error: 'password required' });
 
+  const clientId = setupLib.newClientId();
   try {
-    setupLib.ensureCerts();
+    setupLib.freshCerts();
   } catch (err) {
     return res.status(500).json({
       error: 'certificate generation failed — is openssl installed and on PATH?',
@@ -571,8 +604,9 @@ app.post('/api/setup/register', wrap(async (req, res) => {
   }
   const certPem = fs.readFileSync(setupLib.CERT_FILE, 'utf8');
   try {
-    await setupLib.registerClient(shcIp, password, certPem);
+    await setupLib.registerClient(shcIp, password, certPem, clientId);
   } catch (err) {
+    setupLib.restoreCertBackup();
     return res.status(err.status || 502).json({
       error: 'SHC registration failed — wrong password, or SHC not in pairing mode?',
       detail: err.message,
@@ -581,7 +615,7 @@ app.post('/api/setup/register', wrap(async (req, res) => {
   // Reset any stale auth.json from a previous pairing and write a minimal
   // config (auth disabled). The user can opt into auth via step 2.
   setupLib.removeAuthFile();
-  setupLib.writeConfig({ shcIp, authEnabled: false });
+  setupLib.writeConfig({ shcIp, authEnabled: false, clientId });
   initRuntime();
   kickPollLoop();
   startHistorySampler();
@@ -609,9 +643,50 @@ app.post('/api/setup/complete', wrap(async (req, res) => {
   } else {
     setupLib.removeAuthFile();
   }
-  setupLib.writeConfig({ shcIp: config.shcIp, authEnabled: enabled });
+  setupLib.writeConfig({ shcIp: config.shcIp, authEnabled: enabled, clientId: config.clientId });
   initRuntime();
   res.json({ ok: true });
+}));
+
+// Re-pair a running install (admin only): registers a NEW client id with a
+// fresh certificate and swaps it in place — users, sessions, history and all
+// other config keys stay as they are. Used when the SHC no longer accepts our
+// certificate (pairingLost), or to move an install off the legacy shared id.
+// Body: { password, shcIp? }. The SHC must be in pairing mode (button).
+app.post('/api/setup/repair', requireAdmin, wrap(async (req, res) => {
+  if (!isReady()) return res.status(409).json({ error: 'not configured — use the setup wizard' });
+  if (SHC_PROTOCOL !== 'https') return res.status(409).json({ error: 'not available without TLS (demo/test mode)' });
+  const password = req.body?.password;
+  const shcIp = String(req.body?.shcIp || config.shcIp || '').trim();
+  if (typeof password !== 'string' || !password) return res.status(400).json({ error: 'password required' });
+  if (!shcIp) return res.status(400).json({ error: 'shcIp required' });
+
+  const clientId = setupLib.newClientId();
+  try {
+    setupLib.freshCerts();
+  } catch (err) {
+    setupLib.restoreCertBackup();
+    return res.status(500).json({ error: 'certificate generation failed — is openssl installed and on PATH?', detail: err.message });
+  }
+  try {
+    await setupLib.registerClient(shcIp, password, fs.readFileSync(setupLib.CERT_FILE, 'utf8'), clientId);
+  } catch (err) {
+    setupLib.restoreCertBackup();
+    return res.status(err.status || 502).json({
+      error: 'SHC registration failed — wrong password, or SHC not in pairing mode?',
+      detail: err.message,
+    });
+  }
+  // Patch config in place so uiPort/uiTls/shcPort/… survive.
+  const next = { ...JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')), shcIp, clientId,
+    certPath: path.relative(setupLib.DATA_DIR, setupLib.CERT_FILE),
+    keyPath:  path.relative(setupLib.DATA_DIR, setupLib.KEY_FILE) };
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(next, null, 2));
+  initRuntime();
+  subscriptionId = null; // force a fresh long-poll subscription with the new cert
+  setPairingLost(false);
+  console.log(`✔ Re-paired as ${clientId}`);
+  res.json({ ok: true, clientId });
 }));
 
 // =========================================================================
@@ -1184,7 +1259,7 @@ function broadcast(events) {
 // Push the current SHC-connection status to one client (on connect) or, via
 // setShcConnected, to all of them when it flips.
 function sendStatus(client) {
-  client.write(`event: status\ndata: ${JSON.stringify({ connected: shcConnected })}\n\n`);
+  client.write(`event: status\ndata: ${JSON.stringify({ connected: shcConnected, pairingLost })}\n\n`);
 }
 
 function setShcConnected(v) {
@@ -1315,5 +1390,5 @@ if (!process.env.BOSCH_SHC_NO_LISTEN) {
 module.exports = {
   app, shcRequest,
   // Internals exposed for unit tests — pure functions, no live state.
-  _internals: { hashPassword, verifyPassword, readCookie, adaptIntrusionState, publicUser, newToken, isIngressRequest, frameAncestorsFor },
+  _internals: { hashPassword, verifyPassword, readCookie, adaptIntrusionState, publicUser, newToken, isIngressRequest, frameAncestorsFor, isCertRejected },
 };

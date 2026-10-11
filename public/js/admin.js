@@ -91,7 +91,13 @@ function renderAdmin() {
       <div class="flex justify-between"><dt class="text-slate-500">${t('admin.rooms')}</dt>          <dd class="tabular-nums">${state.rooms.length}</dd></div>
       <div class="flex justify-between"><dt class="text-slate-500">${t('admin.scenarios')}</dt>      <dd class="tabular-nums">${state.scenarios.length}</dd></div>
       <div class="flex justify-between"><dt class="text-slate-500">${t('admin.automations')}</dt>    <dd class="tabular-nums">${state.automations.length}</dd></div>
-    </dl>`;
+      <div class="flex justify-between gap-3"><dt class="text-slate-500">${t('pairing.clientId')}</dt>
+        <dd class="tabular-nums break-all text-right ${state.pairing.lost ? 'text-rose-600' : ''}">${escapeHtml(state.pairing.clientId || '-')}${state.pairing.lost ? ' · ' + t('pairing.rejected') : ''}</dd></div>
+    </dl>
+    <div class="mt-3 flex items-center justify-between gap-3">
+      <p class="text-xs text-slate-500">${t('pairing.adminHint')}</p>
+      <button data-repair class="shrink-0 text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded">${t('pairing.repair')}</button>
+    </div>`;
 
   // ---- Clients ----------------------------------------------------------
   const clientsBody = `

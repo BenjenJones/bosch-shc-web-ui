@@ -547,5 +547,15 @@
     "energy.noMeters": "Keine Geräte mit Verbrauchsmessung (z. B. Zwischenstecker) gefunden.",
     "energy.tariffs": "Strompreis ({0})",
     "energy.tariffHint": "Preis je kWh ab dem angegebenen Datum – bei Tarifwechsel einfach eine neue Zeile hinzufügen. Kosten werden je Tag mit dem dann gültigen Preis berechnet.",
-    "energy.addTariff": "+ Preis ab Datum"
+    "energy.addTariff": "+ Preis ab Datum",
+    "pairing.lostTitle": "Der SHC kennt diese Installation nicht mehr",
+    "pairing.lostHint": "Das Client-Zertifikat wird abgelehnt – meist weil eine andere Installation mit derselben Kennung gekoppelt wurde oder der Client in der Bosch-App entfernt wurde. Neu koppeln behält Benutzer, Verlauf und Einstellungen.",
+    "pairing.lostHintUser": "Das Client-Zertifikat wird vom SHC abgelehnt. Ein Admin muss die UI neu koppeln.",
+    "pairing.repair": "Neu koppeln",
+    "pairing.repairTitle": "Mit dem SHC neu koppeln",
+    "pairing.repairIntro": "Registriert diese Installation mit einer neuen, eigenen Kennung und einem neuen Zertifikat. Benutzer, Verlauf und Einstellungen bleiben erhalten. Den alten Eintrag kannst du danach in der Bosch-App unter „Mobile Geräte“ entfernen.",
+    "pairing.done": "Gekoppelt als {0} – lade neu …",
+    "pairing.clientId": "Client-Kennung",
+    "pairing.rejected": "abgelehnt",
+    "pairing.adminHint": "Neu koppeln vergibt eine neue Kennung, z. B. wenn der SHC das Zertifikat ablehnt."
 }

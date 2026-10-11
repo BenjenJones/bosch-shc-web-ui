@@ -12,6 +12,7 @@ import { applySetupTexts, wireSetupWizard } from './setup.js';
 import { initFavorites } from './favorites.js';
 import { initKiosk } from './kiosk.js';
 import { initCharts } from './charts.js';
+import { initPairing } from './pairing.js';
 
 initModals();
 initTabs();
@@ -19,6 +20,7 @@ initAuth();
 initFavorites();
 initKiosk();
 initCharts();
+initPairing();
 
 // PWA service worker. Browsers only allow it in a secure context (HTTPS or
 // localhost); over plain http://<ip>:3000 the UI simply runs without it.
