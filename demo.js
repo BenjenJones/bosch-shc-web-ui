@@ -56,6 +56,20 @@ process.env.BOSCH_SHC_CONFIG_FILE          = configFile;
 process.env.BOSCH_SHC_AUTH_FILE            = path.join(tmp, 'auth.json'); // ungenutzt (Auth aus)
 process.env.BOSCH_SHC_MESSAGE_ARCHIVE_FILE = archiveFile;
 
+// Verlauf (Diagramme/Energie): eigene SQLite im Tempverzeichnis, vorab mit
+// einem Jahr synthetischer Werte gefüllt (demo/history-seed.js).
+const historyFile = path.join(tmp, 'history.sqlite');
+process.env.BOSCH_SHC_HISTORY_FILE = historyFile;
+{
+  const { openHistory } = require('./history.js');
+  const { seedDemoHistory } = require('./demo/history-seed.js');
+  const h = openHistory(historyFile);
+  const t = Date.now();
+  const n = seedDemoHistory(h, store.services);
+  h.close();
+  if (n) console.log(`▶ Demo-Verlauf: ${n} Werte in ${Date.now() - t} ms erzeugt`);
+}
+
 // Tempverzeichnis beim Beenden aufräumen.
 const cleanup = () => { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* egal */ } };
 process.on('exit', cleanup);

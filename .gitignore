@@ -10,3 +10,4 @@ examples/
 .DS_Store
 test/openapi/_bundled.yml
 public/tailwind.css
+/history.sqlite*

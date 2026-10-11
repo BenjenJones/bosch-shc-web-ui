@@ -50,6 +50,13 @@ The proxy is required because browsers cannot present client certificates (mTLS)
 - Mute an active alarm
 - Toggle user-defined states (Present, Vacation, …)
 
+**History & charts**
+- The server records temperature, humidity, setpoint, power, energy counter, window/door contacts, valve position, air quality, shutter position and illuminance into SQLite (`history.sqlite` in the data dir) — from live events plus a snapshot of all values every 15 minutes
+- Chart button on each device card: 24 h / 7 days / 30 days / 1 year, with min/max band, setpoint overlay for room climate, crosshair tooltip; energy as consumption bars (hours, days, months)
+- 24 h sparkline next to each room's temperature
+- Tiered retention, configurable under *Admin → History*: individual values (default 14 days), hourly values (730 days), daily values (unlimited)
+- Uses Node's built-in `node:sqlite` (Node ≥ 22.5; the Docker image/add-on ships Node 24). On older Node the UI runs without history
+
 **Health**
 - Summary tiles: unreachable devices, battery, device faults, poor signal, firmware updates — click a tile to filter
 - Issue list sorted by severity, with the room and model of each device

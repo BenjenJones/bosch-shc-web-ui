@@ -54,6 +54,9 @@ const state = {
   automations: [],
   userdefinedstates: [],
   intrusion: null,
+  // Server-side sensor history (SQLite) usable? false on Node < 22.5 or when
+  // the DB can't be opened — chart buttons/sparklines are hidden then.
+  historyAvailable: false,
   // Collapsible rooms: set of room ids currently collapsed. Persisted via
   // saveCollapsedRooms() — survives reloads so the user doesn't have to
   // re-collapse the same rooms every session.
@@ -255,7 +258,7 @@ const safeApi = (p, o) => api(p, o).catch(() => null);
 async function loadAll() {
   // /api/clients is admin-only; non-admins skip it (the server would return 403)
   const [info, rooms, devices, services, scenarios, messages,
-         clients, automations, userdefinedstates, intrusion, messageArchive] = await Promise.all([
+         clients, automations, userdefinedstates, intrusion, messageArchive, historyProbe] = await Promise.all([
     safeApi('api/info'),
     safeApi('api/rooms'),
     safeApi('api/devices'),
@@ -267,6 +270,7 @@ async function loadAll() {
     safeApi('api/userdefinedstates'),
     safeApi('api/intrusion'),
     safeApi('api/messages/archive'),
+    safeApi('api/history/spark'),
   ]);
   state.info        = info || {};
   state.rooms       = rooms || [];
@@ -284,6 +288,7 @@ async function loadAll() {
   state.userdefinedstates = (userdefinedstates || []).sort(byName);
   state.intrusion   = intrusion;
   state.messageArchive = messageArchive || [];
+  state.historyAvailable = !!historyProbe?.available;
   state.loaded = true;
 
   applyStaticTexts();

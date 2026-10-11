@@ -19,7 +19,7 @@ HA-specific behaviour is always an optional extra detected at runtime.
 - [x] **Home Assistant ingress** — optional sidebar panel via the Supervisor
       (`ingress: true`). Requires all UI/API URLs to be relative so the app
       works under `/api/hassio_ingress/<token>/` *and* at `/` standalone.
-- [ ] **History & charts** — record SSE events (temperature, humidity, power,
+- [x] **History & charts** — record SSE events (temperature, humidity, power,
       contacts) to SQLite (`node:sqlite`) in the data dir.
   - Tiered retention, configurable in the Admin tab (not only as add-on option):
     raw events 14 days, hourly min/max/avg 2 years, daily aggregates unlimited.

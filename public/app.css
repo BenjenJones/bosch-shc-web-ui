@@ -133,6 +133,33 @@ details[data-section].card:hover {
 }
 
 /* =========================================================================
+   History charts (js/charts.js). Text/grid inherit the container's slate
+   text colour (dark-mode aware); series colours are fixed and validated for
+   both surfaces: s1 #0284c7, s2 #d97706.
+   ========================================================================= */
+.chart svg { display: block; overflow: visible; }
+.chart text { fill: currentColor; }
+.chart-grid { stroke: currentColor; stroke-opacity: .15; stroke-width: 1; }
+.chart-cross { stroke: currentColor; stroke-opacity: .5; stroke-width: 1; }
+.chart-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart-dashed.chart-line { stroke-dasharray: 6 4; }
+.chart-band { stroke: none; fill-opacity: .15; }
+.chart-dot { stroke-width: 2; stroke: #fff; }
+.chart-s1 { stroke: #0284c7; fill: #0284c7; }
+.chart-s2 { stroke: #d97706; fill: #d97706; }
+.chart-line.chart-s1, .chart-line.chart-s2 { fill: none; }
+.chart-band.chart-s1, .chart-band.chart-s2 { stroke: none; }
+.chart-bar { stroke: none; }
+.chart-bar:hover { fill-opacity: .8; }
+/* Legend/tooltip key: a short line sample (dashed for the setpoint). */
+.chart-key { display: inline-block; width: 14px; height: 0; border-top: 2px solid; margin-right: 4px; vertical-align: middle; }
+.chart-key.chart-s1 { border-color: #0284c7; }
+.chart-key.chart-s2 { border-color: #d97706; }
+.chart-key.chart-dashed { border-top-style: dashed; }
+.chart-spark path { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
+[data-theme="dark"] .chart-dot { stroke: #1e293b; }
+
+/* =========================================================================
    Kiosk view — <html data-kiosk> (js/kiosk.js). Hides tabs, toolbar and the
    regular content; shows #kiosk-view with larger touch targets.
    ========================================================================= */

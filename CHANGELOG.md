@@ -2,6 +2,7 @@
 
 ## 2026-10-11
 
+- (History) Sensor history with charts: values are recorded into SQLite (live events + a 15-minute snapshot) with tiered retention (individual 14 d, hourly 730 d, daily unlimited — configurable under Admin → History). Device cards get a chart button (24 h / 7 d / 30 d / 1 y; min/max band, setpoint overlay, energy as consumption bars), rooms show a 24 h temperature sparkline. Requires Node ≥ 22.5 (`node:sqlite`); older Node runs without history. The demo seeds a year of synthetic history.
 - (Add-on) Home Assistant ingress: the UI now appears as a "Bosch SHC" sidebar panel, served through HA (remote access/HTTPS included). All UI URLs are relative, so it runs under the ingress sub-path and behind any sub-path reverse proxy; standalone use at `/` is unchanged. Framing by HA is only allowed for genuine ingress requests (from the Supervisor); the UI's own login still applies in the panel.
 - (Dashboard) Favourites: pin devices and scenarios with ☆; pinned items appear in a section at the top of the dashboard, scenarios as one-tap buttons. Stored per browser. Cards outside their room show the room name.
 - (Kiosk) New kiosk view for wall tablets (header button or `?kiosk`): clock and favourites only, larger controls, screen kept awake where supported; remembered across reloads until exited.

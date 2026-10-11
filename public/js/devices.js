@@ -1,5 +1,6 @@
 import { favButton, renderFavoritesSection } from './favorites.js';
 import { isKiosk, renderKiosk } from './kiosk.js';
+import { hasHistory, fillSparklines } from './charts.js';
 import { state, $, $$, t, api, escapeHtml, roomName, deviceName, serviceOf, deviceUpdateInfo, deviceBatteryLevel, deviceFaults, saveCollapsedRooms, isMessageActive } from './core.js';
 import { severityFromMessage, messageTitle } from './messages.js';
 import { showModal, hideModal } from './modals.js';
@@ -323,6 +324,7 @@ function renderDeviceList() {
     }).join('') || `<p class="text-slate-500">${filter ? t('devices.noMatches') : t('devices.none')}</p>`;
 
   wireDeviceControls($('#device-list'));
+  fillSparklines($('#device-list'));
   // Remember the open/closed state on user interaction (not while filtering)
   $$('#device-list details.room').forEach(el => el.addEventListener('toggle', () => {
     if (state.deviceFilter.trim() || state.statusFilter || state.typeFilter.size) return;
@@ -479,7 +481,15 @@ function renderRoomClimateBadge(roomId) {
   if (tVal == null && hVal == null && contactSvcs.length === 0 && onCount === 0 && !heatPaused && !boost) return '';
 
   const parts = [];
-  if (tVal != null) parts.push(`<span class="tabular-nums">${tVal.toFixed(1)}°C</span>`);
+  if (tVal != null) {
+    // 24 h sparkline next to the room temperature (filled by fillSparklines);
+    // click opens the chart. data-room-setpoint keeps the room from toggling.
+    const spark = state.historyAvailable
+      ? `<button type="button" data-room-setpoint data-history="${escapeHtml(tempSvc.deviceId)}" title="${t('history.open')}"
+           class="inline-flex text-sky-600 hover:opacity-70" data-spark="${escapeHtml(tempSvc.deviceId + '|temperature')}"></button>`
+      : '';
+    parts.push(`<span class="inline-flex items-center gap-1.5"><span class="tabular-nums">${tVal.toFixed(1)}°C</span>${spark}</span>`);
+  }
   if (hVal != null) parts.push(`<span class="tabular-nums">${Math.round(hVal)}% rH</span>`);
   if (onCount) {
     const label = t('devices.devicesOn', onCount);
@@ -1043,6 +1053,10 @@ function renderDeviceCard(device, { showRoom = false } = {}) {
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
           ${favButton('device', device.id)}
+          ${hasHistory(device.id) ? `<button type="button" data-history="${escapeHtml(device.id)}"
+            title="${t('history.open')}" aria-label="${t('history.open')}"
+            class="text-slate-400 hover:text-slate-700 leading-none p-0.5">
+            <span class="icon-mask" style="width:16px;height:16px;mask-image:url(svg/chart-line.svg);-webkit-mask-image:url(svg/chart-line.svg)"></span></button>` : ''}
           ${cqHtml}
           ${hasSettings(services) ? `<button data-action="settings" data-device="${device.id}"
             title="${t('settings.title')}" aria-label="${t('settings.title')}"

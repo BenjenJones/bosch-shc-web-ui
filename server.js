@@ -12,6 +12,7 @@ const http  = require('http');
 const crypto = require('crypto');
 const express = require('express');
 const setupLib = require('./setup.js');
+const historyLib = require('./history.js');
 
 // All writable state defaults to setupLib.DATA_DIR (= BOSCH_SHC_DATA_DIR or
 // this source dir). The per-file env overrides below stay for the test harness
@@ -23,6 +24,12 @@ const AUTH_FILE   = process.env.BOSCH_SHC_AUTH_FILE   || setupLib.AUTH_FILE;
 // here to give the UI a browsable history. Plain JSON file — no SHC connection
 // or auth state involved, so it loads at boot regardless of setup status.
 const MESSAGE_ARCHIVE_FILE = process.env.BOSCH_SHC_MESSAGE_ARCHIVE_FILE || path.join(setupLib.DATA_DIR, 'messages-archive.ndjson');
+// Sensor history (SQLite). The test harness (no listener) keeps it in memory
+// so test runs never create a file in the data dir.
+const HISTORY_FILE = process.env.BOSCH_SHC_HISTORY_FILE
+  || (process.env.BOSCH_SHC_NO_LISTEN ? ':memory:' : path.join(setupLib.DATA_DIR, 'history.sqlite'));
+const history = historyLib.openHistory(HISTORY_FILE);
+if (!history.available) console.warn('History disabled:', history.reason);
 
 // CSP `frame-ancestors` value. Default 'none' keeps clickjacking protection on
 // for standalone use. To embed the UI in a Home Assistant dashboard (Webpage
@@ -412,6 +419,7 @@ app.post('/api/setup', wrap(async (req, res) => {
 
   initRuntime();
   kickPollLoop();
+  startHistorySampler();
   res.json({ ok: true });
 }));
 
@@ -576,6 +584,7 @@ app.post('/api/setup/register', wrap(async (req, res) => {
   setupLib.writeConfig({ shcIp, authEnabled: false });
   initRuntime();
   kickPollLoop();
+  startHistorySampler();
   res.json({ ok: true });
 }));
 
@@ -1054,6 +1063,85 @@ app.delete('/api/messages/:id', wrap(async (req, res) => {
 }));
 
 // =========================================================================
+//  History (charts). Values come from two sources: live events as they
+//  arrive, and a snapshot of all services every 15 minutes — so values that
+//  don't change (a steady temperature, an idle plug's energy counter) still
+//  get regular data points. The snapshot also covers setups without the
+//  long-poll loop (demo / plain-HTTP SHC).
+// =========================================================================
+const HISTORY_SAMPLE_MS = 15 * 60e3;
+const HISTORY_PRUNE_MS  = 60 * 60e3;
+
+function recordHistory(services) {
+  try { history.recordServices(services); }
+  catch (err) { console.warn('History write failed:', err.message); }
+}
+
+async function sampleHistory() {
+  try {
+    const services = await shcRequest('GET', '/smarthome/services');
+    if (Array.isArray(services)) recordHistory(services);
+  } catch (err) {
+    console.warn('History snapshot failed:', err.message);
+  }
+}
+
+let historyStarted = false;
+function startHistorySampler() {
+  if (historyStarted || !isReady() || !history.available || process.env.BOSCH_SHC_NO_LISTEN) return;
+  historyStarted = true;
+  sampleHistory();
+  setInterval(sampleHistory, HISTORY_SAMPLE_MS).unref();
+  const prune = () => { try { history.prune(); } catch (err) { console.warn('History prune failed:', err.message); } };
+  prune();
+  setInterval(prune, HISTORY_PRUNE_MS).unref();
+}
+
+// Parse an optional ms timestamp query param; NaN → fallback.
+const tsParam = (v, fallback) => {
+  const n = Number(v);
+  return v !== undefined && Number.isFinite(n) ? n : fallback;
+};
+
+// GET /api/history?series=<deviceId>|<metric>&from=<ms>&to=<ms>&res=auto|raw|hour|day
+app.get('/api/history', (req, res) => {
+  const series = String(req.query.series || '');
+  if (!series.includes('|')) return res.status(400).json({ error: 'series required (deviceId|metric)' });
+  const to = tsParam(req.query.to, Date.now());
+  const from = tsParam(req.query.from, to - historyLib.DAY);
+  const resolution = ['auto', 'raw', 'hour', 'day'].includes(req.query.res) ? req.query.res : 'auto';
+  if (from >= to) return res.status(400).json({ error: 'from must be before to' });
+  res.json({ series, from, to, available: history.available, ...history.query(series, from, to, resolution) });
+});
+
+// GET /api/history/series?deviceId=… → metrics with recorded data
+app.get('/api/history/series', (req, res) => {
+  const deviceId = String(req.query.deviceId || '');
+  if (!deviceId) return res.status(400).json({ error: 'deviceId required' });
+  res.json({ available: history.available, metrics: history.seriesFor(deviceId) });
+});
+
+// GET /api/history/spark?series=a|temperature,b|temperature → last 24 h hourly
+app.get('/api/history/spark', (req, res) => {
+  const list = String(req.query.series || '').split(',').filter(s => s.includes('|')).slice(0, 100);
+  res.json({ available: history.available, series: history.sparklines(list) });
+});
+
+app.get('/api/history/stats', requireAdmin, (_req, res) => {
+  res.json(history.stats());
+});
+
+app.put('/api/history/settings', requireAdmin, (req, res) => {
+  try {
+    const settings = history.setSettings(req.body || {});
+    history.prune();
+    res.json({ settings });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
+// =========================================================================
 //  Live events via long polling -> Server-Sent Events
 // =========================================================================
 let subscriptionId = null;
@@ -1119,6 +1207,7 @@ async function pollLoop() {
       setShcConnected(true);
       if (Array.isArray(res.result) && res.result.length > 0) {
         broadcast(res.result);
+        recordHistory(res.result.filter(e => e['@type'] === 'DeviceServiceData'));
       }
     } catch (err) {
       console.warn('Polling error, retrying in 3s:', err.message);
@@ -1197,6 +1286,7 @@ if (!process.env.BOSCH_SHC_NO_LISTEN) {
       console.log(`▶ Bosch SHC UI running on ${scheme}://localhost:${PORT}  (SETUP MODE — visit it to pair)`);
     }
     kickPollLoop();
+    startHistorySampler();
   });
 }
 

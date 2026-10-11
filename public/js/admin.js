@@ -25,6 +25,52 @@ function section(id, title, bodyHtml, { collapsed, badge = '' } = {}) {
     </details>`;
 }
 
+// History (SQLite) — storage stats + retention per tier. Loaded async into
+// the placeholder of the "history" accordion section.
+async function loadHistoryAdmin() {
+  const el = $('#admin-history');
+  if (!el) return;
+  let s;
+  try { s = await api('api/history/stats'); }
+  catch (err) { el.textContent = t('error.generic', err.message); return; }
+  if (!s.available) { el.innerHTML = `<p>${t('history.unavailable')}</p><p class="text-xs mt-1">${escapeHtml(s.reason || '')}</p>`; return; }
+  const mb = s.bytes != null ? (s.bytes / 1048576).toLocaleString(undefined, { maximumFractionDigits: 1 }) + ' MB' : '–';
+  const oldest = s.oldest ? new Date(s.oldest).toLocaleDateString() : '–';
+  const field = (key) => `
+    <label class="flex items-center justify-between gap-3 py-1">
+      <span class="text-slate-600">${t('history.keep.' + key)}</span>
+      <span class="flex items-center gap-1.5">
+        <input type="number" min="0" max="36500" step="1" data-hist-set="${key}" value="${s.settings[key]}"
+          class="w-24 border border-slate-300 rounded-md px-2 py-1 text-sm text-right tabular-nums bg-white" />
+        <span class="text-xs text-slate-500 w-10">${t('history.days')}</span>
+      </span>
+    </label>`;
+  el.innerHTML = `
+    <dl class="space-y-1.5 text-slate-800">
+      <div class="flex justify-between"><dt class="text-slate-500">${t('history.statSeries')}</dt><dd class="tabular-nums">${s.series}</dd></div>
+      <div class="flex justify-between"><dt class="text-slate-500">${t('history.statRows')}</dt>
+        <dd class="tabular-nums">${s.rows.raw.toLocaleString()} / ${s.rows.hourly.toLocaleString()} / ${s.rows.daily.toLocaleString()}</dd></div>
+      <div class="flex justify-between"><dt class="text-slate-500">${t('history.statSize')}</dt><dd class="tabular-nums">${mb}</dd></div>
+      <div class="flex justify-between"><dt class="text-slate-500">${t('history.statOldest')}</dt><dd class="tabular-nums">${oldest}</dd></div>
+    </dl>
+    <div class="mt-4 pt-3 border-t border-slate-200">
+      <p class="text-xs text-slate-500 mb-2">${t('history.keepHint')}</p>
+      ${field('rawDays')}${field('hourlyDays')}${field('dailyDays')}
+      <div class="mt-3 flex items-center justify-end gap-2">
+        <span id="hist-saved" class="text-xs text-emerald-700"></span>
+        <button id="hist-save" class="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">${t('modal.save')}</button>
+      </div>
+    </div>`;
+  $('#hist-save').addEventListener('click', async () => {
+    const body = Object.fromEntries($$('[data-hist-set]', el).map(i => [i.dataset.histSet, Number(i.value)]));
+    try {
+      await api('api/history/settings', { method: 'PUT', body });
+      await loadHistoryAdmin();
+      $('#hist-saved').textContent = t('history.saved');
+    } catch (err) { alert(t('error.generic', err.message)); }
+  });
+}
+
 function renderAdmin() {
   const collapsed = loadAdminCollapsed();
   const sw = state.info.softwareUpdateState || {};
@@ -164,7 +210,9 @@ function renderAdmin() {
       ${section('clients', t('admin.clients', state.clients.length), clientsBody, { collapsed: collapsed.clients })}
       ${section('rooms',   t('admin.roomsHeader', state.rooms.length), roomsBody, { collapsed: collapsed.rooms })}
       ${section('devices', t('admin.manageDevices', managed.length), devicesBody, { collapsed: collapsed.devices, badge: devicesBadge })}
+      ${section('history', t('history.adminTitle'), '<div id="admin-history" class="text-sm text-slate-500">…</div>', { collapsed: collapsed.history })}
     </div>`;
+  loadHistoryAdmin();
 
   // Persist accordion open/closed state.
   $$('#tab-admin details[data-section]').forEach(d => d.addEventListener('toggle', () => {
