@@ -56,6 +56,11 @@ The proxy is required because browsers cannot present client certificates (mTLS)
 - All battery-powered devices and all devices' signal quality, worst first
 - Tab badge with the number of devices that need attention, updated live
 
+**Favourites & kiosk view**
+- Pin devices and scenarios with ☆ — they appear in a *Favourites* section at the top of the dashboard (scenarios as one-tap buttons). Stored per browser, so each tablet/phone keeps its own selection
+- *Kiosk* (header button, or open the UI with `?kiosk`): clock plus favourites only, larger touch targets, no tabs; stays on after reload until *Exit kiosk*
+- Keeps the screen awake in kiosk mode where the browser supports it (Wake Lock, needs HTTPS)
+
 **Install as app (PWA)**
 - Web app manifest + service worker: "Install app" / "Add to Home Screen" gives the UI its own window and icon
 - The app shell (HTML/JS/CSS/icons) is cached network-first, so it still opens when the connection drops; `/api/*` and the live stream are never cached

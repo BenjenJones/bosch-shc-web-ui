@@ -133,6 +133,46 @@ details[data-section].card:hover {
 }
 
 /* =========================================================================
+   Kiosk view — <html data-kiosk> (js/kiosk.js). Hides tabs, toolbar and the
+   regular content; shows #kiosk-view with larger touch targets.
+   ========================================================================= */
+html[data-kiosk] nav,
+html[data-kiosk] #tab-select-wrap,
+html[data-kiosk] #menu-toggle,
+html[data-kiosk] #menu-panel,
+html[data-kiosk] #info-line,
+html[data-kiosk] main {
+    display: none !important;
+}
+html[data-kiosk] #kiosk-view,
+html[data-kiosk] #kiosk-exit {
+    display: block !important;
+}
+#kiosk-view .fav-btn,
+#kiosk-view [data-action="settings"] {
+    display: none;
+}
+#kiosk-view .card {
+    padding: 1.25rem;
+}
+#kiosk-view .card h3 {
+    font-size: 1.25rem;
+}
+#kiosk-view .card button[data-action] {
+    padding-top: .75rem;
+    padding-bottom: .75rem;
+    font-size: 1rem;
+}
+#kiosk-view [data-temp-step] {
+    width: 2.75rem;
+    height: 2.75rem;
+    font-size: 1.5rem;
+}
+#kiosk-view input[type="range"] {
+    height: 1.75rem;
+}
+
+/* =========================================================================
    Dark theme — overrides the Tailwind utility classes used in the markup.
    Activated by setting [data-theme="dark"] on <html>.
    ========================================================================= */

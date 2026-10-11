@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- (Dashboard) Favourites: pin devices and scenarios with ☆; pinned items appear in a section at the top of the dashboard, scenarios as one-tap buttons. Stored per browser. Cards outside their room show the room name.
+- (Kiosk) New kiosk view for wall tablets (header button or `?kiosk`): clock and favourites only, larger controls, screen kept awake where supported; remembered across reloads until exited.
 - (PWA) The UI can be installed as an app ("Install app" / "Add to Home Screen"): web app manifest, icons, and a network-first service worker that keeps the app shell available offline (API calls and the live stream are never cached). Requires HTTPS with a trusted certificate or `localhost`; plain HTTP keeps working without install. The browser title bar follows the light/dark theme.
 - (Dashboard) Grouped shutter control: rooms with two or more shutters get open/stop/close buttons and an average-position slider in the room header; with two or more shutters overall, an "All shutters" bar sits above the rooms. A shutter that fails doesn't stop the others; failures are reported once.
 - (Dashboard) Boost mode: room climate controls that support it show a Boost toggle on the card, and an active boost is shown in the room header.

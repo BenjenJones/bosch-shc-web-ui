@@ -14,7 +14,7 @@ HA-specific behaviour is always an optional extra detected at runtime.
 - [x] **Heating boost mode** — show and toggle boost on room climate control.
 - [x] **PWA** — web app manifest + service worker so the UI can be installed
       to the home screen.
-- [ ] **Favourites / kiosk view** — pin devices and scenarios; compact view
+- [x] **Favourites / kiosk view** — pin devices and scenarios; compact view
       with large buttons for wall tablets.
 - [ ] **Home Assistant ingress** — optional sidebar panel via the Supervisor
       (`ingress: true`). Requires all UI/API URLs to be relative so the app

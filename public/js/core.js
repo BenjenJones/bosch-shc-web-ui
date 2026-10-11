@@ -156,6 +156,9 @@ function setLang(lang) {
 function applyStaticTexts() {
   document.title = state.lang === 'en' ? 'Bosch SHC - local UI' : 'Bosch SHC - lokales UI';
   $('#refresh').textContent = t('header.refresh');
+  $('#kiosk-enter').textContent = t('kiosk.enter');
+  $('#kiosk-enter').title = t('kiosk.enterTitle');
+  $('#kiosk-exit').textContent = t('kiosk.exit');
   $('#event-dot').title = t('header.liveStatus');
   // Tab-Beschriftungen — bei #messages innerhalb des span[data-tab-label]
   $('[data-tab="devices"]').textContent   = t('tab.devices');

@@ -32,6 +32,8 @@
         <!-- Always visible: live-event status + primary refresh action -->
         <span id="event-dot" class="inline-block w-2.5 h-2.5 rounded-full bg-slate-300"></span>
         <button id="refresh" class="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-1.5 rounded-md"></button>
+        <!-- Only visible in kiosk mode (see app.css [data-kiosk]) -->
+        <button id="kiosk-exit" class="hidden text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 px-3 py-1.5 rounded-md"></button>
 
         <!-- Mobile-only hamburger; toggles #menu-panel below -->
         <button id="menu-toggle" type="button" aria-controls="menu-panel" aria-expanded="false"
@@ -52,6 +54,7 @@
                  bg-white sm:bg-transparent
                  border border-slate-200 sm:border-0 rounded-md shadow-lg sm:shadow-none
                  p-3 sm:p-0 z-20 min-w-[160px] sm:min-w-0">
+          <button id="kiosk-enter" class="text-[11px] border border-slate-300 rounded-md px-2 py-1 hover:bg-slate-100"></button>
           <button id="notify-toggle" class="text-[11px] border border-slate-300 rounded-md px-2 py-1 hover:bg-slate-100">
             <span class="icon-mask align-middle" style="width:14px;height:14px;-webkit-mask-image:url(svg/bell.svg);mask-image:url(svg/bell.svg)"></span>
           </button>
@@ -78,7 +81,7 @@
     <!-- Mobile-only tab picker. Mirrors the <nav> below; tab-switching JS
          keeps the two in sync. Native <select> for accessibility & to avoid
          building a custom dropdown. -->
-    <div class="sm:hidden max-w-6xl mx-auto px-4 pb-2">
+    <div id="tab-select-wrap" class="sm:hidden max-w-6xl mx-auto px-4 pb-2">
       <select id="tab-select"
         class="w-full text-sm bg-white border border-slate-300 rounded-md px-3 py-1.5">
         <option value="devices"></option>
@@ -113,6 +116,8 @@
     <section id="tab-users"     class="hidden"></section>
     <section id="tab-sessions"  class="hidden"></section>
   </main>
+  <!-- Kiosk view (wall tablets): clock + favourites, rendered by js/kiosk.js -->
+  <section id="kiosk-view" class="hidden max-w-6xl mx-auto p-4"></section>
   </div>
 
   <!-- First-run setup wizard. Shown when /api/setup/status reports

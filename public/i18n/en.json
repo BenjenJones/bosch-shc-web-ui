@@ -476,5 +476,12 @@
     "health.chipOffline": "unreachable",
     "health.chipBattery": "Battery: {0}",
     "health.chipSignal":  "Signal: {0}",
-    "health.chipUpdate":  "Update {0}"
+    "health.chipUpdate":  "Update {0}",
+    "fav.title": "Favourites",
+    "fav.add": "Add to favourites",
+    "fav.remove": "Remove from favourites",
+    "kiosk.enter": "Kiosk",
+    "kiosk.enterTitle": "Kiosk view: clock and favourites only, large controls (for wall tablets)",
+    "kiosk.exit": "Exit kiosk",
+    "kiosk.empty": "No favourites yet. Exit kiosk and mark devices or scenarios with ☆."
   }

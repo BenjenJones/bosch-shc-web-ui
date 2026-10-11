@@ -1,3 +1,5 @@
+import { favButton, renderFavoritesSection } from './favorites.js';
+import { isKiosk, renderKiosk } from './kiosk.js';
 import { state, $, $$, t, api, escapeHtml, roomName, deviceName, serviceOf, deviceUpdateInfo, deviceBatteryLevel, deviceFaults, saveCollapsedRooms, isMessageActive } from './core.js';
 import { severityFromMessage, messageTitle } from './messages.js';
 import { showModal, hideModal } from './modals.js';
@@ -171,6 +173,7 @@ function renderDevices() {
   updateStatusFilterButtons();
   renderTypeFilterOptions();
   renderDeviceList();
+  if (isKiosk()) renderKiosk();
 }
 
 // Populates the type filter dropdown panel. Only categories that actually
@@ -290,7 +293,10 @@ function renderDeviceList() {
       ${renderShutterGroup('all', allShutters, t('devices.allShutters', allShutters.length))}
     </section>` : '';
 
-  $('#device-list').innerHTML = discoveredHtml + allShuttersHtml + [...byRoom.entries()]
+  const filteringAny = !!filter || !!state.statusFilter || state.typeFilter.size > 0;
+  const favHtml = filteringAny ? '' : renderFavoritesSection();
+
+  $('#device-list').innerHTML = discoveredHtml + favHtml + allShuttersHtml + [...byRoom.entries()]
     .sort((a, b) => roomName(a[0]).localeCompare(roomName(b[0]), 'de'))
     .map(([rId, devs]) => {
       // When any filter is active, always open matching rooms
@@ -311,15 +317,29 @@ function renderDeviceList() {
           </div>
         </summary>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          ${devs.map(safeRenderDeviceCard).join('')}
+          ${devs.map(d => safeRenderDeviceCard(d)).join('')}
         </div>
       </details>`;
     }).join('') || `<p class="text-slate-500">${filter ? t('devices.noMatches') : t('devices.none')}</p>`;
 
-  $$('#device-list [data-action]').forEach(el => el.addEventListener('click', onDeviceAction));
-  $$('#device-list [data-temp-set]').forEach(el => el.addEventListener('change', onTemperatureChange));
+  wireDeviceControls($('#device-list'));
+  // Remember the open/closed state on user interaction (not while filtering)
+  $$('#device-list details.room').forEach(el => el.addEventListener('toggle', () => {
+    if (state.deviceFilter.trim() || state.statusFilter || state.typeFilter.size) return;
+    if (el.open) state.collapsedRooms.delete(el.dataset.room);
+    else        state.collapsedRooms.add(el.dataset.room);
+    saveCollapsedRooms();
+  }));
+}
+
+// Attach the handlers for every interactive control inside device cards, room
+// summaries and shutter groups under `root`. Shared by the dashboard list and
+// the kiosk view, which render the same card markup.
+function wireDeviceControls(root) {
+  $$('[data-action]', root).forEach(el => el.addEventListener('click', onDeviceAction));
+  $$('[data-temp-set]', root).forEach(el => el.addEventListener('change', onTemperatureChange));
   // Live value readout while dragging the slider.
-  $$('#device-list [data-temp-set]').forEach(el => el.addEventListener('input', e => {
+  $$('[data-temp-set]', root).forEach(el => el.addEventListener('input', e => {
     const out = e.currentTarget.closest('[data-setpoint]')?.querySelector('[data-temp-out]');
     if (out) out.textContent = e.currentTarget.value + '°';
   }));
@@ -333,14 +353,14 @@ function renderDeviceList() {
     if (out) out.textContent = next + '°';
     slider.dispatchEvent(new Event('change', { bubbles: true }));
   };
-  $$('#device-list [data-temp-step]').forEach(el => el.addEventListener('click', e => {
+  $$('[data-temp-step]', root).forEach(el => el.addEventListener('click', e => {
     const slider = e.currentTarget.closest('[data-setpoint]')?.querySelector('[data-temp-set]');
     if (slider) stepSetpoint(slider, Number(e.currentTarget.dataset.tempStep));
   }));
   // Mouse wheel over any slider nudges it by one step (up = increase). Non-passive
   // so the page doesn't scroll while the cursor is over the control. Reuses each
   // slider's existing change handler (setpoint / dimmer / shutter) for the write.
-  $$('#device-list input[type="range"]').forEach(el => el.addEventListener('wheel', e => {
+  $$('input[type="range"]', root).forEach(el => el.addEventListener('wheel', e => {
     e.preventDefault();
     const r = e.currentTarget;
     const step = parseFloat(r.step) || 1;
@@ -351,37 +371,30 @@ function renderDeviceList() {
     r.dispatchEvent(new Event('change', { bubbles: true }));
   }, { passive: false }));
   // Sliders/buttons sitting in a room <summary> must not toggle the room when used.
-  $$('#device-list [data-room-setpoint]').forEach(el =>
+  $$('[data-room-setpoint]', root).forEach(el =>
     el.addEventListener('click', e => e.preventDefault()));
-  $$('#device-list [data-heat-set]').forEach(el => el.addEventListener('change', onHeatingSetpointChange));
+  $$('[data-heat-set]', root).forEach(el => el.addEventListener('change', onHeatingSetpointChange));
   // Live readout while dragging the heating-circuit slider.
-  $$('#device-list [data-heat-set]').forEach(el => el.addEventListener('input', e => {
+  $$('[data-heat-set]', root).forEach(el => el.addEventListener('input', e => {
     const out = e.currentTarget.closest('[data-setpoint]')?.querySelector('[data-temp-out]');
     if (out) out.textContent = e.currentTarget.value + '°';
   }));
-  $$('#device-list [data-shutter-level]').forEach(el => el.addEventListener('change', onShutterLevelChange));
+  $$('[data-shutter-level]', root).forEach(el => el.addEventListener('change', onShutterLevelChange));
   // Live position readout while dragging the card slider.
-  $$('#device-list [data-shutter-level]').forEach(el => el.addEventListener('input', e => {
+  $$('[data-shutter-level]', root).forEach(el => el.addEventListener('input', e => {
     const out = e.currentTarget.closest('.card')?.querySelector('[data-shutter-out]');
     if (out) out.textContent = t('devices.shutterPosition', e.currentTarget.value);
   }));
-  $$('#device-list [data-shutter-group-action]').forEach(el => el.addEventListener('click', onShutterGroupAction));
-  $$('#device-list [data-shutter-group-level]').forEach(el => {
+  $$('[data-shutter-group-action]', root).forEach(el => el.addEventListener('click', onShutterGroupAction));
+  $$('[data-shutter-group-level]', root).forEach(el => {
     el.addEventListener('input', e => {
       const out = e.currentTarget.closest('[data-shutter-group]')?.querySelector('[data-shutter-group-out]');
       if (out) out.textContent = e.currentTarget.value + '%';
     });
     el.addEventListener('change', onShutterGroupLevelChange);
   });
-  $$('#device-list [data-dimmer-level]').forEach(el => el.addEventListener('change', onDimmerLevelChange));
-  $$('#device-list [data-color-set]').forEach(el => el.addEventListener('change', onColorChange));
-  // Remember the open/closed state on user interaction (not while filtering)
-  $$('#device-list details.room').forEach(el => el.addEventListener('toggle', () => {
-    if (state.deviceFilter.trim() || state.statusFilter || state.typeFilter.size) return;
-    if (el.open) state.collapsedRooms.delete(el.dataset.room);
-    else        state.collapsedRooms.add(el.dataset.room);
-    saveCollapsedRooms();
-  }));
+  $$('[data-dimmer-level]', root).forEach(el => el.addEventListener('change', onDimmerLevelChange));
+  $$('[data-color-set]', root).forEach(el => el.addEventListener('change', onColorChange));
 }
 
 // Which room does a message belong to? `sourceId` is resolved by what it
@@ -771,9 +784,11 @@ function ratingColor(rating) {
 
 // Wrapper: a render error in a single card must not tear down the whole
 // device list. We show a fallback error card instead.
-function safeRenderDeviceCard(device) {
+// opts.showRoom: prefix the model line with the room name — for cards shown
+// outside their room section (favourites, kiosk).
+function safeRenderDeviceCard(device, opts = {}) {
   try {
-    return renderDeviceCard(device);
+    return renderDeviceCard(device, opts);
   } catch (err) {
     console.error('renderDeviceCard failed for', device?.id, err);
     return `
@@ -784,7 +799,7 @@ function safeRenderDeviceCard(device) {
   }
 }
 
-function renderDeviceCard(device) {
+function renderDeviceCard(device, { showRoom = false } = {}) {
   const services = state.services.filter(s => s.deviceId === device.id);
   const power    = services.find(s => s.id === 'PowerSwitch');
   const climate  = services.find(s => s.id === 'RoomClimateControl');
@@ -1012,17 +1027,22 @@ function renderDeviceCard(device) {
         title="${tip}" aria-label="${tip}"></span>`;
   }
 
+  // Outside its room section the virtual climate controller's technical name
+  // ("-RoomClimateControl-") says nothing — title it with the room instead.
+  const roomAsTitle = showRoom && device.roomId && device.deviceModel === 'ROOM_CLIMATE_CONTROL';
+
   return `
     <article class="card bg-white rounded-lg p-4 border border-slate-200">
       <header class="flex items-start justify-between gap-2">
         <div class="flex items-start gap-2.5 min-w-0">
           <div class="text-2xl leading-none mt-0.5 shrink-0" aria-hidden="true"><img src="svg/${deviceIcon(device)}.svg" style="width: 25px; height: 25px;"/></div>
           <div class="min-w-0">
-            <h3 class="font-medium leading-tight">${device.name || device.id}</h3>
-            <p class="text-xs text-slate-500">${device.deviceModel || device.profile || ''}</p>
+            <h3 class="font-medium leading-tight break-words">${roomAsTitle ? escapeHtml(roomName(device.roomId)) : (device.name || device.id)}</h3>
+            <p class="text-xs text-slate-500">${showRoom && device.roomId && !roomAsTitle ? escapeHtml(roomName(device.roomId)) + ' · ' : ''}${device.deviceModel || device.profile || ''}</p>
           </div>
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
+          ${favButton('device', device.id)}
           ${cqHtml}
           ${hasSettings(services) ? `<button data-action="settings" data-device="${device.id}"
             title="${t('settings.title')}" aria-label="${t('settings.title')}"
@@ -1491,4 +1511,4 @@ function onColorChange(e) {
 }
 
 
-export { DEVICE_CATEGORIES, deviceCategory, deviceSortRank, batteryInfo, faultChip, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange, onHeatingSetpointChange, onShutterLevelChange, onDimmerLevelChange, onColorChange, onKeypadScenarioChange };
+export { wireDeviceControls, DEVICE_CATEGORIES, deviceCategory, deviceSortRank, batteryInfo, faultChip, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange, onHeatingSetpointChange, onShutterLevelChange, onDimmerLevelChange, onColorChange, onKeypadScenarioChange };

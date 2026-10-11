@@ -87,6 +87,39 @@ const store = {
   });
 })();
 
+// Fehlende Raumklima-Geräte ergänzen. Der Datensatz enthält nur eine
+// ROOM_CLIMATE_CONTROL (ein Beispiel pro Modell), Thermostate in anderen
+// Räumen verweisen aber per parentDeviceId auf ihre eigene — wie bei der echten
+// Box, wo jeder Raum mit Thermostat ein virtuelles roomClimateControl_<raum>
+// hat. Fehlende werden aus der vorhandenen geklont: Ist-Temperatur vom
+// Thermostat im Raum, Boost nur mit Heizkörperthermostat (TRV).
+(function addDemoRoomClimateControls() {
+  const tpl = store.devices.find(d => d.deviceModel === 'ROOM_CLIMATE_CONTROL');
+  if (!tpl) return;
+  const tplSvcs = store.services.filter(s => s.deviceId === tpl.id);
+  const missing = new Map(); // rccId -> [child devices]
+  for (const d of store.devices) {
+    const parent = d.parentDeviceId;
+    if (!parent?.startsWith('roomClimateControl_') || store.devices.some(x => x.id === parent)) continue;
+    if (!missing.has(parent)) missing.set(parent, []);
+    missing.get(parent).push(d);
+  }
+  for (const [id, children] of missing) {
+    const roomId = children[0].roomId;
+    const childTemp = children.map(c => store.services.find(s => s.deviceId === c.id && s.id === 'TemperatureLevel'))
+      .find(s => s?.state?.temperature != null)?.state.temperature ?? 21;
+    const hasTrv = children.some(c => /^TRV/.test(c.deviceModel));
+    store.devices.push({ ...tpl, id, roomId, childDeviceIds: children.map(c => c.id) });
+    for (const s of tplSvcs) {
+      let st = s.state && { ...s.state };
+      if (s.id === 'TemperatureLevel') st = { ...st, temperature: childTemp };
+      if (s.id === 'RoomClimateControl') st = { ...st, setpointTemperature: 21, ventilationMode: false, boostMode: false, supportsBoostMode: hasTrv };
+      if (s.id === 'TemperatureLevelConfiguration') st = { ...st, sensors: children.map(c => ({ deviceId: c.id, active: true })) };
+      store.services.push({ ...s, deviceId: id, path: `/devices/${id}/services/${s.id}`, ...(st ? { state: st } : {}) });
+    }
+  }
+})();
+
 const notFound = (msg = 'not found') => { throw Object.assign(new Error(msg), { status: 404 }); };
 const findDevice = (id) => store.devices.find(d => d.id === id);
 

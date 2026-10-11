@@ -1,3 +1,4 @@
+import { favButton } from './favorites.js';
 import { state, $, $$, t, api, escapeHtml, loadAll, roomName, deviceName } from './core.js';
 import { showModal, hideModal, confirmModal, promptModal } from './modals.js';
 import { autoFieldInput, autoFieldDefault, PROFILE_OPTS, intrusionProfileLabel, openAutomationEditor } from './automations.js';
@@ -261,7 +262,8 @@ function renderScenarios() {
                 <img src="svg/${sceIconSvg(s.iconId)}.svg" alt="" style="width:18px;height:18px" />${s.name}</div>
               <div class="text-xs text-slate-500 mt-1">${t('scenarios.tap')}</div>
             </button>
-            <div class="flex gap-1 mt-2 pt-2 border-t border-slate-100">
+            <div class="flex items-center gap-1 mt-2 pt-2 border-t border-slate-100">
+              ${favButton('scenario', s.id)}
               <button data-scenario-edit="${s.id}" class="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded">${t('admin.edit')}</button>
               <button data-scenario-del="${s.id}" data-name="${(s.name || s.id).replace(/"/g,'')}"
                 class="text-xs text-rose-600 hover:bg-rose-50 px-2 py-1 rounded">${t('admin.remove')}</button>

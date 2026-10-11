@@ -476,5 +476,12 @@
     "health.chipOffline": "nicht erreichbar",
     "health.chipBattery": "Batterie: {0}",
     "health.chipSignal": "Funk: {0}",
-    "health.chipUpdate": "Update {0}"
+    "health.chipUpdate": "Update {0}",
+    "fav.title": "Favoriten",
+    "fav.add": "Zu Favoriten hinzufügen",
+    "fav.remove": "Aus Favoriten entfernen",
+    "kiosk.enter": "Kiosk",
+    "kiosk.enterTitle": "Kiosk-Ansicht: nur Uhr und Favoriten, große Bedienelemente (für Wandtablets)",
+    "kiosk.exit": "Kiosk beenden",
+    "kiosk.empty": "Noch keine Favoriten. Kiosk beenden und im Dashboard bzw. bei den Szenarien mit ☆ markieren."
 }

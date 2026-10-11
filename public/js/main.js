@@ -9,10 +9,14 @@ import { initTabs } from './tabs.js';
 import { initAuth, loadAuthStatus, applyRoleVisibility, showLogin, hideLogin } from './auth.js';
 import { connectEvents } from './live.js';
 import { applySetupTexts, wireSetupWizard } from './setup.js';
+import { initFavorites } from './favorites.js';
+import { initKiosk } from './kiosk.js';
 
 initModals();
 initTabs();
 initAuth();
+initFavorites();
+initKiosk();
 
 // PWA service worker. Browsers only allow it in a secure context (HTTPS or
 // localhost); over plain http://<ip>:3000 the UI simply runs without it.
