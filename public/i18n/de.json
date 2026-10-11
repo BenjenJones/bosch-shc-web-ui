@@ -109,6 +109,9 @@
     "devices.illuminance": "Helligkeit",
     "devices.heatAuto": "Auto",
     "devices.heatManual": "Manuell",
+    "devices.climateAuto": "Heizplan",
+    "devices.climateAutoTitle": "Automatik: folgt dem Heizplan aus der Bosch-App",
+    "devices.climateManualTitle": "Manuell: hält die eingestellte Temperatur",
     "rating.GOOD": "Gut",
     "rating.MEDIUM": "Mittel",
     "rating.BAD": "Schlecht",
@@ -543,5 +546,17 @@
     "energy.noMeters": "Keine Geräte mit Verbrauchsmessung (z. B. Zwischenstecker) gefunden.",
     "energy.tariffs": "Strompreis ({0})",
     "energy.tariffHint": "Preis je kWh ab dem angegebenen Datum – bei Tarifwechsel einfach eine neue Zeile hinzufügen. Kosten werden je Tag mit dem dann gültigen Preis berechnet.",
-    "energy.addTariff": "+ Preis ab Datum"
+    "energy.addTariff": "+ Preis ab Datum",
+    "program.title": "Schaltprogramm (Wochenplan)",
+    "program.on": "an",
+    "program.off": "aus",
+    "program.auto": "Zeitplan",
+    "program.manual": "Manuell",
+    "program.autoHint": "Schaltet automatisch zu den eingetragenen Zeiten.",
+    "program.manualHint": "Zeitplan ist gespeichert, aber pausiert – geschaltet wird nur von Hand.",
+    "program.noPoints": "keine Schaltzeiten",
+    "program.addTitle": "Schaltzeit hinzufügen für:",
+    "program.add": "Hinzufügen",
+    "program.chipOn": "Zeitplan aktiv",
+    "program.chipOff": "Zeitplan"
 }

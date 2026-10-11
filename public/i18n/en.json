@@ -109,6 +109,9 @@
     "devices.illuminance": "Brightness",
     "devices.heatAuto": "Auto",
     "devices.heatManual": "Manual",
+    "devices.climateAuto": "Schedule",
+    "devices.climateAutoTitle": "Automatic: follows the heating schedule from the Bosch app",
+    "devices.climateManualTitle": "Manual: holds the set temperature",
     "rating.GOOD": "Good",
     "rating.MEDIUM": "Medium",
     "rating.BAD": "Bad",
@@ -543,5 +546,17 @@
     "energy.noMeters": "No devices with energy metering (e.g. smart plugs) found.",
     "energy.tariffs": "Electricity price ({0})",
     "energy.tariffHint": "Price per kWh from the given date — add a row when your tariff changes. Costs use the price valid on each day.",
-    "energy.addTariff": "+ Price from date"
+    "energy.addTariff": "+ Price from date",
+    "program.title": "Switch program (weekly)",
+    "program.on": "on",
+    "program.off": "off",
+    "program.auto": "Schedule",
+    "program.manual": "Manual",
+    "program.autoHint": "Switches automatically at the times below.",
+    "program.manualHint": "Schedule is saved but paused — switched by hand only.",
+    "program.noPoints": "no switch times",
+    "program.addTitle": "Add switch time for:",
+    "program.add": "Add",
+    "program.chipOn": "Schedule active",
+    "program.chipOff": "Schedule"
   }

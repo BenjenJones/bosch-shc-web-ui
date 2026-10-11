@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- (Dashboard) Room climate cards get a *Schedule / Manual* toggle (follow the heating schedule from the Bosch app or hold the set temperature).
+- (Dashboard) Switch program editor for plugs and light switches: weekly on/off times per day with a timeline, add times to several days at once, schedule on/off. The card shows whether the schedule is active.
 - (Energy) New *Energy* tab: consumption of all metering devices per day/week/month/year (browsable), cost from configurable electricity prices with valid-from dates (tariff changes), comparison with the previous period, live total power, consumption chart and a per-device ranking with share and cost. Based on the recorded energy-counter history.
 - (History) Sensor history with charts: values are recorded into SQLite (live events + a 15-minute snapshot) with tiered retention (individual 14 d, hourly 730 d, daily unlimited — configurable under Admin → History). Device cards get a chart button (24 h / 7 d / 30 d / 1 y; min/max band, setpoint overlay, energy as consumption bars), rooms show a 24 h temperature sparkline. Requires Node ≥ 22.5 (`node:sqlite`); older Node runs without history. The demo seeds a year of synthetic history.
 - (Add-on) Home Assistant ingress: the UI now appears as a "Bosch SHC" sidebar panel, served through HA (remote access/HTTPS included). All UI URLs are relative, so it runs under the ingress sub-path and behind any sub-path reverse proxy; standalone use at `/` is unchanged. Framing by HA is only allowed for genuine ingress requests (from the Supervisor); the UI's own login still applies in the panel.

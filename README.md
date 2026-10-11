@@ -38,6 +38,9 @@ The proxy is required because browsers cannot present client certificates (mTLS)
 - Communication-quality indicator (Wi-Fi-strength icon, color-coded)
 - Grouped shutter control per room and for all shutters (open / stop / close, average-position slider)
 - Heating boost toggle (where supported), active boost shown in the room header
+- Room climate: switch between the heating schedule (set up in the Bosch app) and manual
+- Weekly switch program for plugs and light switches: on/off times per day, schedule on/off
+- Note: `boostMode`, `operationMode` and the switch program are reported by the documented API but writing them is not documented — the SHC accepts it in practice
 - Camera controls: privacy mode, push notifications, light (where supported)
 - **Live updates** without reload via long polling
 

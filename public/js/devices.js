@@ -1,6 +1,7 @@
 import { favButton, renderFavoritesSection } from './favorites.js';
 import { isKiosk, renderKiosk } from './kiosk.js';
 import { hasHistory, fillSparklines } from './charts.js';
+import { openProgramEditor } from './program.js';
 import { state, $, $$, t, api, escapeHtml, roomName, deviceName, serviceOf, deviceUpdateInfo, deviceBatteryLevel, deviceFaults, saveCollapsedRooms, isMessageActive } from './core.js';
 import { severityFromMessage, messageTitle } from './messages.js';
 import { showModal, hideModal } from './modals.js';
@@ -601,8 +602,25 @@ function renderSetpointControl(deviceId, setpoint, { compact = false } = {}) {
     </div>`;
 }
 
+// Automatic (follows the heating schedule set up in the Bosch app) vs. manual
+// for a room. Note: the documented PUT payload for RoomClimateControl only
+// lists setpointTemperature; operationMode (like boostMode) is reported in the
+// state and accepted by the SHC in practice (boschshcpy writes it the same way)
+// but is not part of the documented API.
+function renderClimateMode(deviceId, mode) {
+  const btn = (m, label) =>
+    `<button data-action="climate-mode" data-device="${deviceId}" data-mode="${m}" aria-pressed="${mode === m}"
+       title="${t(m === 'AUTOMATIC' ? 'devices.climateAutoTitle' : 'devices.climateManualTitle')}"
+       class="flex-1 px-2 py-1 rounded-md text-xs font-medium
+       ${mode === m ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">${label}</button>`;
+  return `<div class="flex items-center gap-1.5 mt-1.5">
+    ${btn('AUTOMATIC', t('devices.climateAuto'))}${btn('MANUAL', t('devices.heatManual'))}
+  </div>`;
+}
+
 // Boost toggle for a RoomClimateControl that reports supportsBoostMode: heats
-// at full power for a short time (duration is set in the Bosch app).
+// at full power for a short time (duration is set in the Bosch app). Like
+// operationMode, writing boostMode is not documented but accepted by the SHC.
 function renderBoostButton(deviceId, on) {
   return `<button data-action="toggle-boost" data-device="${deviceId}" data-on="${on}"
     title="${t('devices.boostTitle')}"
@@ -917,6 +935,7 @@ function renderDeviceCard(device, { showRoom = false } = {}) {
           <span class="text-2xl font-light tabular-nums">${current}°</span>
           <span class="text-xs text-slate-500">${t('devices.current')}</span>
         </div>
+        ${climate.state?.operationMode ? renderClimateMode(device.id, climate.state.operationMode) : ''}
         <div class="mt-1.5">${renderSetpointControl(device.id, climate.state?.setpointTemperature)}</div>
       </div>
       ${climate.state?.ventilationMode ? `<div class="mt-1.5 inline-flex items-center gap-1.5 text-sm text-amber-600 font-medium">
@@ -1002,6 +1021,17 @@ function renderDeviceCard(device, { showRoom = false } = {}) {
         <span class="tabular-nums font-medium">${txt}</span>
       </div>`;
   }
+  // Weekly switch program (plugs, light switches): chip shows whether it's
+  // active and opens the editor.
+  const program = services.find(s => s.id === 'PowerSwitchProgram');
+  if (program?.state) {
+    const auto = program.state.operationMode === 'AUTOMATIC';
+    body += `
+      <button data-action="program" data-device="${device.id}" title="${t('program.title')}"
+        class="mt-2 mr-1 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium
+        ${auto ? 'bg-sky-100 text-sky-800 hover:bg-sky-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+        ⏱ ${t(auto ? 'program.chipOn' : 'program.chipOff')}</button>`;
+  }
   if (silentMode) {
     const silent = silentMode.state?.mode === 'MODE_SILENT';
     body += `
@@ -1078,6 +1108,10 @@ async function onDeviceAction(e) {
   const { action, device } = btn.dataset;
   if (action === 'settings') {
     openDeviceSettings(device);
+    return;
+  }
+  if (action === 'program') {
+    openProgramEditor(device);
     return;
   }
   if (action === 'toggle-power') {
@@ -1167,6 +1201,19 @@ async function onDeviceAction(e) {
       });
       const svc = serviceOf(device, 'ShutterControl');
       if (svc) svc.state = { ...(svc.state || {}), operationState: 'STOPPED' };
+      renderDevices();
+    } catch (err) { alert(t('error.generic', err.message)); }
+  } else if (action === 'climate-mode') {
+    const operationMode = btn.dataset.mode; // AUTOMATIC | MANUAL
+    if (serviceOf(device, 'RoomClimateControl')?.state?.operationMode === operationMode) return;
+    btn.classList.add('pulse');
+    try {
+      await api(`api/devices/${encodeURIComponent(device)}/services/RoomClimateControl/state`, {
+        method: 'PUT',
+        body: { '@type': 'climateControlState', operationMode },
+      });
+      const svc = serviceOf(device, 'RoomClimateControl');
+      if (svc) svc.state = { ...(svc.state || {}), operationMode };
       renderDevices();
     } catch (err) { alert(t('error.generic', err.message)); }
   } else if (action === 'toggle-boost') {

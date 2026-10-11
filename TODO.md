@@ -30,9 +30,12 @@ HA-specific behaviour is always an optional extra detected at runtime.
       / year per plug, top consumers, optional cost with €/kWh price (with
       valid-from date for tariff changes). Retention default unlimited,
       configurable.
-- [ ] **Heating schedule editor** — view/edit weekly profiles of
-      RoomClimateControl. Verify against a real SHC first whether the endpoint
-      is writable (undocumented).
+- [x] **Room climate: schedule ↔ manual** — toggle `operationMode` per room
+      (documented as read-only; the SHC accepts writes in practice, like
+      `boostMode`). Needs a check on the real SHC.
+- [x] **Switch program editor** — weekly on/off schedule of plugs / light
+      switches (`PowerSwitchProgram`, state documented, write accepted in
+      practice). Needs a check on the real SHC.
 
 ## Later
 
@@ -41,6 +44,12 @@ HA-specific behaviour is always an optional extra detected at runtime.
 - [ ] **Audit log** — who switched what and when.
 
 ## Not planned
+
+- Heating schedule editor — the weekly heating profiles are not exposed by any
+  documented service (RoomClimateControl only reports `activeScheduleId`);
+  probing undocumented endpoints would conflict with Bosch's API terms
+  (no reverse engineering). Schedules stay in the Bosch app; the UI can
+  switch a room between schedule and manual.
 
 - External push notifications (ntfy / Telegram / webhook) — not for now.
 - Backup / export of rooms, scenarios, automations.
