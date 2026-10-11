@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-11 - 2
+
+- (Pairing) Fix: two installations (e.g. HA add-on and a local server) paired with the same fixed client id, so pairing one silently invalidated the other ("certificate unknown"). Every new pairing now registers its own client id (`oss_bosch_shc_web_ui_xxxxxx`) with a fresh certificate. When the SHC rejects the certificate, the UI shows a banner and admins can **re-pair** in place (banner or *Admin → Controller*) without losing users, history or settings. Existing pairings keep working unchanged.
+
+## 2026-10-11
+
+- (Dashboard) Calmer device cards: the header shows only name and signal (status pill only when a device is not available); favourite, history and settings moved to a footer next to battery/valve. The virtual room climate controller is titled "Room climate".
+- (Dashboard) Room climate cards get a *Schedule / Manual* toggle (follow the heating schedule from the Bosch app or hold the set temperature).
+- (Energy) New *Energy* tab: consumption of all metering devices per day/week/month/year (browsable), cost from configurable electricity prices with valid-from dates (tariff changes), comparison with the previous period, live total power, consumption chart and a per-device ranking with share and cost. Based on the recorded energy-counter history.
+- (History) Sensor history with charts: values are recorded into SQLite (live events + a 15-minute snapshot) with tiered retention (individual 14 d, hourly 730 d, daily unlimited — configurable under Admin → History). Device cards get a chart button (24 h / 7 d / 30 d / 1 y; min/max band, setpoint overlay, energy as consumption bars), rooms show a 24 h temperature sparkline. Requires Node ≥ 22.5 (`node:sqlite`); older Node runs without history. The demo seeds a year of synthetic history.
+- (Add-on) Home Assistant ingress: the UI now appears as a "Bosch SHC" sidebar panel, served through HA (remote access/HTTPS included). All UI URLs are relative, so it runs under the ingress sub-path and behind any sub-path reverse proxy; standalone use at `/` is unchanged. Framing by HA is only allowed for genuine ingress requests (from the Supervisor); the UI's own login still applies in the panel.
+- (Dashboard) Favourites: pin devices and scenarios with ☆; pinned items appear in a section at the top of the dashboard, scenarios as one-tap buttons. Stored per browser. Cards outside their room show the room name.
+- (Kiosk) New kiosk view for wall tablets (header button or `?kiosk`): clock and favourites only, larger controls, screen kept awake where supported; remembered across reloads until exited.
+- (PWA) The UI can be installed as an app ("Install app" / "Add to Home Screen"): web app manifest, icons, and a network-first service worker that keeps the app shell available offline (API calls and the live stream are never cached). Requires HTTPS with a trusted certificate or `localhost`; plain HTTP keeps working without install. The browser title bar follows the light/dark theme.
+- (Dashboard) Grouped shutter control: rooms with two or more shutters get open/stop/close buttons and an average-position slider in the room header; with two or more shutters overall, an "All shutters" bar sits above the rooms. A shutter that fails doesn't stop the others; failures are reported once.
+- (Dashboard) Boost mode: room climate controls that support it show a Boost toggle on the card, and an active boost is shown in the room header.
+- (Health) New *Health* tab: summary tiles and an issue list for unreachable devices, low/critical batteries, device faults, poor signal and pending firmware updates (tiles filter the list), plus a list of all battery devices and of signal quality, worst first. The tab badge counts devices with warnings or errors and updates live.
+
 ## 2026-10-10
 
 - (Dashboard) Fix battery badge showing "OK" for a device with low battery — the SHC reports `LOW_BATTERY` as a fault on the BatteryLevel *service*, not on the device. Faults are now read from the service, the device and active battery messages; unknown levels no longer show a full battery, and a cleared fault in a live event is no longer kept from the previous state.
