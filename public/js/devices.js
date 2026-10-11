@@ -1,7 +1,6 @@
 import { favButton, renderFavoritesSection } from './favorites.js';
 import { isKiosk, renderKiosk } from './kiosk.js';
 import { hasHistory, fillSparklines } from './charts.js';
-import { openProgramEditor } from './program.js';
 import { state, $, $$, t, api, escapeHtml, roomName, deviceName, serviceOf, deviceUpdateInfo, deviceBatteryLevel, deviceFaults, saveCollapsedRooms, isMessageActive } from './core.js';
 import { severityFromMessage, messageTitle } from './messages.js';
 import { showModal, hideModal } from './modals.js';
@@ -1021,17 +1020,6 @@ function renderDeviceCard(device, { showRoom = false } = {}) {
         <span class="tabular-nums font-medium">${txt}</span>
       </div>`;
   }
-  // Weekly switch program (plugs, light switches): chip shows whether it's
-  // active and opens the editor.
-  const program = services.find(s => s.id === 'PowerSwitchProgram');
-  if (program?.state) {
-    const auto = program.state.operationMode === 'AUTOMATIC';
-    body += `
-      <button data-action="program" data-device="${device.id}" title="${t('program.title')}"
-        class="mt-2 mr-1 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium
-        ${auto ? 'bg-sky-100 text-sky-800 hover:bg-sky-200' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
-        ⏱ ${t(auto ? 'program.chipOn' : 'program.chipOff')}</button>`;
-  }
   if (silentMode) {
     const silent = silentMode.state?.mode === 'MODE_SILENT';
     body += `
@@ -1070,36 +1058,48 @@ function renderDeviceCard(device, { showRoom = false } = {}) {
   // Outside its room section the virtual climate controller's technical name
   // ("-RoomClimateControl-") says nothing — title it with the room instead.
   const roomAsTitle = showRoom && device.roomId && device.deviceModel === 'ROOM_CLIMATE_CONTROL';
+  // Inside its room section the virtual controller is simply "Room climate".
+  const title = roomAsTitle ? escapeHtml(roomName(device.roomId))
+    : device.deviceModel === 'ROOM_CLIMATE_CONTROL' ? t('devices.roomClimate')
+    : escapeHtml(device.name || device.id);
+
+  // Header keeps only identity + signal; the status pill only shows when the
+  // device is *not* available (AVAILABLE is the normal case). Actions
+  // (favourite, history, settings) live in the footer next to battery/valve.
+  const statusPill = device.status && device.status !== 'AVAILABLE'
+    ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">${escapeHtml(device.status)}</span>` : '';
+  const actions = [
+    favButton('device', device.id),
+    hasHistory(device.id) ? `<button type="button" data-history="${escapeHtml(device.id)}"
+      title="${t('history.open')}" aria-label="${t('history.open')}"
+      class="text-slate-400 hover:text-slate-700 leading-none p-1">
+      <span class="icon-mask" style="width:16px;height:16px;mask-image:url(svg/chart-line.svg);-webkit-mask-image:url(svg/chart-line.svg)"></span></button>` : '',
+    hasSettings(services) ? `<button data-action="settings" data-device="${device.id}"
+      title="${t('settings.title')}" aria-label="${t('settings.title')}"
+      class="text-slate-400 hover:text-slate-700 leading-none p-1">
+      <img src="svg/cog.svg" style="width:16px;height:16px" alt="" /></button>` : '',
+  ].join('');
 
   return `
-    <article class="card bg-white rounded-lg p-4 border border-slate-200">
+    <article class="card bg-white rounded-lg p-4 border border-slate-200 flex flex-col">
       <header class="flex items-start justify-between gap-2">
         <div class="flex items-start gap-2.5 min-w-0">
           <div class="text-2xl leading-none mt-0.5 shrink-0" aria-hidden="true"><img src="svg/${deviceIcon(device)}.svg" style="width: 25px; height: 25px;"/></div>
           <div class="min-w-0">
-            <h3 class="font-medium leading-tight break-words">${roomAsTitle ? escapeHtml(roomName(device.roomId)) : (device.name || device.id)}</h3>
+            <h3 class="font-medium leading-tight break-words">${title}</h3>
             <p class="text-xs text-slate-500">${showRoom && device.roomId && !roomAsTitle ? escapeHtml(roomName(device.roomId)) + ' · ' : ''}${device.deviceModel || device.profile || ''}</p>
           </div>
         </div>
-        <div class="flex items-center gap-1.5 shrink-0">
-          ${favButton('device', device.id)}
-          ${hasHistory(device.id) ? `<button type="button" data-history="${escapeHtml(device.id)}"
-            title="${t('history.open')}" aria-label="${t('history.open')}"
-            class="text-slate-400 hover:text-slate-700 leading-none p-0.5">
-            <span class="icon-mask" style="width:16px;height:16px;mask-image:url(svg/chart-line.svg);-webkit-mask-image:url(svg/chart-line.svg)"></span></button>` : ''}
-          ${cqHtml}
-          ${hasSettings(services) ? `<button data-action="settings" data-device="${device.id}"
-            title="${t('settings.title')}" aria-label="${t('settings.title')}"
-            class="text-slate-400 hover:text-slate-700 leading-none p-0.5">
-            <img src="svg/cog.svg" style="width:18px;height:18px" alt="" /></button>` : ''}
-          <span class="text-[10px] px-1.5 py-0.5 rounded
-            ${device.status === 'AVAILABLE' ? 'bg-emerald-50 text-emerald-700'
-                                            : 'bg-slate-100 text-slate-500'}">${device.status||''}</span>
-        </div>
+        <div class="flex items-center gap-1.5 shrink-0">${cqHtml}${statusPill}</div>
       </header>
-      ${faultHtml}
-      ${body}
-      ${meta.length ? `<div class="mt-2 text-xs text-slate-500 space-x-2">${meta.join(' · ')}</div>` : ''}
+      <div class="flex-1">
+        ${faultHtml}
+        ${body}
+      </div>
+      <footer class="mt-2 flex items-end justify-between gap-2 min-h-[24px]">
+        <div class="text-xs text-slate-500 space-x-2">${meta.join(' · ')}</div>
+        <div class="flex items-center gap-0.5 shrink-0 -mr-1 -mb-1">${actions}</div>
+      </footer>
     </article>`;
 }
 
@@ -1108,10 +1108,6 @@ async function onDeviceAction(e) {
   const { action, device } = btn.dataset;
   if (action === 'settings') {
     openDeviceSettings(device);
-    return;
-  }
-  if (action === 'program') {
-    openProgramEditor(device);
     return;
   }
   if (action === 'toggle-power') {

@@ -34,7 +34,7 @@ function favButton(kind, id) {
   const label = t(on ? 'fav.remove' : 'fav.add');
   return `<button type="button" data-fav="${kind}" data-fav-id="${escapeHtml(id)}" aria-pressed="${on}"
     title="${label}" aria-label="${label}"
-    class="fav-btn leading-none p-0.5 text-base ${on ? 'text-amber-600' : 'text-slate-400 hover:text-slate-700'}">${on ? '★' : '☆'}</button>`;
+    class="fav-btn leading-none p-1 text-base ${on ? 'text-amber-600' : 'text-slate-400 hover:text-slate-700'}">${on ? '★' : '☆'}</button>`;
 }
 
 // Scenario quick buttons — shared by the dashboard section and the kiosk.
