@@ -14,6 +14,13 @@ initModals();
 initTabs();
 initAuth();
 
+// PWA service worker. Browsers only allow it in a secure context (HTTPS or
+// localhost); over plain http://<ip>:3000 the UI simply runs without it.
+// Relative URL so the worker's scope follows wherever the app is mounted.
+if ('serviceWorker' in navigator && window.isSecureContext) {
+  navigator.serviceWorker.register('sw.js').catch(() => { /* non-fatal */ });
+}
+
 (async () => {
   try {
     await loadI18N();

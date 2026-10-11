@@ -131,6 +131,8 @@ function setTheme(theme) {
   localStorage.setItem('theme', theme);
   if (theme === 'dark') document.documentElement.dataset.theme = 'dark';
   else delete document.documentElement.dataset.theme;
+  // Browser/PWA title bar follows the header colour (bg-white / dark #1e293b).
+  $('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#1e293b' : '#ffffff');
   applyStaticTexts();
 }
 

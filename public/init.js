@@ -5,7 +5,12 @@
 (function () {
   try {
     var t = localStorage.getItem('theme');
-    if (t === 'dark') document.documentElement.dataset.theme = 'dark';
+    if (t === 'dark') {
+      document.documentElement.dataset.theme = 'dark';
+      // Browser/PWA title bar matches the dark header (see setTheme in core.js).
+      var m = document.querySelector('meta[name="theme-color"]');
+      if (m) m.setAttribute('content', '#1e293b');
+    }
   } catch (e) {
     /* localStorage disabled — fall back to light theme */
   }

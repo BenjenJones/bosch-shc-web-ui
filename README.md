@@ -56,6 +56,11 @@ The proxy is required because browsers cannot present client certificates (mTLS)
 - All battery-powered devices and all devices' signal quality, worst first
 - Tab badge with the number of devices that need attention, updated live
 
+**Install as app (PWA)**
+- Web app manifest + service worker: "Install app" / "Add to Home Screen" gives the UI its own window and icon
+- The app shell (HTML/JS/CSS/icons) is cached network-first, so it still opens when the connection drops; `/api/*` and the live stream are never cached
+- Browsers only allow this in a **secure context**: `https://` with a certificate the device trusts, or `localhost`. Over plain `http://<ip>:3000` the UI works as before, just without install — see [Serving over HTTPS](#serving-over-https)
+
 **Admin** (mirrors the app's *Settings* area)
 - Controller overview with firmware and update status
 - List and remove mobile devices / clients
@@ -220,6 +225,8 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 825 -keyout certs/ui-key.pem -ou
 ```
 
 Note: `uiTls` is independent of the `certPath`/`keyPath` used for the SHC mTLS client cert — don't reuse those here.
+
+To install the UI as an app (PWA), the browser must *trust* the certificate — clicking through the warning of a self-signed one is not enough for the service worker. Either import the certificate (or your own CA) on each device, or use a reverse proxy with a trusted certificate (option 2).
 
 **2. Reverse proxy.** Keep the server on `127.0.0.1:3000` and terminate TLS in front. Caddy is the simplest (`reverse_proxy 127.0.0.1:3000` + `tls internal`). With Apache/nginx make sure the `/api/events` SSE endpoint isn't buffered and the proxy timeout is high (e.g. Apache: `ProxyPass / http://127.0.0.1:3000/ flushpackets=on` + `ProxyTimeout 3600`).
 

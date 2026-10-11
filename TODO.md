@@ -12,7 +12,7 @@ HA-specific behaviour is always an optional extra detected at runtime.
 - [x] **Grouped shutter control** — open/close/stop per room and for all
       shutters, plus a percentage slider.
 - [x] **Heating boost mode** — show and toggle boost on room climate control.
-- [ ] **PWA** — web app manifest + service worker so the UI can be installed
+- [x] **PWA** — web app manifest + service worker so the UI can be installed
       to the home screen.
 - [ ] **Favourites / kiosk view** — pin devices and scenarios; compact view
       with large buttons for wall tablets.

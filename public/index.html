@@ -4,6 +4,14 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/svg+xml" href="svg/shield-home.svg" />
+  <!-- PWA: installable via manifest + sw.js (registered in js/main.js).
+       theme-color follows the in-app theme (set by init.js / setTheme). -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Smart Home" />
   <title>Bosch SHC - lokales UI</title>
   <!-- init.js sets data-theme before paint (no FOUC); kept external so a
        strict CSP without `'unsafe-inline'` works. tailwind.css is generated
