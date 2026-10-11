@@ -25,7 +25,7 @@ HA-specific behaviour is always an optional extra detected at runtime.
     raw events 14 days, hourly min/max/avg 2 years, daily aggregates unlimited.
   - Nightly job aggregates and prunes.
   - Per-room sparkline, per-device 24 h / 7 d chart.
-- [ ] **Energy dashboard** — hourly snapshots of the PowerMeter
+- [x] **Energy dashboard** — hourly snapshots of the PowerMeter
       `energyConsumption` counter (Wh); consumption = delta. Day / week / month
       / year per plug, top consumers, optional cost with €/kWh price (with
       valid-from date for tariff changes). Retention default unlimited,

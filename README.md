@@ -57,6 +57,13 @@ The proxy is required because browsers cannot present client certificates (mTLS)
 - Tiered retention, configurable under *Admin → History*: individual values (default 14 days), hourly values (730 days), daily values (unlimited)
 - Uses Node's built-in `node:sqlite` (Node ≥ 22.5; the Docker image/add-on ships Node 24). On older Node the UI runs without history
 
+**Energy**
+- Consumption of all metering devices (smart plugs etc.) per day / week / month / year, browsable back in time
+- Tiles: consumption, cost, comparison with the previous period (for the running period: the same elapsed span), current total power
+- Consumption chart over the period and a ranking of all consumers with share and cost — click one for its own chart
+- Electricity price per kWh with a *valid from* date; add a row when the tariff changes, costs use the price valid on each day
+- Computed from the recorded energy-counter readings (see History), so it starts with the first recorded data
+
 **Health**
 - Summary tiles: unreachable devices, battery, device faults, poor signal, firmware updates — click a tile to filter
 - Issue list sorted by severity, with the room and model of each device

@@ -1127,6 +1127,28 @@ app.get('/api/history/spark', (req, res) => {
   res.json({ available: history.available, series: history.sparklines(list) });
 });
 
+// GET /api/energy?from=<ms>&to=<ms>&bucket=hour|day|month → consumption per
+// energy counter and bucket, plus costs from the configured tariffs.
+app.get('/api/energy', (req, res) => {
+  const to = tsParam(req.query.to, Date.now());
+  const from = tsParam(req.query.from, to - historyLib.DAY);
+  const bucket = ['hour', 'day', 'month'].includes(req.query.bucket) ? req.query.bucket : 'day';
+  if (from >= to) return res.status(400).json({ error: 'from must be before to' });
+  res.json({ from, to, bucket, available: history.available, ...history.energy(from, to, bucket) });
+});
+
+app.get('/api/energy/tariffs', (_req, res) => {
+  res.json({ tariffs: history.getTariffs() });
+});
+
+app.put('/api/energy/tariffs', requireAdmin, (req, res) => {
+  try {
+    res.json({ tariffs: history.setTariffs(req.body?.tariffs) });
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
+});
+
 app.get('/api/history/stats', requireAdmin, (_req, res) => {
   res.json(history.stats());
 });

@@ -1,8 +1,9 @@
 import { $, $$, loadAll, setLang, setTheme, toggleNotify } from './core.js';
 import { loadUsers } from './users.js';
 import { loadSessions } from './sessions.js';
+import { loadEnergy } from './energy.js';
 
-const ALL_TABS = ['devices','scenarios','security','messages','health','admin','users','sessions'];
+const ALL_TABS = ['devices','scenarios','security','messages','health','energy','admin','users','sessions'];
 
 function selectTab(name) {
   if (!ALL_TABS.includes(name)) return;
@@ -24,6 +25,7 @@ function selectTab(name) {
   // whether the tab was picked via the buttons or the mobile dropdown).
   if (name === 'users')    loadUsers();
   if (name === 'sessions') loadSessions();
+  if (name === 'energy')   loadEnergy();
 }
 // Header/tab controls + the mobile hamburger menu. Called once from boot.
 function initTabs() {

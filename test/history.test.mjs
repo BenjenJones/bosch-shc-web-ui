@@ -105,3 +105,53 @@ describe('retention', () => {
     expect(h.setSettings({ rawDays: 30, hourlyDays: 10 })).toMatchObject({ rawDays: 30, hourlyDays: 30 });
   });
 });
+
+describe('energy', () => {
+  // Local-time helpers: energy buckets follow the server's local calendar.
+  const at = (y, m, d, h = 0) => new Date(y, m - 1, d, h).getTime();
+
+  test('daily consumption = delta of counter readings, incl. the reading before the range', () => {
+    h.record([{ series: 'p1|energy', value: 1000 }], at(2026, 9, 30, 23));
+    h.record([{ series: 'p1|energy', value: 3000 }], at(2026, 10, 1, 12));
+    h.record([{ series: 'p1|energy', value: 3500 }], at(2026, 10, 2, 12));
+    const e = h.energy(at(2026, 10, 1), at(2026, 10, 3), 'day');
+    expect(e.buckets).toEqual([at(2026, 10, 1), at(2026, 10, 2)]);
+    expect(e.devices[0]).toMatchObject({ deviceId: 'p1', values: [2, 0.5], kwh: 2.5 });
+    expect(e.kwh).toBe(2.5);
+  });
+
+  test('counter reset counts as 0, devices sorted by consumption, months grouped', () => {
+    h.record([{ series: 'a|energy', value: 5000 }], at(2026, 1, 10, 12));
+    h.record([{ series: 'a|energy', value: 100 }], at(2026, 1, 11, 12));   // reset
+    h.record([{ series: 'a|energy', value: 1100 }], at(2026, 2, 5, 12));
+    h.record([{ series: 'b|energy', value: 0 }], at(2026, 1, 10, 12));
+    h.record([{ series: 'b|energy', value: 9000 }], at(2026, 2, 5, 12));
+    const e = h.energy(at(2026, 1, 1), at(2026, 3, 1), 'month');
+    expect(e.buckets).toEqual([at(2026, 1, 1), at(2026, 2, 1)]);
+    expect(e.devices.map(d => d.deviceId)).toEqual(['b', 'a']);
+    expect(e.devices[1].values).toEqual([0, 1]);
+    expect(e.totals).toEqual([0, 10]);
+  });
+
+  test('costs follow the tariff valid on each day; consumption before the first tariff marks cost incomplete', () => {
+    h.setTariffs([{ validFrom: '2026-10-02', price: 0.5 }, { validFrom: '2026-10-01', price: 0.3 }]);
+    expect(h.getTariffs().map(t => t.validFrom)).toEqual(['2026-10-01', '2026-10-02']);
+    h.record([{ series: 'p|energy', value: 0 }], at(2026, 9, 30, 12));
+    h.record([{ series: 'p|energy', value: 1000 }], at(2026, 10, 1, 12));
+    h.record([{ series: 'p|energy', value: 3000 }], at(2026, 10, 2, 12));
+    const e = h.energy(at(2026, 10, 1), at(2026, 10, 3), 'day');
+    expect(e.cost).toBeCloseTo(1 * 0.3 + 2 * 0.5);
+    expect(e.priced).toBe(true);
+    const early = h.energy(at(2026, 9, 30), at(2026, 10, 3), 'day');
+    expect(early.priced).toBe(true); // first day has no prior reading → 0 kWh, so nothing unpriced
+    h.record([{ series: 'p|energy', value: 0 }], at(2026, 9, 29, 12));
+    h.record([{ series: 'p|energy', value: 500 }], at(2026, 9, 30, 13));
+    expect(h.energy(at(2026, 9, 30), at(2026, 10, 3), 'day').priced).toBe(false);
+  });
+
+  test('tariff validation', () => {
+    expect(() => h.setTariffs([{ validFrom: '01.10.2026', price: 0.3 }])).toThrow();
+    expect(() => h.setTariffs([{ validFrom: '2026-10-01', price: -1 }])).toThrow();
+    expect(() => h.setTariffs('x')).toThrow();
+  });
+});

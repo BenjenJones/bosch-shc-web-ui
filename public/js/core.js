@@ -6,6 +6,7 @@ import { renderScenarios } from './scenarios.js';
 import { renderSecurity } from './security.js';
 import { renderMessages, messageTitle } from './messages.js';
 import { renderHealth } from './health.js';
+import { loadEnergy } from './energy.js';
 import { renderAdmin } from './admin.js';
 import { renderUsers } from './users.js';
 import { renderSessions } from './sessions.js';
@@ -172,8 +173,9 @@ function applyStaticTexts() {
   $('[data-tab="sessions"]').textContent  = t('tab.sessions');
   $('[data-tab="messages"] [data-tab-label]').textContent = t('tab.messages');
   $('[data-tab="health"] [data-tab-label]').textContent   = t('tab.health');
+  $('[data-tab="energy"]').textContent    = t('tab.energy');
   // Mobile dropdown mirrors the same labels (i18n applied here too)
-  for (const name of ['devices','scenarios','security','messages','health','admin','users','sessions']) {
+  for (const name of ['devices','scenarios','security','messages','health','energy','admin','users','sessions']) {
     const opt = $(`#tab-select option[value="${name}"]`);
     if (opt) opt.textContent = t('tab.' + name);
   }
@@ -301,6 +303,7 @@ function renderAll() {
   renderSecurity();
   renderMessages();
   renderHealth();
+  loadEnergy(); // no-op unless the energy tab is visible
   if (isAdmin()) {
     renderAdmin();
     renderUsers();

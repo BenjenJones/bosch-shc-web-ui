@@ -66,6 +66,12 @@ process.env.BOSCH_SHC_HISTORY_FILE = historyFile;
   const h = openHistory(historyFile);
   const t = Date.now();
   const n = seedDemoHistory(h, store.services);
+  // Beispiel-Strompreise inkl. Tarifwechsel, damit Kosten sichtbar sind.
+  const isoDay = (ms) => new Date(ms).toISOString().slice(0, 10);
+  h.setTariffs([
+    { validFrom: isoDay(Date.now() - 400 * 864e5), price: 0.34 },
+    { validFrom: isoDay(Date.now() - 90 * 864e5), price: 0.29 },
+  ]);
   h.close();
   if (n) console.log(`▶ Demo-Verlauf: ${n} Werte in ${Date.now() - t} ms erzeugt`);
 }

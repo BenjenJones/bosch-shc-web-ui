@@ -226,6 +226,94 @@ function openHistory(file) {
       .map(r => r.key.slice(prefix.length));
   }
 
+  // ---- Energy -------------------------------------------------------------
+  // Tariffs: [{ validFrom: 'YYYY-MM-DD', price: <€/kWh> }], applied by the
+  // local date of each bucket. Stored next to the retention settings.
+  function getTariffs() {
+    try {
+      const row = st.getSetting.get('tariffs');
+      return row ? JSON.parse(row.value) : [];
+    } catch { return []; }
+  }
+
+  function setTariffs(list) {
+    if (!Array.isArray(list)) throw Object.assign(new Error('tariffs must be an array'), { status: 400 });
+    const clean = list.map(t => {
+      const price = Number(t?.price);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(String(t?.validFrom)) || Number.isNaN(Date.parse(t.validFrom)))
+        throw Object.assign(new Error('invalid validFrom'), { status: 400 });
+      if (!Number.isFinite(price) || price < 0 || price > 100)
+        throw Object.assign(new Error('invalid price'), { status: 400 });
+      return { validFrom: t.validFrom, price };
+    }).sort((a, b) => a.validFrom.localeCompare(b.validFrom));
+    st.setSetting.run('tariffs', JSON.stringify(clean));
+    return clean;
+  }
+
+  // Price for a bucket start (local date), or null before the first tariff.
+  function priceAt(ts, tariffs) {
+    const d = new Date(ts);
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    let price = null;
+    for (const t of tariffs) if (t.validFrom <= date) price = t.price;
+    return price;
+  }
+
+  const monthStart = (ts) => { const d = new Date(ts); return new Date(d.getFullYear(), d.getMonth(), 1).getTime(); };
+
+  // Consumption of every energy counter in [from, to), per bucket
+  // ('hour' | 'day' | 'month'). A bucket's consumption is its last counter
+  // reading minus the previous reading (the last one before the bucket, which
+  // may lie before `from`). A missed bucket is absorbed by the next one; a
+  // negative delta (counter reset / device replaced) counts as 0.
+  // Returns { buckets: [ts], devices: [{ deviceId, kwh, cost, values: [kWh per bucket] }],
+  //           totals: [kWh per bucket], kwh, cost, priced }.
+  function energy(from, to, bucket = 'day') {
+    const table = bucket === 'hour' ? 'hourly' : 'daily';
+    const bucketOf = bucket === 'month' ? monthStart : (ts) => ts;
+    const tariffs = getTariffs();
+    const counters = db.prepare("SELECT id, key FROM series WHERE key LIKE '%|energy'").all();
+    const rowsStmt = db.prepare(`SELECT ts, vlast FROM ${table} WHERE sid = ? AND ts >= ? AND ts < ? ORDER BY ts`);
+    const prevStmt = db.prepare(`SELECT vlast FROM ${table} WHERE sid = ? AND ts < ? ORDER BY ts DESC LIMIT 1`);
+
+    const bucketSet = new Set();
+    const perDevice = [];
+    for (const c of counters) {
+      const rows = rowsStmt.all(c.id, from, to);
+      if (!rows.length) continue;
+      let prev = prevStmt.get(c.id, from)?.vlast;
+      const byBucket = new Map();
+      for (const r of rows) {
+        const kwh = prev == null ? 0 : Math.max(0, r.vlast - prev) / 1000;
+        prev = r.vlast;
+        const b = bucketOf(r.ts);
+        bucketSet.add(b);
+        byBucket.set(b, (byBucket.get(b) || 0) + kwh);
+      }
+      perDevice.push({ deviceId: c.key.slice(0, -'|energy'.length), byBucket });
+    }
+
+    const buckets = [...bucketSet].sort((a, b) => a - b);
+    let priced = tariffs.length > 0;
+    const devices = perDevice.map(({ deviceId, byBucket }) => {
+      const values = buckets.map(b => byBucket.get(b) || 0);
+      let cost = 0;
+      values.forEach((v, i) => {
+        const p = priceAt(buckets[i], tariffs);
+        if (p == null) { if (v > 0) priced = false; } else cost += v * p;
+      });
+      return { deviceId, values, kwh: values.reduce((a, v) => a + v, 0), cost };
+    }).sort((a, b) => b.kwh - a.kwh);
+    const totals = buckets.map((_, i) => devices.reduce((a, d) => a + d.values[i], 0));
+    return {
+      buckets, devices, totals,
+      kwh: totals.reduce((a, v) => a + v, 0),
+      cost: devices.reduce((a, d) => a + d.cost, 0),
+      // false when some consumption falls before the first tariff (cost incomplete)
+      priced,
+    };
+  }
+
   function stats() {
     const count = (t) => Number(db.prepare(`SELECT count(*) AS c FROM ${t}`).get().c);
     const oldest = Number(db.prepare('SELECT min(ts) AS t FROM daily').get().t) || null;
@@ -244,7 +332,7 @@ function openHistory(file) {
 
   return {
     available: true, batch, record, recordServices, prune, query, sparklines, seriesFor, stats,
-    getSettings, setSettings, pickResolution, close: () => db.close(),
+    getSettings, setSettings, pickResolution, energy, getTariffs, setTariffs, close: () => db.close(),
   };
 }
 
@@ -258,6 +346,9 @@ function disabledStore(reason) {
     stats: () => ({ available: false, reason }), getSettings: () => ({ ...DEFAULT_SETTINGS }),
     setSettings() { throw Object.assign(new Error('history unavailable: ' + reason), { status: 503 }); },
     pickResolution: () => 'raw', close() {},
+    energy: () => ({ buckets: [], devices: [], totals: [], kwh: 0, cost: 0, priced: false }),
+    getTariffs: () => [],
+    setTariffs() { throw Object.assign(new Error('history unavailable: ' + reason), { status: 503 }); },
   };
 }
 

@@ -55,6 +55,13 @@ function niceTicks(min, max, count = 4) {
   return ticks;
 }
 
+// Decimals needed to print every tick exactly (step 2.5 → 1, 0.25 → 2).
+function tickDec(ticks) {
+  const step = ticks.length > 1 ? Math.abs(ticks[1] - ticks[0]) : 1;
+  for (let d = 0; d < 3; d++) if (Math.abs(Math.round(step * 10 ** d) - step * 10 ** d) < 1e-6) return d;
+  return 3;
+}
+
 function timeTicks(from, to, rangeKey) {
   const out = [];
   const d = new Date(from);
@@ -101,7 +108,8 @@ function renderLineChart(el, series, { from, to, rangeKey, res, def }) {
   // Break the line at gaps (missed samples / server offline) rather than
   // drawing a misleading straight segment across them.
   const gapMs = res === 'raw' ? HOUR : res === 'hour' ? 3 * HOUR : 3 * DAY;
-  const yLabel = (v) => def.binary ? t(v ? 'history.stateOpen' : 'history.stateClosed') : fmt(v, Math.abs(y1 - y0) < 5 && def.dec ? 1 : 0);
+  const yDec = tickDec(yt);
+  const yLabel = (v) => def.binary ? t(v ? 'history.stateOpen' : 'history.stateClosed') : fmt(v, yDec);
 
   const path = (pts, step) => {
     let d = '', prev = null;
@@ -191,7 +199,7 @@ function renderBarChart(el, bars, { def }) {
     <div class="chart relative text-slate-500">
       <svg width="${W}" height="${H}" role="img" aria-label="${escapeHtml(t('history.consumption'))}">
         ${yt.map(v => `<line x1="${P.l}" x2="${W - P.r}" y1="${y(v)}" y2="${y(v)}" class="chart-grid" />
-          <text x="${P.l - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11">${fmt(v, y1 < 5 ? 1 : 0)}</text>`).join('')}
+          <text x="${P.l - 6}" y="${y(v) + 4}" text-anchor="end" font-size="11">${fmt(v, tickDec(yt))}</text>`).join('')}
         ${bars.map((b, i) => {
           const bx = P.l + i * slot + (slot - bw) / 2, by = y(b[1]);
           return `<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0, P.t + ih - by).toFixed(1)}" rx="${bw > 6 ? 2 : 0}" class="chart-s1 chart-bar" data-bar="${i}" />
@@ -245,7 +253,7 @@ function energyBars(points, rangeKey) {
 // ---- modal ----------------------------------------------------------------
 let modalState = null;
 
-async function openHistoryModal(deviceId) {
+async function openHistoryModal(deviceId, preferMetric) {
   const dev = state.devices.find(d => d.id === deviceId);
   // Same naming rule as the favourites: the virtual climate controller is
   // better known by its room.
@@ -258,7 +266,7 @@ async function openHistoryModal(deviceId) {
   catch (err) { showModal(`<p class="text-sm text-rose-600">${escapeHtml(t('error.generic', err.message))}</p>`); return; }
   // Setpoint is drawn into the temperature chart, not as its own tab.
   const tabs = METRIC_ORDER.filter(m => metrics.includes(m) && !(m === 'setpoint' && metrics.includes('temperature')));
-  modalState = { deviceId, metrics, tabs, metric: tabs[0], range: '24h' };
+  modalState = { deviceId, metrics, tabs, metric: tabs.includes(preferMetric) ? preferMetric : tabs[0], range: '24h' };
   showModal(`
     <div class="flex items-start justify-between gap-2 mb-3">
       <div>
@@ -380,8 +388,8 @@ function initCharts() {
     if (!b) return;
     e.preventDefault();
     e.stopPropagation();
-    openHistoryModal(b.dataset.history);
+    openHistoryModal(b.dataset.history, b.dataset.historyMetric);
   });
 }
 
-export { initCharts, hasHistory, openHistoryModal, fillSparklines, energyBars, niceTicks };
+export { initCharts, hasHistory, openHistoryModal, fillSparklines, energyBars, niceTicks, tickDec, renderBarChart };

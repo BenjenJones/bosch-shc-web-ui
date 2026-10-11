@@ -156,6 +156,7 @@ details[data-section].card:hover {
 .chart-key.chart-s1 { border-color: #0284c7; }
 .chart-key.chart-s2 { border-color: #d97706; }
 .chart-key.chart-dashed { border-top-style: dashed; }
+.chart-share { background: #0284c7; }
 .chart-spark path { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
 [data-theme="dark"] .chart-dot { stroke: #1e293b; }
 
