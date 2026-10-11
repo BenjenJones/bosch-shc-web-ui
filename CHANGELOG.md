@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-11 - 3
+
+- (Live) Fix: after the HA app (or a browser tab) was in the background, the live lamp stayed red until you switched views. The live stream now reconnects on its own — on return to the foreground, when the server heartbeat (every 25 s) goes missing, and when the browser gives up after an error such as an expired HA ingress session — and reloads the data once it is back.
+
 ## 2026-10-11 - 2
 
 - (Pairing) Fix: two installations (e.g. HA add-on and a local server) paired with the same fixed client id, so pairing one silently invalidated the other ("certificate unknown"). Every new pairing now registers its own client id (`oss_bosch_shc_web_ui_xxxxxx`) with a fresh certificate. When the SHC rejects the certificate, the UI shows a banner and admins can **re-pair** in place (banner or *Admin → Controller*) without losing users, history or settings. Existing pairings keep working unchanged.

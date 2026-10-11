@@ -1341,6 +1341,13 @@ app.get('/api/events', (req, res) => {
   req.on('close', () => sseClients.delete(res));
 });
 
+// Heartbeat: re-send the status to every SSE client every 25 s. Lets clients
+// detect a silently dead stream (phones in the background) and keeps proxies
+// (HA ingress, reverse proxies) from closing an idle connection.
+if (!process.env.BOSCH_SHC_NO_LISTEN) {
+  setInterval(() => { for (const c of sseClients) sendStatus(c); }, 25e3).unref();
+}
+
 // =========================================================================
 //  Start
 // =========================================================================
