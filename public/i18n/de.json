@@ -164,6 +164,7 @@
     "messages.sev.info": "Info",
     "messages.technical": "technische Details",
     "messages.dismiss": "Nachricht entfernen",
+    "messages.deviceTitle": "Aktive Nachrichten",
     "messages.archive.title": "Nicht mehr aktive Nachrichten",
     "messages.archive.none": "Keine archivierten Nachrichten.",
     "messages.archive.badge": "Archiviert",

@@ -160,6 +160,15 @@ details[data-section].card:hover {
 .chart-spark path { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
 [data-theme="dark"] .chart-dot { stroke: #1e293b; }
 
+/* Room-header setpoint on touch screens: no slider (too easy to change by
+   accident while scrolling), just − value + with larger buttons. */
+@media (pointer: coarse) {
+  .setpoint-compact input[type="range"] { display: none; }
+  .setpoint-compact [data-temp-step] { width: 2.25rem; height: 2.25rem; }
+  .setpoint-compact [data-temp-out] { order: 1; width: 4rem; text-align: center; font-size: 1rem; }
+  .setpoint-compact [data-temp-step="1"] { order: 2; }
+}
+
 /* =========================================================================
    Kiosk view — <html data-kiosk> (js/kiosk.js). Hides tabs, toolbar and the
    regular content; shows #kiosk-view with larger touch targets.

@@ -1,5 +1,6 @@
 import { state, $, $$, t, api, escapeHtml, deviceName, roomName, I18N, isMessageActive } from './core.js';
 import { renderDeviceList } from './devices.js';
+import { showModal, hideModal } from './modals.js';
 
 // =========================================================================
 //  Tab: Messages
@@ -144,6 +145,55 @@ async function archiveMessage(m) {
   } catch (_) { /* keep the optimistic local copy; it'll reconcile on reload */ }
 }
 
+// Dismiss an active message: remove it from the SHC, archive a copy, drop it
+// from the active list. Returns false when the dismiss failed.
+async function dismissMessage(id) {
+  const msg = state.messages.find(x => x.id === id);
+  try {
+    await api(`api/messages/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  } catch (err) {
+    // The SHC won't delete some system messages (update/fault notices tied
+    // to an active condition). Treat dismiss as "mark read": archive it
+    // locally and suppress it from the active list. Any other error is real.
+    const code = err.body?.body?.errorCode;
+    if (code !== 'ENTITY_NOT_DELETABLE' && !/ENTITY_NOT_DELETABLE/.test(err.message)) {
+      alert(t('error.generic', err.message));
+      return false;
+    }
+  }
+  if (msg) await archiveMessage(msg);
+  state.messages = state.messages.filter(x => x.id !== id);
+  renderMessages();
+  renderDeviceList(); // drop the room/card markers now that the message is gone
+  return true;
+}
+
+// Active messages of one device, newest first — for the bell on its card.
+const activeMessagesForDevice = (deviceId) => state.messages
+  .filter(m => isMessageActive(m) && m.sourceId === deviceId)
+  .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+// Modal listing a device's active messages (opened from the card's bell).
+// Dismissing re-renders the list and closes the modal once it is empty.
+function openDeviceMessagesModal(deviceId) {
+  const msgs = activeMessagesForDevice(deviceId);
+  if (!msgs.length) { hideModal(); return; }
+  const dateLocale = state.lang === 'en' ? 'en-GB' : 'de-DE';
+  showModal(`
+    <div class="flex items-start justify-between gap-2 mb-2">
+      <div>
+        <h4 class="font-medium">${escapeHtml(deviceName(deviceId))}</h4>
+        <p class="text-xs text-slate-500">${t('messages.deviceTitle')}</p>
+      </div>
+      <button id="dm-close" class="text-slate-400 hover:text-slate-700 text-xl leading-none px-1" aria-label="${t('modal.cancel')}">×</button>
+    </div>
+    <ul class="-mx-5 divide-y max-h-[70vh] overflow-auto">${msgs.map(m => activeItem(m, dateLocale)).join('')}</ul>`);
+  $('#dm-close').onclick = hideModal;
+  $$('#modal-card [data-dismiss]').forEach(b => b.addEventListener('click', async () => {
+    if (await dismissMessage(b.dataset.dismiss)) openDeviceMessagesModal(deviceId);
+  }));
+}
+
 function renderMessages() {
   // Hide deleted messages and ones already archived ("marked read").
   const visible = state.messages.filter(isMessageActive);
@@ -203,29 +253,8 @@ function renderMessages() {
 
   $('#tab-messages').innerHTML = activeHtml + archiveHtml;
 
-  // Dismiss an active message: remove it from the SHC, archive a copy, drop it
-  // from the active list.
   $$('#tab-messages [data-dismiss]').forEach(b =>
-    b.addEventListener('click', async () => {
-      const id = b.dataset.dismiss;
-      const msg = state.messages.find(x => x.id === id);
-      try {
-        await api(`api/messages/${encodeURIComponent(id)}`, { method: 'DELETE' });
-      } catch (err) {
-        // The SHC won't delete some system messages (update/fault notices tied
-        // to an active condition). Treat dismiss as "mark read": archive it
-        // locally and suppress it from the active list. Any other error is real.
-        const code = err.body?.body?.errorCode;
-        if (code !== 'ENTITY_NOT_DELETABLE' && !/ENTITY_NOT_DELETABLE/.test(err.message)) {
-          alert(t('error.generic', err.message));
-          return;
-        }
-      }
-      if (msg) await archiveMessage(msg);
-      state.messages = state.messages.filter(x => x.id !== id);
-      renderMessages();
-      renderDeviceList(); // drop the room marker now that the message is gone
-    })
+    b.addEventListener('click', () => dismissMessage(b.dataset.dismiss))
   );
 
   // Delete a single archived message.
@@ -269,4 +298,4 @@ function renderMessages() {
 }
 
 
-export { messageTitle, severityFromMessage, describeArguments, renderMessages, archiveMessage };
+export { messageTitle, severityFromMessage, describeArguments, renderMessages, archiveMessage, dismissMessage, activeMessagesForDevice, openDeviceMessagesModal };

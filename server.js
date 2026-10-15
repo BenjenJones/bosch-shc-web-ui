@@ -725,7 +725,7 @@ app.delete('/api/auth/users/:username', requireAdmin, (req, res) => {
   const username = req.params.username;
   const target = findUser(username);
   if (!target) return res.status(404).json({ error: 'user not found' });
-  if (target.username === req.authCtx.user.username) {
+  if (target.username === req.authCtx?.user.username) {
     return res.status(400).json({ error: 'cannot delete yourself' });
   }
   authData.users   = authData.users.filter(u => u.username !== username);
@@ -757,7 +757,7 @@ app.post('/api/auth/users/:username/reset-password', requireAdmin, (req, res) =>
 //  Admin - session management (admin role only)
 // =========================================================================
 app.get('/api/auth/sessions', requireAdmin, (req, res) => {
-  const currentToken = req.authCtx.token;
+  const currentToken = req.authCtx?.token; // undefined without auth (no sessions then)
   res.json(authData.sessions.map(s => ({
     token: s.token.slice(0, 8) + '…', // never expose full tokens, even to admins
     tokenId: s.token,                  // opaque id used only for delete calls

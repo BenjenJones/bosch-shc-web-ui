@@ -17,9 +17,11 @@ function applyRoleVisibility() {
   // (for <option> elements inside the mobile dropdown — Chrome/Edge don't
   // honour `display: none` on options in a <select>, but they do honour
   // the `hidden` attribute).
+  // .auth-only (users, sessions) is meaningless without user management.
   $$('.admin-only').forEach(el => {
-    el.classList.toggle('hidden', !admin);
-    el.hidden = !admin;
+    const show = admin && (state.auth.enabled || !el.classList.contains('auth-only'));
+    el.classList.toggle('hidden', !show);
+    el.hidden = !show;
   });
   // Account button only makes sense when auth is on
   const acc = $('#account-btn');

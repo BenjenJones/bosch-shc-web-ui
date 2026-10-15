@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-15
+
+- (Dashboard) Rooms with a humidity sensor (e.g. Room Thermostat II, Twinguard) show a 24 h humidity sparkline next to the humidity value; clicking it opens the history chart on the humidity tab.
+- (Dashboard) Device cards with active messages show a bell with the message count, tinted by the most severe message. Clicking it lists the device's messages in a dialog, where they can be dismissed just like on the *Messages* tab.
+- (Dashboard) On touch screens the room header no longer shows the setpoint slider — it was too easy to change the target by accident while scrolling. Only − / + (0.5 °C steps) around the target remain; desktop keeps the slider.
+- (Auth) Fix: without user management, opening the *Sessions* tab crashed the request (`Cannot read properties of undefined (reading 'token')`); deleting a user had the same flaw. The *Users* and *Sessions* tabs are now hidden when user management is off.
+
 ## 2026-10-11 - 3
 
 - (Live) Fix: after the HA app (or a browser tab) was in the background, the live lamp stayed red until you switched views. The live stream now reconnects on its own — on return to the foreground, when the server heartbeat (every 25 s) goes missing, and when the browser gives up after an error such as an expired HA ingress session — and reloads the data once it is back.

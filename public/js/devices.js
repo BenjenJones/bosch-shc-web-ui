@@ -2,7 +2,7 @@ import { favButton, renderFavoritesSection } from './favorites.js';
 import { isKiosk, renderKiosk } from './kiosk.js';
 import { hasHistory, fillSparklines } from './charts.js';
 import { state, $, $$, t, api, escapeHtml, roomName, deviceName, serviceOf, deviceUpdateInfo, deviceBatteryLevel, deviceFaults, saveCollapsedRooms, isMessageActive } from './core.js';
-import { severityFromMessage, messageTitle } from './messages.js';
+import { severityFromMessage, messageTitle, activeMessagesForDevice, openDeviceMessagesModal } from './messages.js';
 import { showModal, hideModal } from './modals.js';
 
 // Service ids that the per-device settings dialog (⚙) can configure.
@@ -416,20 +416,25 @@ function activeMessagesForRoom(roomId) {
   return state.messages.filter(m => isMessageActive(m) && messageRoomId(m) === roomId);
 }
 
+// Badge colours by the most severe message (error > warning > info).
+function messagesBadgeClass(msgs) {
+  const sev = msgs.some(m => severityFromMessage(m) === 'error')   ? 'error'
+            : msgs.some(m => severityFromMessage(m) === 'warning') ? 'warning'
+            : 'info';
+  return {
+    error:   'bg-rose-100 text-rose-700',
+    warning: 'bg-amber-100 text-amber-700',
+    info:    'bg-slate-100 text-slate-600',
+  }[sev];
+}
+
 // Marker shown in the room header when the room has active messages — count +
 // a bell, tinted by the most severe message (error > warning > info). Stays
 // visible while the room is collapsed, so problems are visible at a glance.
 function renderRoomMessageBadge(roomId) {
   const msgs = activeMessagesForRoom(roomId);
   if (!msgs.length) return '';
-  const sev = msgs.some(m => severityFromMessage(m) === 'error')   ? 'error'
-            : msgs.some(m => severityFromMessage(m) === 'warning') ? 'warning'
-            : 'info';
-  const cls = {
-    error:   'bg-rose-100 text-rose-700',
-    warning: 'bg-amber-100 text-amber-700',
-    info:    'bg-slate-100 text-slate-600',
-  }[sev];
+  const cls = messagesBadgeClass(msgs);
   const titles = msgs.map(m => messageTitle(m.messageCode?.name || 'UNKNOWN')).join(', ');
   return `<span class="normal-case inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded ${cls}"
       title="${escapeHtml(titles)}">
@@ -490,7 +495,13 @@ function renderRoomClimateBadge(roomId) {
       : '';
     parts.push(`<span class="inline-flex items-center gap-1.5"><span class="tabular-nums">${tVal.toFixed(1)}°C</span>${spark}</span>`);
   }
-  if (hVal != null) parts.push(`<span class="tabular-nums">${Math.round(hVal)}% rH</span>`);
+  if (hVal != null) {
+    const spark = state.historyAvailable
+      ? `<button type="button" data-room-setpoint data-history="${escapeHtml(humSvc.deviceId)}" data-history-metric="humidity" title="${t('history.open')}"
+           class="inline-flex text-teal-600 hover:opacity-70" data-spark="${escapeHtml(humSvc.deviceId + '|humidity')}"></button>`
+      : '';
+    parts.push(`<span class="inline-flex items-center gap-1.5"><span class="tabular-nums">${Math.round(hVal)}% rH</span>${spark}</span>`);
+  }
   if (onCount) {
     const label = t('devices.devicesOn', onCount);
     parts.push(
@@ -584,6 +595,9 @@ function renderRoomShutterGroup(roomId) {
 // and the collapsed-room climate badge so the target can be set without
 // expanding the room. The change PUT is wired via [data-temp-set]
 // (onTemperatureChange); an `input` listener updates [data-temp-out] live.
+// `compact` (room header): on touch screens the slider is hidden via CSS
+// (.setpoint-compact) — it sat right where the thumb lands while scrolling —
+// leaving only −/+ around the value. The hidden slider still holds the value.
 function renderSetpointControl(deviceId, setpoint, { compact = false } = {}) {
   const val = typeof setpoint === 'number' ? setpoint : 5;
   const btn = (dir, glyph) =>
@@ -591,7 +605,7 @@ function renderSetpointControl(deviceId, setpoint, { compact = false } = {}) {
        class="shrink-0 w-7 h-7 flex items-center justify-center rounded-md border border-slate-300
               text-slate-600 hover:bg-slate-100 active:bg-slate-200 text-lg leading-none">${glyph}</button>`;
   return `
-    <div class="flex items-center gap-1.5 w-full" data-setpoint>
+    <div class="flex items-center gap-1.5 w-full${compact ? ' setpoint-compact' : ''}" data-setpoint>
       ${btn(-1, '−')}
       <input type="range" min="5" max="30" step="0.5" value="${val}"
         data-temp-set data-device="${deviceId}"
@@ -1068,7 +1082,14 @@ function renderDeviceCard(device, { showRoom = false } = {}) {
   // (favourite, history, settings) live in the footer next to battery/valve.
   const statusPill = device.status && device.status !== 'AVAILABLE'
     ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">${escapeHtml(device.status)}</span>` : '';
+  // Bell with the count of the device's active messages; opens them in a modal.
+  const deviceMsgs = activeMessagesForDevice(device.id);
+  const msgTip = deviceMsgs.map(m => messageTitle(m.messageCode?.name || 'UNKNOWN')).join(', ');
   const actions = [
+    deviceMsgs.length ? `<button type="button" data-action="messages" data-device="${escapeHtml(device.id)}"
+      title="${escapeHtml(msgTip)}" aria-label="${escapeHtml(t('messages.deviceTitle'))}"
+      class="mr-1 inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded hover:opacity-80 ${messagesBadgeClass(deviceMsgs)}">
+      <span class="icon-mask" style="width:11px;height:11px;mask-image:url(svg/bell.svg);-webkit-mask-image:url(svg/bell.svg)"></span>${deviceMsgs.length}</button>` : '',
     favButton('device', device.id),
     hasHistory(device.id) ? `<button type="button" data-history="${escapeHtml(device.id)}"
       title="${t('history.open')}" aria-label="${t('history.open')}"
@@ -1108,6 +1129,10 @@ async function onDeviceAction(e) {
   const { action, device } = btn.dataset;
   if (action === 'settings') {
     openDeviceSettings(device);
+    return;
+  }
+  if (action === 'messages') {
+    openDeviceMessagesModal(device);
     return;
   }
   if (action === 'toggle-power') {
