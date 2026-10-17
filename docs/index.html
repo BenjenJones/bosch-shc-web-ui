@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bosch SHC Web UI – local dashboard for the Bosch Smart Home Controller</title>
+<meta name="description" content="Open-source local web UI and dashboard for the Bosch Smart Home Controller (SHC I/II): control all devices in the browser, history charts, energy costs, device health. No cloud. Home Assistant add-on, Docker or Node.js.">
+<meta name="keywords" content="Bosch Smart Home, Bosch SHC, Smart Home Controller, dashboard, web UI, Home Assistant add-on, Docker, self-hosted, energy monitoring, local, no cloud">
+<link rel="canonical" href="https://benjenjones.github.io/bosch-shc-web-ui/">
+<link rel="icon" href="img/icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0f172a">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Bosch SHC Web UI">
+<meta property="og:title" content="Bosch SHC Web UI – local dashboard for the Bosch Smart Home Controller">
+<meta property="og:description" content="Control every Bosch Smart Home device from any browser. History charts, energy costs, device health. No cloud. Home Assistant add-on, Docker or Node.js.">
+<meta property="og:url" content="https://benjenjones.github.io/bosch-shc-web-ui/">
+<meta property="og:image" content="https://benjenjones.github.io/bosch-shc-web-ui/img/social-preview.png">
+<meta property="og:image:width" content="1280">
+<meta property="og:image:height" content="640">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://benjenjones.github.io/bosch-shc-web-ui/img/social-preview.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Bosch SHC Web UI",
+  "applicationCategory": "HomeApplication",
+  "operatingSystem": "Linux, Windows, macOS, Home Assistant OS, Docker",
+  "description": "Open-source local web UI and dashboard for the Bosch Smart Home Controller (SHC I/II) with history charts, energy costs and device health. No cloud.",
+  "url": "https://benjenjones.github.io/bosch-shc-web-ui/",
+  "downloadUrl": "https://github.com/BenjenJones/bosch-shc-web-ui",
+  "codeRepository": "https://github.com/BenjenJones/bosch-shc-web-ui",
+  "license": "https://opensource.org/licenses/MIT",
+  "inLanguage": ["en", "de"],
+  "image": "https://benjenjones.github.io/bosch-shc-web-ui/img/social-preview.png",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
+}
+</script>
+
+<style>
+:root {
+  --bg: #f8fafc; --surface: #ffffff; --text: #0f172a; --muted: #475569; --line: #e2e8f0;
+  --accent: #2563eb; --accent-soft: #dbeafe; --code: #f1f5f9;
+  --hero-from: #1e3a8a; --hero-to: #0f172a;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0b1220; --surface: #111a2e; --text: #e2e8f0; --muted: #94a3b8; --line: #1e293b;
+    --accent: #60a5fa; --accent-soft: #1e3a8a; --code: #0f172a; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+a { color: var(--accent); }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+header.hero { background: radial-gradient(circle at 15% 20%, var(--hero-from) 0, var(--hero-to) 60%); color: #f8fafc; padding: 56px 0 64px; }
+.brand { display: flex; align-items: center; gap: 12px; font-weight: 600; color: #93c5fd; letter-spacing: .04em; text-transform: uppercase; font-size: 14px; }
+.brand img { width: 40px; height: 40px; }
+h1 { font-size: clamp(36px, 6vw, 60px); line-height: 1.05; margin: 20px 0 16px; letter-spacing: -.02em; }
+.lead { font-size: clamp(18px, 2.2vw, 22px); color: #cbd5e1; max-width: 720px; margin: 0 0 28px; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn { display: inline-block; padding: 11px 20px; border-radius: 10px; font-weight: 600; text-decoration: none; }
+.btn.primary { background: #2563eb; color: #fff; }
+.btn.ghost { border: 1px solid rgba(147,197,253,.5); color: #dbeafe; }
+.hero-shot { margin-top: 44px; border-radius: 14px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(148,163,184,.25); }
+.hero-shot img { display: block; width: 100%; height: auto; }
+section { padding: 56px 0; border-bottom: 1px solid var(--line); }
+h2 { font-size: 30px; margin: 0 0 8px; letter-spacing: -.01em; }
+.sub { color: var(--muted); margin: 0 0 28px; }
+.grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+.card h3 { margin: 0 0 6px; font-size: 18px; }
+.card p { margin: 0; color: var(--muted); font-size: 15px; }
+.shots { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+figure { margin: 0; }
+figure img { width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--line); display: block; }
+figcaption { font-size: 14px; color: var(--muted); margin-top: 6px; }
+pre { background: var(--code); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; overflow-x: auto; font-size: 14px; margin: 8px 0 0; }
+code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; }
+summary { cursor: pointer; font-weight: 600; }
+details p { color: var(--muted); margin: 10px 0 0; }
+footer { padding: 32px 0 48px; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="brand"><img src="img/icon.svg" alt="">Open source · No cloud · MIT</div>
+    <h1>Bosch SHC Web UI</h1>
+    <p class="lead">A fast, local web dashboard for your Bosch Smart Home Controller (SHC I and II). Control every device from any browser, see history charts and energy costs, and keep an eye on batteries and signal quality.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/BenjenJones/bosch-shc-web-ui#installation">Install</a>
+      <a class="btn ghost" href="https://github.com/BenjenJones/bosch-shc-web-ui">View on GitHub</a>
+      <a class="btn ghost" href="#demo">Try the demo</a>
+    </div>
+    <div class="hero-shot"><img src="img/dashboard-dark.png" width="1920" height="1500" alt="Bosch SHC Web UI dashboard in dark theme: devices grouped by room"></div>
+  </div>
+</header>
+
+<main>
+<section>
+  <div class="wrap">
+    <h2>Features</h2>
+    <p class="sub">Everything runs in your home network and talks to the controller over Bosch's official local API.</p>
+    <div class="grid">
+      <div class="card"><h3>Dashboard</h3><p>All devices by room: heating, shutters, lights, plugs, window contacts, smoke and motion detectors, Twinguard, cameras. Live updates.</p></div>
+      <div class="card"><h3>History charts</h3><p>Temperature, humidity, power, valve position, air quality and more, from 24 hours to a year. Includes values the Bosch app doesn't show.</p></div>
+      <div class="card"><h3>Energy &amp; cost</h3><p>Consumption and cost per day, week, month and year, per device, with your own electricity price.</p></div>
+      <div class="card"><h3>Device health</h3><p>Unreachable devices, low batteries, weak signal and pending firmware updates at a glance.</p></div>
+      <div class="card"><h3>Kiosk &amp; favourites</h3><p>A clean wall-tablet view with only the devices and scenarios you need.</p></div>
+      <div class="card"><h3>Scenarios &amp; alarm</h3><p>Run scenarios, switch automations, arm and disarm the alarm system, read messages.</p></div>
+      <div class="card"><h3>App &amp; users</h3><p>Install as an app (PWA), optional login with multiple users, light and dark theme, English and German.</p></div>
+      <div class="card"><h3>Private</h3><p>No cloud, no account, no tracking. Your data stays on your controller and your server.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Screenshots</h2>
+    <p class="sub">Made with the built-in demo — no real home involved.</p>
+    <div class="shots">
+      <figure><img src="img/history.png" loading="lazy" alt="History chart of a room thermostat"><figcaption>History charts</figcaption></figure>
+      <figure><img src="img/energy.png" loading="lazy" alt="Energy consumption and cost per device"><figcaption>Energy and cost</figcaption></figure>
+      <figure><img src="img/health.png" loading="lazy" alt="Device health overview with batteries and signal quality"><figcaption>Device health</figcaption></figure>
+      <figure><img src="img/kiosk.png" loading="lazy" alt="Kiosk mode for wall tablets"><figcaption>Kiosk mode</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>Installation</h2>
+    <p class="sub">You need a Bosch Smart Home Controller (I or II), already set up in the Bosch app, and its system password.</p>
+    <div class="grid">
+      <div class="card"><h3>Home Assistant add-on</h3><p>Add-on store → ⋮ → Repositories → add the URL below → install <b>Bosch SHC Web UI</b>. Opens in the HA sidebar.</p>
+        <pre><code>https://github.com/BenjenJones/bosch-shc-web-ui</code></pre></div>
+      <div class="card"><h3>Docker</h3><p>NAS, server, Raspberry Pi, Synology, Unraid, Portainer.</p>
+        <pre><code>docker run -d --name bosch-shc-ui \
+  --restart unless-stopped -p 3000:3000 \
+  -v bosch-shc-data:/data \
+  ghcr.io/benjenjones/bosch-shc-web-ui:latest</code></pre></div>
+      <div class="card"><h3>Node.js</h3><p>Linux, Windows, macOS — Node.js 22.13 or newer.</p>
+        <pre><code>git clone https://github.com/BenjenJones/bosch-shc-web-ui
+cd bosch-shc-web-ui
+npm ci &amp;&amp; npm start</code></pre></div>
+    </div>
+    <p>Then open <code>http://&lt;ip&gt;:3000</code>. A short wizard pairs the UI with your controller. Step-by-step guides: <a href="https://github.com/BenjenJones/bosch-shc-web-ui/blob/main/docs/INSTALL.md">INSTALL.md</a>.</p>
+  </div>
+</section>
+
+<section id="demo">
+  <div class="wrap">
+    <h2>Just looking?</h2>
+    <p class="sub">Try the demo with made-up devices and a year of history — no controller needed.</p>
+    <pre><code>docker run --rm -p 3001:3001 ghcr.io/benjenjones/bosch-shc-web-ui node demo.js</code></pre>
+    <p>Then open <code>http://localhost:3001</code>.</p>
+  </div>
+</section>
+
+<section lang="de">
+  <div class="wrap">
+    <h2>Auf Deutsch</h2>
+    <p>Die <b>Bosch SHC Web UI</b> ist eine lokale Weboberfläche für den Bosch Smart Home Controller (SHC I und II). Du steuerst alle Geräte im Browser – Heizung, Rollläden, Licht, Steckdosen, Fensterkontakte, Rauchmelder, Twinguard und Kameras – siehst Verlaufsdiagramme für Temperatur und Luftfeuchtigkeit, Stromverbrauch und Stromkosten und behältst Batterien und Funkqualität im Blick.</p>
+    <p>Alles läuft in deinem Heimnetz, ohne Cloud. Installation als Home-Assistant-Add-on, Docker-Container oder mit Node.js. Die Oberfläche gibt es komplett auf Deutsch.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>FAQ</h2>
+    <details><summary>Does it need the Bosch cloud or an account?</summary><p>No. It talks directly to the controller in your network using Bosch's official local REST API.</p></details>
+    <details><summary>Which controllers are supported?</summary><p>Bosch Smart Home Controller I and II.</p></details>
+    <details><summary>Does it replace Home Assistant's Bosch integration?</summary><p>No, it is a separate dashboard. It runs fine next to Home Assistant, as an add-on in the HA sidebar, or completely without Home Assistant.</p></details>
+    <details><summary>Is it free?</summary><p>Yes, open source under the MIT license. Bosch permits the local API for private, non-commercial use.</p></details>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    Unofficial hobby project, not affiliated with Robert Bosch GmbH or Bosch Smart Home GmbH. "Bosch" and "Smart Home Controller" are trademarks of their respective owners.
+    · <a href="https://github.com/BenjenJones/bosch-shc-web-ui">GitHub</a>
+    · <a href="https://github.com/BenjenJones/bosch-shc-web-ui/blob/main/CHANGELOG.md">Changelog</a>
+    · <a href="https://github.com/BenjenJones/bosch-shc-web-ui/blob/main/LICENSE">MIT license</a>
+  </div>
+</footer>
+
+</body>
+</html>

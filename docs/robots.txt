@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://benjenjones.github.io/bosch-shc-web-ui/sitemap.xml

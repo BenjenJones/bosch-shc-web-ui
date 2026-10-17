@@ -61,11 +61,21 @@ jobs:
 
       - id: meta
         uses: docker/metadata-action@v5
+        env:
+          # GHCR reads the package description of multi-arch images from the
+          # index annotations, not from image labels.
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
         with:
           images: ghcr.io/${{ github.repository_owner }}/bosch-shc-web-ui
           tags: |
             type=semver,pattern={{version}}
             type=raw,value=latest
+          labels: |
+            org.opencontainers.image.title=Bosch SHC Web UI
+            org.opencontainers.image.description=Local web UI and dashboard for the Bosch Smart Home Controller (SHC I/II): history charts, energy costs, device health. No cloud.
+          annotations: |
+            org.opencontainers.image.title=Bosch SHC Web UI
+            org.opencontainers.image.description=Local web UI and dashboard for the Bosch Smart Home Controller (SHC I/II): history charts, energy costs, device health. No cloud.
 
       - uses: docker/build-push-action@v6
         with:
@@ -81,3 +91,4 @@ jobs:
           sbom: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}

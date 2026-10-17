@@ -1,8 +1,12 @@
 # Bosch SHC Web UI
 
-**A fast, local web interface for your Bosch Smart Home Controller** — control every device from any browser, see history charts and energy costs, and keep an eye on batteries and signal quality. Runs entirely in your home network, no cloud. English and German.
+**A fast, local web interface and dashboard for the Bosch Smart Home Controller (SHC I and II)** — control every device from any browser, see history charts and energy costs, and keep an eye on batteries and signal quality. An open-source alternative to the Bosch Smart Home app for desktop, tablet and wall panels. Runs entirely in your home network, no cloud. Install as a **Home Assistant add-on**, with **Docker** or plain **Node.js**. English and German.
 
-![Dashboard](docs/img/dashboard.png)
+**Website:** [benjenjones.github.io/bosch-shc-web-ui](https://benjenjones.github.io/bosch-shc-web-ui/)
+
+![Bosch SHC Web UI dashboard: devices grouped by room with heating, shutters, lights and sensors](docs/img/dashboard.png)
+
+> **Auf Deutsch:** Lokale Weboberfläche für den Bosch Smart Home Controller – alle Geräte im Browser steuern, Verlaufsdiagramme für Temperatur und Luftfeuchtigkeit, Stromverbrauch und -kosten, Batterie- und Funkstatus. Ohne Cloud, als Home-Assistant-Add-on, Docker-Container oder mit Node.js. Die Oberfläche gibt es komplett auf Deutsch.
 
 ## Highlights
 
@@ -16,9 +20,9 @@
 
 | History | Energy | Health |
 | --- | --- | --- |
-| [![History](docs/img/history.png)](docs/img/history.png) | [![Energy](docs/img/energy.png)](docs/img/energy.png) | [![Health](docs/img/health.png)](docs/img/health.png) |
+| [![History chart of a room thermostat with temperature over 24 hours](docs/img/history.png)](docs/img/history.png) | [![Energy tab with consumption and electricity cost per device](docs/img/energy.png)](docs/img/energy.png) | [![Health tab with unreachable devices, low batteries and weak signal](docs/img/health.png)](docs/img/health.png) |
 | **Dark theme** | **Kiosk** | **Mobile** |
-| [![Dark theme](docs/img/dashboard-dark.png)](docs/img/dashboard-dark.png) | [![Kiosk](docs/img/kiosk.png)](docs/img/kiosk.png) | [![Mobile](docs/img/mobile.png)](docs/img/mobile.png) |
+| [![Dashboard in dark theme](docs/img/dashboard-dark.png)](docs/img/dashboard-dark.png) | [![Kiosk mode for wall tablets with clock and favourite devices](docs/img/kiosk.png)](docs/img/kiosk.png) | [![Mobile view of the dashboard on a phone](docs/img/mobile.png)](docs/img/mobile.png) |
 
 ## Installation
 
@@ -121,7 +125,7 @@ Then open `http://localhost:3001`.
 
 - Controller overview with firmware and update status, re-pairing
 - Manage paired clients, rename rooms, rename or remove devices, inspect raw device JSON
-- Optional login: admin creates users, resets passwords, sees and revokes sessions. Passwords are stored as scrypt hashes
+- Optional login, switched on or off under *Admin → Login* at any time: admin creates users, resets passwords, sees and revokes sessions. Passwords are stored as scrypt hashes
 - Regular users see the dashboard, scenarios, security and messages
 </details>
 
@@ -155,7 +159,7 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 825 -keyout certs/ui-key.pem -ou
 ## Security notes
 
 - The files in `certs/` are your key to the SHC — don't share them.
-- Without login, anyone who can reach port 3000 can switch your devices. Enable login in the wizard (or later with `npm run setup:auth`) if your network isn't fully trusted, and don't expose the port to the internet.
+- Without login, anyone who can reach port 3000 can switch your devices. Enable login in the wizard (or later under *Admin → Login*) if your network isn't fully trusted, and don't expose the port to the internet.
 - `auth.json` holds password hashes and session tokens — treat it like a secret.
 - The SHC presents a self-signed certificate, so the connection to it isn't verified against a CA. For a hardened setup, pin Bosch's CAs (published in the official API repo) via the `ca:` option of the `https.Agent` in `server.js`.
 
