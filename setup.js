@@ -16,6 +16,7 @@ const https = require('https');
 const crypto = require('crypto');
 const readline = require('readline');
 const { execSync } = require('child_process');
+const { createSelfSignedCert } = require('./selfsigned-cert.js');
 
 // All runtime-writable state lives under DATA_DIR. Defaults to this source
 // dir (unchanged for bare `npm start`); in a container set BOSCH_SHC_DATA_DIR
@@ -46,19 +47,31 @@ function newClientId() {
 //  Shared helpers — used by the CLI flow and the web wizard alike.
 // =========================================================================
 
+// Existing certificates are never touched — this only runs when one of the
+// two files is missing (first pairing, or freshCerts() for a re-pair).
+// Certificates are generated in plain Node (selfsigned-cert.js, same
+// structure as openssl's), so openssl no longer has to be installed. The
+// openssl CLI stays as a fallback, and BOSCH_SHC_CERT_TOOL=openssl forces it.
 function ensureCerts() {
   if (fs.existsSync(CERT_FILE) && fs.existsSync(KEY_FILE)) return { generated: false };
   fs.mkdirSync(CERT_DIR, { recursive: true });
-  // openssl is documented as a requirement; we don't ship a JS fallback to
-  // keep the dependency surface small. The web wizard surfaces a clear error
-  // if it isn't on PATH.
+  if (process.env.BOSCH_SHC_CERT_TOOL !== 'openssl') {
+    try {
+      const { cert, key } = createSelfSignedCert({ commonName: CLIENT_ID, days: 9999 });
+      fs.writeFileSync(KEY_FILE, key, { mode: 0o600 });
+      fs.writeFileSync(CERT_FILE, cert);
+      return { generated: true, tool: 'node' };
+    } catch (err) {
+      console.warn('Certificate generation in Node failed, trying openssl:', err.message);
+    }
+  }
   execSync(
     `openssl req -x509 -nodes -days 9999 -newkey rsa:2048 ` +
     `-keyout "${KEY_FILE}" -out "${CERT_FILE}" ` +
     `-subj "/CN=${CLIENT_ID}"`,
     { stdio: 'pipe' }
   );
-  return { generated: true };
+  return { generated: true, tool: 'openssl' };
 }
 
 // Fresh key pair for a new pairing (new client id). Existing files are kept

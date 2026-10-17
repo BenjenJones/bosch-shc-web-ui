@@ -164,7 +164,7 @@ openssl req -x509 -newkey rsa:2048 -nodes -days 825 -keyout certs/ui-key.pem -ou
 | Problem | Possible cause |
 | --- | --- |
 | Pairing: *registration failed* / `401` | Wrong system password, or the SHC wasn't in pairing mode (LED blinking) — press the button and retry right away |
-| Pairing: *certificate generation failed* | OpenSSL missing — see [INSTALL.md](docs/INSTALL.md#first-start-pairing-with-the-shc) |
+| Pairing: *certificate generation failed* | Usually the data folder isn't writable — the wizard shows the exact error |
 | `EADDRINUSE` on start | Port 3000 is taken — change `uiPort` in `config.json` (Docker: change the left port number) |
 | Red banner *"SHC no longer recognises this installation"* / `certificate unknown` | The client was removed in the Bosch app, or the SHC was reset. Use **Re-pair** in the banner or under *Admin → Controller* (keeps users, history, settings) |
 | Live indicator stays red | Connection to the SHC lost — check the SHC is online and the server log |

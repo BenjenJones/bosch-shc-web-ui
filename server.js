@@ -407,8 +407,8 @@ app.post('/api/setup', wrap(async (req, res) => {
     if (typeof adminPassword !== 'string' || adminPassword.length < 4)  return res.status(400).json({ error: 'adminPassword must be at least 4 chars' });
   }
 
-  // Cert generation first — if openssl isn't around we want to fail before
-  // touching the SHC (it would only timeout otherwise).
+  // Cert generation first — if it fails we want to fail before touching the
+  // SHC (it would only timeout otherwise).
   // Each pairing gets its own client id + fresh certificate, so pairing this
   // install never invalidates another one paired with the same SHC.
   const clientId = setupLib.newClientId();
@@ -416,7 +416,7 @@ app.post('/api/setup', wrap(async (req, res) => {
     setupLib.freshCerts();
   } catch (err) {
     return res.status(500).json({
-      error: 'cert generation failed — is openssl on PATH?',
+      error: 'certificate generation failed',
       detail: err.message,
     });
   }
@@ -598,7 +598,7 @@ app.post('/api/setup/register', wrap(async (req, res) => {
     setupLib.freshCerts();
   } catch (err) {
     return res.status(500).json({
-      error: 'certificate generation failed — is openssl installed and on PATH?',
+      error: 'certificate generation failed',
       detail: err.message,
     });
   }
@@ -666,7 +666,7 @@ app.post('/api/setup/repair', requireAdmin, wrap(async (req, res) => {
     setupLib.freshCerts();
   } catch (err) {
     setupLib.restoreCertBackup();
-    return res.status(500).json({ error: 'certificate generation failed — is openssl installed and on PATH?', detail: err.message });
+    return res.status(500).json({ error: 'certificate generation failed', detail: err.message });
   }
   try {
     await setupLib.registerClient(shcIp, password, fs.readFileSync(setupLib.CERT_FILE, 'utf8'), clientId);

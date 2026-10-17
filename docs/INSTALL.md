@@ -99,10 +99,10 @@ docker run -d --name bosch-shc-ui --restart unless-stopped \
 
 Runs the UI directly with Node.js as a system service that starts at boot.
 
-**1. Install Node.js (current LTS), git and OpenSSL**
+**1. Install Node.js (current LTS) and git**
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-sudo apt-get install -y nodejs git openssl
+sudo apt-get install -y nodejs git
 node -v     # must be v22.13 or newer
 ```
 
@@ -185,14 +185,7 @@ npm ci
 npm run build:css
 ```
 
-**3. Pair once from Git Bash.** Pairing needs OpenSSL, which ships with Git but is only on the `PATH` inside *Git Bash*. Start menu → **Git Bash**, then:
-```bash
-cd /c/bosch-shc-web-ui
-npm start
-```
-Open `http://localhost:3000`, [pair](#first-start-pairing-with-the-shc), then stop the server with **Ctrl+C**.
-
-**4. Start automatically with Windows** — in PowerShell **as Administrator**:
+**3. Start automatically with Windows** — in PowerShell **as Administrator**:
 ```powershell
 $action   = New-ScheduledTaskAction -Execute (Get-Command node).Source -Argument 'server.js' -WorkingDirectory 'C:\bosch-shc-web-ui'
 $trigger  = New-ScheduledTaskTrigger -AtStartup
@@ -203,6 +196,8 @@ Start-ScheduledTask -TaskName 'Bosch SHC Web UI'
 # allow other devices (phone, tablet) to reach port 3000
 New-NetFirewallRule -DisplayName 'Bosch SHC Web UI' -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow
 ```
+
+**4.** Open `http://localhost:3000` and [pair](#first-start-pairing-with-the-shc).
 
 The UI now runs in the background, also when nobody is logged in. Data stays in `C:\bosch-shc-web-ui` (`config.json`, `auth.json`, `certs\`, `history.sqlite`) — `git pull` doesn't touch these files.
 
@@ -215,8 +210,6 @@ npm ci
 npm run build:css
 Start-ScheduledTask -TaskName 'Bosch SHC Web UI'
 ```
-
-To re-pair later (e.g. after resetting the SHC), stop the task, start the UI from Git Bash as in step 3 and use **Re-pair** under *Admin → Controller*, then start the task again.
 
 ---
 
@@ -233,7 +226,7 @@ The page reloads and shows your devices. In the Bosch app the UI appears as a co
 | Problem | What's going on |
 | --- | --- |
 | *"SHC registration failed"* | The SHC wasn't in pairing mode (LED not blinking) or the system password is wrong. Press the button again and retry right away. |
-| *"certificate generation failed"* | OpenSSL isn't available. Docker / add-on: can't happen. Linux: `sudo apt-get install openssl`. Windows: run the pairing from Git Bash (see above). |
+| *"certificate generation failed"* | Usually the data folder isn't writable — the wizard shows the exact error. The certificate is created by Node itself, no OpenSSL needed. |
 | Wizard never appears | The UI is already paired. To start over, stop it and delete `config.json`, `auth.json` and `certs/` from the data folder. |
 
 ---

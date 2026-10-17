@@ -16,11 +16,10 @@ COPY . .
 RUN npm run build:css
 
 # ---------------------------------------------------------------------------
-# Runtime stage: production deps only + openssl (needed by setup.js to
-# generate the client certificate during pairing).
+# Runtime stage: production deps only. No openssl needed — the client
+# certificate for pairing is generated in Node (selfsigned-cert.js).
 # ---------------------------------------------------------------------------
 FROM node:26-alpine AS runtime
-RUN apk add --no-cache openssl
 WORKDIR /app
 ENV NODE_ENV=production
 # All runtime-writable state (config.json, auth.json, certs/, message archive)
