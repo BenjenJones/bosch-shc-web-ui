@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-17
+
+- (History) Twinguard temperature and humidity are now recorded too (they are part of its `AirQualityLevel` state, not separate services), so its history chart gets *Temperature* and *Humidity* tabs next to *Air quality*.
+- (Dashboard) Twinguard cards show temperature and humidity; rooms without another sensor use the Twinguard values (incl. sparklines) in the room header.
+- (Devices) Light Control II child lights (`MICROMODULE_LIGHT_ATTACHED`) are listed under *Light*, Motion Detector II (`MD2`) under *Motion detector* instead of *Other*.
+
 ## 2026-10-15
 
 - (Dashboard) Rooms with a humidity sensor (e.g. Room Thermostat II, Twinguard) show a 24 h humidity sparkline next to the humidity value; clicking it opens the history chart on the humidity tab.

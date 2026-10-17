@@ -37,13 +37,13 @@ const DEVICE_TYPE_ORDER = [
   ['BOILER', 'HEATING_CIRCUIT'],                                    // central heating control
   ['SWD', 'SWD2'],                                                  // door/window contact
   ['BBL', 'BBL_2', 'MICROMODULE_SHUTTER', 'SHUTTER_CONTROL'],       // shutter
-  ['BSM', 'MICROMODULE_LIGHT_CONTROL', 'LIGHT_CONTROL_2',
+  ['BSM', 'MICROMODULE_LIGHT_CONTROL', 'MICROMODULE_LIGHT_ATTACHED', 'LIGHT_CONTROL_2',
    'HUE_LIGHT', 'HUE_LIGHT_ROOM_CONTROL',
    'LEDVANCE_LIGHT', 'SMART_BULB'],                                 // light
   ['PSM', 'PLUG', 'PLUG_COMPACT', 'PLUG_COMPACT_DUAL'],             // smart plug
   ['MICROMODULE_RELAY'],                                            // relay (impulse)
   ['SD', 'SMOKE_DETECTOR', 'SMOKE_DETECTOR_2', 'TWINGUARD'],        // smoke detector
-  ['MD', 'MOTION_DETECTOR'],                                        // motion detector
+  ['MD', 'MD2', 'MOTION_DETECTOR'],                                 // motion detector
   ['WLS', 'WATER_LEAKAGE_SENSOR'],                                  // water leakage sensor
   ['UNIVERSAL_SWITCH', 'UNIVERSAL_SWITCH_2', 'WRC2', 'MULTISWITCH'],// universal switch / twist
   ['HOMECONNECT_WASHER'],                                           // home connect appliances
@@ -64,11 +64,11 @@ const DEVICE_CATEGORIES = [
   { id: 'boiler',     icon: 'water-boiler',     models: ['BOILER', 'HEATING_CIRCUIT'] },
   { id: 'contact',    icon: 'window-closed',    models: ['SWD','SWD2'], prefixes: ['SWD', 'SWD2'] },
   { id: 'shutter',    icon: 'window-shutter',   models: ['BBL','BBL_2','MICROMODULE_SHUTTER','SHUTTER_CONTROL'] },
-  { id: 'light',      icon: 'lightbulb-on',     models: ['BSM','MICROMODULE_LIGHT_CONTROL','LIGHT_CONTROL_2','HUE_LIGHT','HUE_LIGHT_ROOM_CONTROL','LEDVANCE_LIGHT','SMART_BULB'] },
+  { id: 'light',      icon: 'lightbulb-on',     models: ['BSM','MICROMODULE_LIGHT_CONTROL','MICROMODULE_LIGHT_ATTACHED','LIGHT_CONTROL_2','HUE_LIGHT','HUE_LIGHT_ROOM_CONTROL','LEDVANCE_LIGHT','SMART_BULB'] },
   { id: 'plug',       icon: 'power-plug',       models: ['PSM','PLUG','PLUG_COMPACT','PLUG_COMPACT_DUAL'] },
   { id: 'relay',      icon: 'electric-switch',  models: ['MICROMODULE_RELAY'] },
   { id: 'smoke',      icon: 'smoke-detector',   models: ['SD','SMOKE_DETECTOR','SMOKE_DETECTOR_2','TWINGUARD'] },
-  { id: 'motion',     icon: 'motion-sensor',    models: ['MD','MOTION_DETECTOR'] },
+  { id: 'motion',     icon: 'motion-sensor',    models: ['MD','MD2','MOTION_DETECTOR'] },
   { id: 'water',      icon: 'water-alert',      models: ['WLS','WATER_LEAKAGE_SENSOR', 'WATER_DETECTOR'] },
   { id: 'switch',     icon: 'light-switch-off', models: ['UNIVERSAL_SWITCH','UNIVERSAL_SWITCH_2','WRC2','MULTISWITCH'] },
   { id: 'washer',     icon: 'washing-machine',  models: ['HOMECONNECT_WASHER'] },
@@ -460,10 +460,15 @@ function renderRoomClimateBadge(roomId) {
       s => s.id === 'TemperatureLevel' && roomDeviceIds.includes(s.deviceId)
     );
   }
-  // Humidity: any HumidityLevel in the room (e.g. Room Thermostat II or Twinguard)
+  // Twinguard: temperature/humidity only inside AirQualityLevel (last resort).
+  const airSvc = state.services.find(
+    s => s.id === 'AirQualityLevel' && roomDeviceIds.includes(s.deviceId)
+  );
+  if (!tempSvc) tempSvc = airQualityAs(airSvc, 'temperature');
+  // Humidity: any HumidityLevel in the room (e.g. Room Thermostat II), else Twinguard
   const humSvc = state.services.find(
     s => s.id === 'HumidityLevel' && roomDeviceIds.includes(s.deviceId)
-  );
+  ) || airQualityAs(airSvc, 'humidity');
   // Window/door contacts in the room — summarised as "all closed" vs "n open".
   const contactSvcs = state.services.filter(
     s => s.id === 'ShutterContact' && roomDeviceIds.includes(s.deviceId)
@@ -708,7 +713,7 @@ function deviceIcon(device) {
     return power?.state?.switchState === 'ON' ? 'power-plug' : 'power-plug-off';
   }
   // Light switch / micromodule / smart bulb
-  if (m === 'BSM' || m === 'MICROMODULE_LIGHT_CONTROL'
+  if (m === 'BSM' || m === 'MICROMODULE_LIGHT_CONTROL' || m === 'MICROMODULE_LIGHT_ATTACHED'
       || m === 'LIGHT_CONTROL_2' || m === 'HUE_LIGHT'
       || m === 'LEDVANCE_LIGHT' || m === 'SMART_BULB') {
         return "lightbulb-on";
@@ -723,7 +728,7 @@ function deviceIcon(device) {
     return 'smoke-detector'
   };
   // Motion detector
-  if (m === 'MD' || m === 'MOTION_DETECTOR') return 'motion-sensor';
+  if (m === 'MD' || m === 'MD2' || m === 'MOTION_DETECTOR') return 'motion-sensor';
   // Water leakage sensor
   if (m === 'WLS' || m === 'WATER_LEAKAGE_SENSOR') return 'water-alert';
   // Cameras
@@ -840,12 +845,21 @@ function safeRenderDeviceCard(device, opts = {}) {
   }
 }
 
+// Present one field of a Twinguard AirQualityLevel service as if it were a
+// TemperatureLevel/HumidityLevel service ({ deviceId, state: { [field] } }).
+function airQualityAs(svc, field) {
+  const v = svc?.state?.[field];
+  return typeof v === 'number' ? { deviceId: svc.deviceId, state: { [field]: v } } : undefined;
+}
+
 function renderDeviceCard(device, { showRoom = false } = {}) {
   const services = state.services.filter(s => s.deviceId === device.id);
   const power    = services.find(s => s.id === 'PowerSwitch');
   const climate  = services.find(s => s.id === 'RoomClimateControl');
-  const temp     = services.find(s => s.id === 'TemperatureLevel');
-  const humidity = services.find(s => s.id === 'HumidityLevel');
+  const airQuality = services.find(s => s.id === 'AirQualityLevel'); // Twinguard
+  // Twinguard reports temperature/humidity only inside AirQualityLevel.
+  const temp     = services.find(s => s.id === 'TemperatureLevel') || airQualityAs(airQuality, 'temperature');
+  const humidity = services.find(s => s.id === 'HumidityLevel') || airQualityAs(airQuality, 'humidity');
   const shutter  = services.find(s => s.id === 'ShutterContact');
   const shutterCtl = services.find(s => s.id === 'ShutterControl');
   const binary   = services.find(s => s.id === 'BinarySwitch');   // generic on/off (Hue, micromodule light/switch)
@@ -855,7 +869,6 @@ function renderDeviceCard(device, { showRoom = false } = {}) {
   const valve    = services.find(s => s.id === 'ValveTappet');
   const energy   = services.find(s => s.id === 'PowerMeter');
   const silentMode = services.find(s => s.id === 'SilentMode');
-  const airQuality = services.find(s => s.id === 'AirQualityLevel'); // Twinguard
   const illuminanceSvc = services.find(s => s.id === 'MultiLevelSensor'); // motion detector
   const heatingCircuit = services.find(s => s.id === 'HeatingCircuit');
   const communicationQuality = services.find(s => s.id === 'CommunicationQuality');

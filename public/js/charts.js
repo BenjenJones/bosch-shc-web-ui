@@ -17,7 +17,7 @@ import { showModal } from './modals.js';
 const SERVICE_METRICS = {
   TemperatureLevel: ['temperature'], HumidityLevel: ['humidity'], RoomClimateControl: ['setpoint'],
   PowerMeter: ['power', 'energy'], ShutterContact: ['contact'], ValveTappet: ['valve'],
-  AirQualityLevel: ['purity'], ShutterControl: ['shutter'], MultiLevelSensor: ['illuminance'],
+  AirQualityLevel: ['purity', 'temperature', 'humidity'], ShutterControl: ['shutter'], MultiLevelSensor: ['illuminance'],
 };
 const METRIC_ORDER = ['temperature', 'humidity', 'energy', 'power', 'contact', 'valve', 'purity', 'shutter', 'illuminance', 'setpoint'];
 const METRIC_DEFS = {

@@ -30,7 +30,8 @@ const METRICS = {
   PowerMeter:         s => [['power', s.powerConsumption], ['energy', s.energyConsumption]],
   ShutterContact:     s => [['contact', s.value === 'OPEN' ? 1 : s.value === 'CLOSED' ? 0 : null]],
   ValveTappet:        s => [['valve', s.position]],
-  AirQualityLevel:    s => [['purity', s.purity]],
+  // Twinguard: no separate Temperature/HumidityLevel service — both live here.
+  AirQualityLevel:    s => [['purity', s.purity], ['temperature', s.temperature], ['humidity', s.humidity]],
   ShutterControl:     s => [['shutter', typeof s.level === 'number' ? Math.round(s.level * 100) : null]],
   MultiLevelSensor:   s => [['illuminance', typeof s.illuminance === 'number' ? s.illuminance : null]],
 };
