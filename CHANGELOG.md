@@ -2,6 +2,8 @@
 
 ## 2026-10-17
 
+- (Auth) Login can now be turned on later from the UI under *Admin → Login* (create the admin, you stay logged in) and turned off again with your password. Previously this needed `npm run setup:auth` on the console, which isn't available in Docker or the Home Assistant add-on. Turning it off keeps `auth.json`, so the users come back when it's turned on again.
+- (Home Assistant) The *Update* badge now shows in the add-on too (hover says to install via *Settings → Updates*). Off with the new add-on option `update_check: false`.
 - (History) Twinguard temperature and humidity are now recorded too (they are part of its `AirQualityLevel` state, not separate services), so its history chart gets *Temperature* and *Humidity* tabs next to *Air quality*.
 - (Dashboard) Twinguard cards show temperature and humidity; rooms without another sensor use the Twinguard values (incl. sparklines) in the room header.
 - (Devices) Light Control II child lights (`MICROMODULE_LIGHT_ATTACHED`) are listed under *Light*, Motion Detector II (`MD2`) under *Motion detector* instead of *Other*.

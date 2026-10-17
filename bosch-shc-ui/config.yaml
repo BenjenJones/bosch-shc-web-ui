@@ -36,7 +36,12 @@ ports_description:
 # set frame_ancestors to your HA origin(s), space-separated. The default
 # 'none' blocks all framing (clickjacking protection) for standalone use.
 # Example: http://homeassistant.local:8123 http://192.168.1.10:8123
+#
+# update_check: show an "Update" badge in the UI when a newer release is out
+# (checks api.github.com twice a day). Set to false to turn it off.
 options:
   frame_ancestors: "'none'"
+  update_check: true
 schema:
   frame_ancestors: str
+  update_check: bool?

@@ -6,8 +6,8 @@ function applySetupTexts() {
   $$('#setup-root [data-setup-text]').forEach(el => {
     el.textContent = t('setup.' + el.dataset.setupText);
   });
-  // Opt-in HTML strings (currently only `authHint`, which references the
-  // `npm run setup` command in a <code> tag). Keep the set small and the
+  // Opt-in HTML strings (currently only `authHint`, which points to
+  // Admin → Login in an <i> tag). Keep the set small and the
   // dictionary trustworthy — i18n files are bundled, not user-supplied.
   $$('#setup-root [data-setup-text-html]').forEach(el => {
     el.innerHTML = t('setup.' + el.dataset.setupTextHtml);

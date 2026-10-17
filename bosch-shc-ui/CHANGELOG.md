@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-17
+
+- (Auth) Login can now be turned on later from the UI under *Admin → Login* (create the admin, you stay logged in) and turned off again with your password. Previously this needed `npm run setup:auth` on the console, which isn't available in Docker or the Home Assistant add-on. Turning it off keeps `auth.json`, so the users come back when it's turned on again.
+- (Home Assistant) The *Update* badge now shows in the add-on too (hover says to install via *Settings → Updates*). Off with the new add-on option `update_check: false`.
+
 ## 2026-10-15
 
 - (Dashboard) Rooms with a humidity sensor (e.g. Room Thermostat II, Twinguard) show a 24 h humidity sparkline next to the humidity value; clicking it opens the history chart on the humidity tab.

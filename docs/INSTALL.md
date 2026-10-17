@@ -219,7 +219,7 @@ On first start the UI has no connection yet and shows a three-step wizard:
 
 1. Enter the **IP address of your SHC** (shown in your router's device list, or in the Bosch app's controller details).
 2. Press the **button on the front of the SHC** until its LED blinks, then enter the **system password** and submit quickly — pairing mode only lasts a short time.
-3. Decide whether the UI should require a **login**. Recommended if anyone else on your network shouldn't be able to switch your devices. If yes, set an admin username and password.
+3. Decide whether the UI should require a **login**. Recommended if anyone else on your network shouldn't be able to switch your devices. If yes, set an admin username and password. You can also skip this and turn login on (or off) later under *Admin → Login*.
 
 The page reloads and shows your devices. In the Bosch app the UI appears as a connected client (`oss_bosch_shc_web_ui_…`).
 
@@ -233,7 +233,7 @@ The page reloads and shows your devices. In the Bosch app the UI appears as a co
 
 ## Update notifications
 
-The UI checks GitHub twice a day for a newer release and shows an **Update** badge next to the title (hover for the versions, click for the changelog). The check sends no data except a normal web request to `api.github.com`. Turn it off with `"updateCheck": false` in `config.json` or the environment variable `BOSCH_SHC_UPDATE_CHECK=0`. The Home Assistant add-on doesn't check — Home Assistant announces add-on updates itself.
+The UI checks GitHub twice a day for a newer release and shows an **Update** badge next to the title (hover for the versions, click for the changelog). The check sends no data except a normal web request to `api.github.com`. Turn it off with `"updateCheck": false` in `config.json` or the environment variable `BOSCH_SHC_UPDATE_CHECK=0`. In the Home Assistant add-on the badge shows too; install the update under *Settings → Updates* as usual. Turn it off there with the add-on option `update_check: false`.
 
 ## Backup
 

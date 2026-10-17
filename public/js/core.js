@@ -177,7 +177,7 @@ function applyStaticTexts() {
     badge.classList.toggle('hidden', !ver?.updateAvailable);
     if (ver?.updateAvailable) {
       badge.textContent = t('header.update', ver.latest);
-      badge.title = t('header.updateTitle', ver.version, ver.latest);
+      badge.title = t(ver.haAddon ? 'header.updateTitleHa' : 'header.updateTitle', ver.version, ver.latest);
     }
   }
   // Tab-Beschriftungen — bei #messages innerhalb des span[data-tab-label]

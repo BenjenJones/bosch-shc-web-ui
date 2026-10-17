@@ -38,14 +38,18 @@ if (!history.available) console.warn('History disabled:', history.reason);
 // Resolution order: env var (tests) -> HA add-on option in /data/options.json
 // -> 'none'. The HA Supervisor writes the configured add-on options to
 // options.json, so reading it here avoids needing a jq entrypoint.
-function resolveFrameAncestors() {
-  if (process.env.BOSCH_SHC_FRAME_ANCESTORS) return process.env.BOSCH_SHC_FRAME_ANCESTORS;
+function readAddonOptions() {
   try {
     const opts = JSON.parse(fs.readFileSync(path.join(setupLib.DATA_DIR, 'options.json'), 'utf8'));
-    if (opts && typeof opts.frame_ancestors === 'string' && opts.frame_ancestors.trim()) {
-      return opts.frame_ancestors.trim();
-    }
-  } catch { /* no options.json (not running as add-on) — fall through */ }
+    return opts && typeof opts === 'object' ? opts : null;
+  } catch { return null; /* no options.json (not running as add-on) */ }
+}
+const ADDON_OPTIONS = readAddonOptions();
+
+function resolveFrameAncestors() {
+  if (process.env.BOSCH_SHC_FRAME_ANCESTORS) return process.env.BOSCH_SHC_FRAME_ANCESTORS;
+  const fa = ADDON_OPTIONS?.frame_ancestors;
+  if (typeof fa === 'string' && fa.trim()) return fa.trim();
   return "'none'";
 }
 const FRAME_ANCESTORS = resolveFrameAncestors();
@@ -392,7 +396,7 @@ app.get('/api/setup/status', (_req, res) => {
 // button right before submitting; auth choices are made earlier and
 // preserved in JS state if registration needs a retry.
 app.post('/api/setup', wrap(async (req, res) => {
-  if (isReady()) return res.status(409).json({ error: 'already configured — re-run `npm run setup` from the CLI to change anything' });
+  if (isReady()) return res.status(409).json({ error: 'already configured — use Admin → Login to change the login, or re-pair from the UI' });
 
   const shcIp         = (req.body?.shcIp || '').trim();
   const password      = req.body?.password;
@@ -482,6 +486,12 @@ app.post('/api/auth/login', (req, res) => {
   if (!user || !verifyPassword(password, user.salt, user.passwordHash)) {
     return res.status(401).json({ error: 'invalid credentials' });
   }
+  startSession(req, res, user);
+  res.json({ user: publicUser(user) });
+});
+
+// New session for `user` on this device: stored in auth.json + cookie.
+function startSession(req, res, user) {
   const token = newToken();
   const now = Date.now();
   const ua = (req.headers['user-agent'] || '').slice(0, 200);
@@ -495,8 +505,46 @@ app.post('/api/auth/login', (req, res) => {
   });
   saveAuth();
   setSessionCookie(res, token);
+}
+
+// Flip authEnabled in config.json in place, so uiPort/uiTls/shcPort/… survive.
+function setAuthEnabled(enabled) {
+  const next = { ...JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')), authEnabled: !!enabled };
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(next, null, 2));
+  initRuntime();
+}
+
+// Turn on login later from the UI (what `npm run setup:auth` does on the
+// CLI). Only while auth is off — then every client on the network is
+// effectively admin anyway, so this grants nothing new. Non-admin users from
+// an earlier auth.json are kept, sessions are dropped; the caller is logged
+// in as the new admin right away.
+app.post('/api/auth/enable', wrap(async (req, res) => {
+  if (AUTH_ENABLED) return res.status(409).json({ error: 'auth already enabled' });
+  const username = String(req.body?.adminUsername || '').trim();
+  const password = req.body?.adminPassword;
+  if (!username)                                           return res.status(400).json({ error: 'adminUsername required' });
+  if (typeof password !== 'string' || password.length < 4) return res.status(400).json({ error: 'adminPassword must be at least 4 chars' });
+  setupLib.writeAuth({ adminUsername: username, adminPassword: password });
+  setAuthEnabled(true);
+  const user = findUser(username);
+  startSession(req, res, user);
   res.json({ user: publicUser(user) });
-});
+}));
+
+// Turn login off again (admin only, re-confirmed with the own password).
+// auth.json stays, so turning it back on keeps the regular users.
+app.post('/api/auth/disable', requireAdmin, wrap(async (req, res) => {
+  if (!AUTH_ENABLED) return res.json({ ok: true });
+  const password = req.body?.password;
+  const user = req.authCtx.user;
+  if (typeof password !== 'string' || !verifyPassword(password, user.salt, user.passwordHash)) {
+    return res.status(401).json({ error: 'password incorrect' });
+  }
+  setAuthEnabled(false);
+  clearSessionCookie(res);
+  res.json({ ok: true });
+}));
 
 app.post('/api/auth/logout', (req, res) => {
   if (!AUTH_ENABLED) return res.json({ ok: true });
@@ -622,9 +670,8 @@ app.post('/api/setup/register', wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
-// Step 2 (optional): enable login auth. Allowed only between the register
-// step and the first non-setup request — once auth is on or the user closes
-// the wizard, admin rotation goes through the CLI (`npm run setup`) again.
+// Step 2 (optional): enable login auth. Allowed while auth is off; turning it
+// on later from the running UI goes through /api/auth/enable.
 app.post('/api/setup/complete', wrap(async (req, res) => {
   if (!isReady()) {
     return res.status(409).json({ error: 'not registered yet — call /api/setup/register first' });
@@ -643,8 +690,7 @@ app.post('/api/setup/complete', wrap(async (req, res) => {
   } else {
     setupLib.removeAuthFile();
   }
-  setupLib.writeConfig({ shcIp: config.shcIp, authEnabled: enabled, clientId: config.clientId });
-  initRuntime();
+  setAuthEnabled(enabled);
   res.json({ ok: true });
 }));
 
@@ -845,13 +891,16 @@ app.get('/api/info', wrap(async (_req, res) => {
 //  GitHub (tags are what publishes the container image, see build-addon.yml).
 //  Runs every 12 h (60 unauthenticated API calls/h per IP is plenty); any
 //  failure (offline, rate limit) just leaves `latest` unknown. Opt out with
-//  config.updateCheck = false or BOSCH_SHC_UPDATE_CHECK=0. Inside the HA
-//  add-on the Supervisor already announces updates, so we don't duplicate it.
+//  config.updateCheck = false, BOSCH_SHC_UPDATE_CHECK=0 or (HA add-on) the
+//  update_check option. Inside the add-on the badge points to HA's own
+//  update dialog — the Supervisor installs it, not git/docker.
 // =========================================================================
 const APP_VERSION = require('./package.json').version;
 const RELEASE_TAGS_URL = 'https://api.github.com/repos/BenjenJones/bosch-shc-web-ui/tags?per_page=100';
 const UPDATE_CHECK_MS  = 12 * 60 * 60e3;
-const IS_HA_ADDON = !!process.env.SUPERVISOR_TOKEN;
+// The Supervisor writes /data/options.json for every add-on with options
+// (ours has frame_ancestors); SUPERVISOR_TOKEN is checked as well.
+const IS_HA_ADDON = !!process.env.SUPERVISOR_TOKEN || !!ADDON_OPTIONS;
 let latestVersion = null;
 
 // "v0.1.4" → [0, 1, 4]; null for anything that isn't plain x.y.z.
@@ -874,7 +923,8 @@ function newestTag(tags) {
 }
 
 function updateCheckEnabled() {
-  return process.env.BOSCH_SHC_UPDATE_CHECK !== '0' && config?.updateCheck !== false && !IS_HA_ADDON;
+  return process.env.BOSCH_SHC_UPDATE_CHECK !== '0' && config?.updateCheck !== false
+    && ADDON_OPTIONS?.update_check !== false;
 }
 
 function checkForUpdate() {
@@ -906,6 +956,7 @@ app.get('/api/version', (_req, res) => {
     version: APP_VERSION,
     latest: enabled ? latestVersion : null,
     updateAvailable: enabled && !!latestVersion && compareVersions(latestVersion, APP_VERSION) > 0,
+    haAddon: IS_HA_ADDON,
   });
 });
 

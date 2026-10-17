@@ -71,6 +71,76 @@ async function loadHistoryAdmin() {
   });
 }
 
+// Login on/off — the in-UI version of `npm run setup:auth`. Turning it on
+// logs this browser in as the new admin (server sets the cookie), so a reload
+// is all it takes to switch the app into auth mode.
+function loginBody() {
+  if (state.auth.enabled) {
+    return `
+      <p class="text-sm text-slate-600 mb-3">${t('admin.loginOnHint')}</p>
+      <button id="login-disable" class="px-3 py-1.5 text-sm border border-rose-300 text-rose-700 rounded-md hover:bg-rose-50">${t('admin.loginDisable')}</button>`;
+  }
+  const input = 'w-full border border-slate-300 rounded-md px-3 py-2 text-sm';
+  return `
+    <div class="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-900 mb-3">${t('admin.loginOffHint')}</div>
+    <div class="grid sm:grid-cols-3 gap-2 max-w-2xl">
+      <label class="text-xs text-slate-500">${t('auth.username')}
+        <input id="le-user" value="admin" autocomplete="username" class="${input} mt-1" /></label>
+      <label class="text-xs text-slate-500">${t('auth.password')}
+        <input id="le-pass" type="password" autocomplete="new-password" class="${input} mt-1" /></label>
+      <label class="text-xs text-slate-500">${t('admin.loginRepeat')}
+        <input id="le-rep" type="password" autocomplete="new-password" class="${input} mt-1" /></label>
+    </div>
+    <p id="le-err" class="hidden text-xs text-rose-600 mt-2"></p>
+    <button id="login-enable" class="mt-3 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700">${t('admin.loginEnable')}</button>`;
+}
+
+function wireLogin() {
+  $('#login-enable')?.addEventListener('click', async () => {
+    const err = $('#le-err');
+    const fail = (text) => { err.textContent = text; err.classList.remove('hidden'); };
+    err.classList.add('hidden');
+    const adminUsername = $('#le-user').value.trim();
+    const adminPassword = $('#le-pass').value;
+    if (!adminUsername || !adminPassword) return fail(t('auth.allFieldsRequired'));
+    if (adminPassword.length < 4)          return fail(t('auth.passwordTooShort'));
+    if (adminPassword !== $('#le-rep').value) return fail(t('auth.passwordsMismatch'));
+    $('#login-enable').disabled = true;
+    try {
+      await api('api/auth/enable', { method: 'POST', body: { adminUsername, adminPassword } });
+      location.reload();
+    } catch (e) {
+      $('#login-enable').disabled = false;
+      fail(t('error.generic', e.message));
+    }
+  });
+
+  $('#login-disable')?.addEventListener('click', () => {
+    showModal(`
+      <h4 class="font-medium mb-1">${t('admin.loginDisable')}</h4>
+      <p class="text-xs text-slate-500 mb-3">${t('admin.loginDisableConfirm')}</p>
+      <label class="text-xs text-slate-500 block mb-1" for="ld-pass">${t('auth.password')}</label>
+      <input id="ld-pass" type="password" autocomplete="current-password" class="w-full border border-slate-300 rounded-md px-3 py-2 text-sm" />
+      <p id="ld-err" class="hidden text-xs text-rose-600 mt-2"></p>
+      <div class="mt-4 flex justify-end gap-2">
+        <button id="m-cancel" class="px-3 py-1.5 text-sm border border-slate-300 rounded-md">${t('modal.cancel')}</button>
+        <button id="m-ok" class="px-3 py-1.5 text-sm bg-rose-600 text-white rounded-md hover:bg-rose-700">${t('admin.loginDisable')}</button>
+      </div>`);
+    $('#ld-pass').focus();
+    $('#m-cancel').onclick = hideModal;
+    $('#m-ok').onclick = async () => {
+      try {
+        await api('api/auth/disable', { method: 'POST', body: { password: $('#ld-pass').value } });
+        location.reload();
+      } catch (e) {
+        const err = $('#ld-err');
+        err.textContent = t('error.generic', e.message);
+        err.classList.remove('hidden');
+      }
+    };
+  });
+}
+
 function renderAdmin() {
   const collapsed = loadAdminCollapsed();
   const sw = state.info.softwareUpdateState || {};
@@ -217,8 +287,13 @@ function renderAdmin() {
       ${section('rooms',   t('admin.roomsHeader', state.rooms.length), roomsBody, { collapsed: collapsed.rooms })}
       ${section('devices', t('admin.manageDevices', managed.length), devicesBody, { collapsed: collapsed.devices, badge: devicesBadge })}
       ${section('history', t('history.adminTitle'), '<div id="admin-history" class="text-sm text-slate-500">…</div>', { collapsed: collapsed.history })}
+      ${section('login',   t('admin.login'), loginBody(), {
+        collapsed: collapsed.login,
+        badge: state.auth.enabled ? '' : `<span class="text-xs ml-2 text-amber-700">${t('admin.loginOff')}</span>`,
+      })}
     </div>`;
   loadHistoryAdmin();
+  wireLogin();
 
   // Persist accordion open/closed state.
   $$('#tab-admin details[data-section]').forEach(d => d.addEventListener('toggle', () => {
