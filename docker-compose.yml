@@ -1,18 +1,25 @@
+# Pulls the prebuilt multi-arch image (amd64 + arm64) from GHCR — no git clone
+# or local build needed. Save this file anywhere, then:
+#   docker compose up -d                       # start  → http://<host>:3000
+#   docker compose pull && docker compose up -d  # update
 services:
   bosch-shc-ui:
-    build: .
-    image: bosch-shc-ui
+    image: ghcr.io/benjenjones/bosch-shc-web-ui:latest
+    # Developing on the repo? Comment `image` out and use `build: .` instead.
     container_name: bosch-shc-ui
     restart: unless-stopped
     ports:
       - "3000:3000"
+    environment:
+      # Days/hours in charts and the energy view follow this time zone.
+      - TZ=Europe/Berlin
     volumes:
-      # Persists pairing (config.json), login (auth.json), client certs and the
-      # message archive across restarts and image rebuilds.
+      # Persists pairing (config.json), login (auth.json), client certs,
+      # history database and the message archive across restarts and updates.
       - bosch-shc-data:/data
     # SHC sits on the LAN with a routable IP, so the default bridge network is
     # enough — no host networking needed. If your SHC is only reachable via
-    # mDNS/.local, add its IP to extra_hosts or use the numeric IP in setup.
+    # mDNS/.local, use its numeric IP in the setup wizard.
 
 volumes:
   bosch-shc-data:

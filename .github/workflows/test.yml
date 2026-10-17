@@ -14,12 +14,14 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
+        # Oldest supported (node:sqlite unflagged since 22.13) and newest.
+        node: ['22', '26']
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: '22'
+          node-version: ${{ matrix.node }}
           cache: 'npm'
       # `npm ci` is strict about platform-specific optional deps. When the
       # lockfile is generated on one OS (Windows here) and CI runs on

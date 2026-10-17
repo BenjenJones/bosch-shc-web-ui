@@ -5,6 +5,12 @@
 - (History) Twinguard temperature and humidity are now recorded too (they are part of its `AirQualityLevel` state, not separate services), so its history chart gets *Temperature* and *Humidity* tabs next to *Air quality*.
 - (Dashboard) Twinguard cards show temperature and humidity; rooms without another sensor use the Twinguard values (incl. sparklines) in the room header.
 - (Devices) Light Control II child lights (`MICROMODULE_LIGHT_ATTACHED`) are listed under *Light*, Motion Detector II (`MD2`) under *Motion detector* instead of *Other*.
+- (UI) Update notice: the header shows an *Update* badge when a newer release is available (checked against GitHub twice a day; hover for versions, click for the changelog). Off with `"updateCheck": false` in `config.json` or `BOSCH_SHC_UPDATE_CHECK=0`; not active in the Home Assistant add-on, where HA announces updates itself.
+- (Docs) New README with screenshots; step-by-step install and update guides for Home Assistant, Docker (Compose, Synology, Unraid, Portainer), a Raspberry Pi/Linux service and Windows autostart in `docs/INSTALL.md`; developer notes moved to `docs/DEVELOPMENT.md`.
+- (Docker) `docker-compose.yml` now pulls the published image instead of building from source — no git clone needed. Update with `docker compose pull && docker compose up -d`.
+- (Linux) systemd unit in `deploy/bosch-shc-ui.service`.
+- (Node) Requires Node.js ≥ 22.13 (previously stated ≥ 18, but history needs `node:sqlite`, unflagged since 22.13). Docker image and add-on now run Node 26.
+- (Demo) Fix: the live indicator was always red in demo mode.
 
 ## 2026-10-15
 

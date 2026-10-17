@@ -8,6 +8,7 @@ config.json
 auth.json
 messages-archive.ndjson
 certs/
+history.sqlite*
 
 # Local-only / tooling
 .git
@@ -25,3 +26,7 @@ bosch-shc-ui/
 # Tests & specs not needed at runtime
 test/
 TODO.md
+
+# Docs, screenshots and their generator
+docs/
+scripts/

@@ -217,3 +217,19 @@ describe('isCertRejected', () => {
   test.each(['connect ECONNREFUSED 192.168.1.5:8444', 'Timeout', 'SHC 401', 'SSL alert number 460'])(
     'ignores %s', (msg) => expect(internals.isCertRejected(new Error(msg))).toBe(false));
 });
+
+describe('update check helpers', () => {
+  test('compareVersions orders numerically, ignores a leading v', () => {
+    expect(internals.compareVersions('0.1.10', '0.1.9')).toBeGreaterThan(0);
+    expect(internals.compareVersions('v0.2.0', '0.10.0')).toBeLessThan(0);
+    expect(internals.compareVersions('1.0.0', 'v1.0.0')).toBe(0);
+    expect(internals.compareVersions('garbage', '1.0.0')).toBe(0);
+  });
+
+  test('newestTag picks the highest x.y.z tag and skips others', () => {
+    const tags = [{ name: 'v0.1.9' }, { name: 'v0.1.10' }, { name: 'nightly' }, { name: 'v0.2.0-rc1' }, { name: 'v0.0.1' }];
+    expect(internals.newestTag(tags)).toBe('0.1.10');
+    expect(internals.newestTag([])).toBe(null);
+    expect(internals.newestTag(null)).toBe(null);
+  });
+});

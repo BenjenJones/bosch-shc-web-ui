@@ -1,290 +1,184 @@
-# Bosch SHC - Local Web UI
+# Bosch SHC Web UI
 
-> **Disclaimer**
-> This is an **unofficial, private hobby project** with **no affiliation** to Robert Bosch GmbH or Bosch Smart Home GmbH. "Bosch" and "Smart Home Controller" are trademarks of their respective owners. Use of the local Bosch SHC API is restricted to **private, non-commercial use** per Bosch's terms — see [bosch-shc-api-docs](https://github.com/BoschSmartHome/bosch-shc-api-docs). Use at your own risk; no warranty (see [LICENSE](LICENSE)).
-> This project was created with the help of AI (Claude Opus 4.7) under the supervision of an experienced software architect.
+**A fast, local web interface for your Bosch Smart Home Controller** — control every device from any browser, see history charts and energy costs, and keep an eye on batteries and signal quality. Runs entirely in your home network, no cloud. English and German.
 
-A small, self-hostable web UI for the **Bosch Smart Home Controller**, built on top of the official [bosch-shc-api-docs](https://github.com/BoschSmartHome/bosch-shc-api-docs).
+![Dashboard](docs/img/dashboard.png)
 
-The UI is bilingual (English / German) — switch languages from the header.
+## Highlights
 
-## Architecture
+- **Dashboard** — all devices by room: heating, shutters, lights, plugs, contacts, smoke and motion detectors, Twinguard, cameras. Live updates without reloading.
+- **History charts** — temperature, humidity, power, valve position, air quality and more, from 24 hours to a year. Includes values the Bosch app doesn't show.
+- **Energy** — consumption and cost per day, week, month and year, per device, with your own electricity price.
+- **Health** — unreachable devices, low batteries, weak signal and pending firmware updates at a glance.
+- **Favourites & kiosk mode** — a clean wall-tablet view with just the devices and scenarios you need.
+- **Scenarios, automations, alarm system, messages** — run, switch and arm from the browser.
+- **Install as an app** on phone or desktop (PWA), optional login with multiple users, light and dark theme.
 
-```mermaid
-flowchart LR
-  UI["Browser UI<br/><sub>public/ · HTML · JS · Tailwind</sub>"]
-  Proxy["Node.js Proxy<br/><sub>server.js · holds mTLS cert</sub>"]
-  SHC["Bosch SHC<br/><sub>local API on :8444</sub>"]
-
-  UI -- "HTTP /api/*" --> Proxy
-  Proxy -- "HTTPS + mTLS" --> SHC
-  SHC -. "long-poll events" .-> Proxy
-  Proxy -. "SSE /api/events" .-> UI
-```
-
-Solid arrows are synchronous request/response, dotted arrows are the live-event channel: `server.js` keeps a long-polling JSON-RPC connection open to the SHC and fans incoming events out to every connected browser via Server-Sent Events.
-
-The proxy is required because browsers cannot present client certificates (mTLS) to third-party hosts — but the SHC requires exactly that.
-
-## Features
-
-**Dashboard**
-- Devices grouped by room, with collapsible room sections
-- Filter bar (search by name, model, room) and expand/collapse-all buttons
-- Per room with a room thermostat: temperature and humidity shown in the room header
-- Switchable plugs / lights
-- Heating setpoint (RoomClimateControl) including humidity
-- Temperature, window/door contact, power consumption, battery status
-- Communication-quality indicator (Wi-Fi-strength icon, color-coded)
-- Grouped shutter control per room and for all shutters (open / stop / close, average-position slider)
-- Heating boost toggle (where supported), active boost shown in the room header
-- Room climate: switch between the heating schedule (set up in the Bosch app) and manual
-- Note: `boostMode` and `operationMode` are reported by the documented API but writing them is not documented — the SHC accepts it in practice
-- Camera controls: privacy mode, push notifications, light (where supported)
-- **Live updates** without reload via long polling
-
-**Scenarios**
-- Enable/disable automations
-- Toggle user defined states
-
-**Security**
-- Arm / disarm intrusion detection (full, partial, custom)
-- Mute an active alarm
-- Toggle user-defined states (Present, Vacation, …)
-
-**History & charts**
-- The server records temperature, humidity, setpoint, power, energy counter, window/door contacts, valve position, air quality, shutter position and illuminance into SQLite (`history.sqlite` in the data dir) — from live events plus a snapshot of all values every 15 minutes
-- Chart button on each device card: 24 h / 7 days / 30 days / 1 year, with min/max band, setpoint overlay for room climate, crosshair tooltip; energy as consumption bars (hours, days, months)
-- 24 h sparkline next to each room's temperature
-- Tiered retention, configurable under *Admin → History*: individual values (default 14 days), hourly values (730 days), daily values (unlimited)
-- Uses Node's built-in `node:sqlite` (Node ≥ 22.5; the Docker image/add-on ships Node 24). On older Node the UI runs without history
-
-**Energy**
-- Consumption of all metering devices (smart plugs etc.) per day / week / month / year, browsable back in time
-- Tiles: consumption, cost, comparison with the previous period (for the running period: the same elapsed span), current total power
-- Consumption chart over the period and a ranking of all consumers with share and cost — click one for its own chart
-- Electricity price per kWh with a *valid from* date; add a row when the tariff changes, costs use the price valid on each day
-- Computed from the recorded energy-counter readings (see History), so it starts with the first recorded data
-
-**Health**
-- Summary tiles: unreachable devices, battery, device faults, poor signal, firmware updates — click a tile to filter
-- Issue list sorted by severity, with the room and model of each device
-- All battery-powered devices and all devices' signal quality, worst first
-- Tab badge with the number of devices that need attention, updated live
-
-**Favourites & kiosk view**
-- Pin devices and scenarios with ☆ — they appear in a *Favourites* section at the top of the dashboard (scenarios as one-tap buttons). Stored per browser, so each tablet/phone keeps its own selection
-- *Kiosk* (header button, or open the UI with `?kiosk`): clock plus favourites only, larger touch targets, no tabs; stays on after reload until *Exit kiosk*
-- Keeps the screen awake in kiosk mode where the browser supports it (Wake Lock, needs HTTPS)
-
-**Install as app (PWA)**
-- Web app manifest + service worker: "Install app" / "Add to Home Screen" gives the UI its own window and icon
-- The app shell (HTML/JS/CSS/icons) is cached network-first, so it still opens when the connection drops; `/api/*` and the live stream are never cached
-- Browsers only allow this in a **secure context**: `https://` with a certificate the device trusts, or `localhost`. Over plain `http://<ip>:3000` the UI works as before, just without install — see [Serving over HTTPS](#serving-over-https)
-
-**Admin** (mirrors the app's *Settings* area)
-- Controller overview with firmware and update status
-- List and remove mobile devices / clients
-- Rename rooms
-- Rename or remove devices, with per-device **firmware update status**
-- Inspect raw device JSON to see which services and fields a device exposes
-
-**Messages**
-- Translated titles for known codes (low battery, update available, …)
-- Severity classification derived from `messageCode.category` and `flags`
-- Source (device name) and timestamp formatted to your locale
-- Collapsible raw-JSON view for details
-- Per-message dismissal
-- Tab badge showing the count of important messages
-- Messages can be activated to also trigger browser notifications
-
-**Authentication (optional)**
-- Enabled at setup time — if disabled, the UI is open
-- Admin account created during setup; passwords are stored as scrypt hashes with a per-user salt in `auth.json`
-- Login issues an `HttpOnly` session cookie that stays valid indefinitely on the same device
-- **Users tab** (admin only): create users with an initial password, reset a user's password, delete users — new users and password-reset users are forced to change their password on next login
-- **Sessions tab** (admin only): see every active session (device, IP, last activity) and revoke individual sessions on demand
-- Admin-only API endpoints (`/api/clients`, device & room rename/delete, user/session management) reject normal users on the server — the UI hides those tabs to match
-
-## Requirements
-
-- **Node.js ≥ 18**
-- **OpenSSL** (for the one-time certificate generation — built in on macOS/Linux; on Windows available e.g. via Git Bash)
-- Bosch Smart Home Controller (I or II) on the same network, already set up via the Bosch app
-- The **system password** of the SHC (the one you chose during initial app setup)
+| History | Energy | Health |
+| --- | --- | --- |
+| [![History](docs/img/history.png)](docs/img/history.png) | [![Energy](docs/img/energy.png)](docs/img/energy.png) | [![Health](docs/img/health.png)](docs/img/health.png) |
+| **Dark theme** | **Kiosk** | **Mobile** |
+| [![Dark theme](docs/img/dashboard-dark.png)](docs/img/dashboard-dark.png) | [![Kiosk](docs/img/kiosk.png)](docs/img/kiosk.png) | [![Mobile](docs/img/mobile.png)](docs/img/mobile.png) |
 
 ## Installation
 
-```bash
-# 1. Install dependencies
-npm install
+You need a Bosch Smart Home Controller (I or II), already set up in the Bosch app, and its **system password**. Choose one way to run the UI:
 
-# 2. Start the UI
-npm start
-# → http://localhost:3000
-```
-
-On first run the server has no `config.json` yet and boots into **setup-mode**: open the URL in a browser and a three-step wizard pairs you with the SHC right there.
-
-1. Enter the **SHC IP address**.
-2. Press the **front button on the SHC** until the LED blinks (pairing mode), then enter the **system password** and submit.
-3. Choose whether to protect the UI with a login. If yes, set the admin username and password.
-
-The wizard writes `certs/client-cert.pem`, `certs/client-key.pem`, `config.json` and (if auth was enabled) `auth.json`. After completion the page reloads and you're in the normal UI.
-
-Prefer the CLI? `npm run setup` runs the same flow interactively in a terminal (since the web wizard only appears on a fresh install).
-
-To change **only the admin login** later — without re-pairing the SHC — run `npm run setup:auth`. It prompts for a new admin username and password, rewrites `auth.json` (keeping non-admin users and clearing all sessions) and enables auth in `config.json` if it wasn't already. It never generates certificates or talks to the controller, so it's also the quickest way to **recover from a forgotten admin password**. (It requires an existing `config.json` — pair via `npm run setup` first.)
-
-`npm start` runs a `prestart` hook that compiles Tailwind CSS from `public/tailwind.src.css` into `public/tailwind.css` (gitignored). The CSS is fully self-hosted — no CDN — and tree-shaken to only the utilities the UI actually uses (~16 KB minified). If you ever serve `public/` without going through `npm start`, run `npm run build:css` first.
-
-| Problem during setup | What's going on |
+| You have … | Install |
 | --- | --- |
-| Wizard step 2: *"SHC registration failed"* | SHC was not in pairing mode (LED not blinking) or the system password is wrong. Press the button again and retry — pairing-mode times out after a few seconds. |
-| Wizard step 2: *"certificate generation failed"* | OpenSSL isn't on the server's PATH. Install it (built-in on macOS/Linux; on Windows e.g. via Git Bash) and retry. |
-| Wizard never appears | `config.json` already exists. To re-pair, stop the server, delete `config.json`, `auth.json`, and `certs/`, then `npm start` again. |
+| **Home Assistant** | Add-on store → ⋮ → Repositories → add `https://github.com/BenjenJones/bosch-shc-web-ui` → install **Bosch SHC Web UI** |
+| **Docker** (NAS, server, Raspberry Pi) | `docker run -d --name bosch-shc-ui --restart unless-stopped -p 3000:3000 -v bosch-shc-data:/data ghcr.io/benjenjones/bosch-shc-web-ui:latest` |
+| **Node.js** (Linux, Windows, macOS) | clone the repo, `npm ci`, `npm start` |
 
-## Docker
+**Step-by-step guides** — including Synology, Unraid, Portainer, a Raspberry Pi service, Windows autostart, updates and backups — are in **[docs/INSTALL.md](docs/INSTALL.md)**.
 
-All runtime-writable state (`config.json`, `auth.json`, `certs/`, `messages-archive.ndjson`) is relocated to `BOSCH_SHC_DATA_DIR` — set to `/data` in the image — so it persists on a volume across restarts and image updates. `openssl` (needed for pairing) is included.
+Then open `http://<ip>:3000`. A short wizard pairs the UI with your controller: enter its IP, press the button on the SHC, type the system password, done.
 
-```bash
-docker compose up -d --build
-# → http://localhost:3000  (boots into the setup wizard on first run)
-```
+### Updating
 
-Or without compose:
+| Install | Update |
+| --- | --- |
+| Home Assistant | shown under *Settings → Updates* |
+| Docker Compose | `docker compose pull && docker compose up -d` |
+| Node.js | `git pull && npm ci && npm run build:css`, then restart |
 
-```bash
-docker build -t bosch-shc-ui .
-docker run -d --name bosch-shc-ui -p 3000:3000 -v bosch-shc-data:/data bosch-shc-ui
-```
+The UI shows an **Update** badge next to its title when a new version is out ([details and opt-out](docs/INSTALL.md#update-notifications)). What changed: [CHANGELOG.md](CHANGELOG.md).
 
-The SHC is reached over the LAN by its IP, so the default bridge network is enough — no host networking required. The image runs `node server.js` directly (the Tailwind CSS is compiled in a build stage), so the `prestart` build hook and the `tailwindcss` devDependency aren't needed at runtime.
+### Just looking?
 
-### Home Assistant (HASS OS) add-on
-
-This repo is a **Home Assistant add-on repository** — anyone can add it by URL and install the add-on; no local build on the HA host. The add-on (`bosch-shc-ui/config.yaml`) pulls a prebuilt multi-arch image from GHCR; the image is built from the root `Dockerfile` by `.github/workflows/build-addon.yml`.
-
-**Publishing a version (maintainer):** tag a release so the workflow builds and pushes the image, then make the GHCR package public once:
+Try the demo with made-up devices and a year of history — no controller needed:
 
 ```bash
-git tag v0.0.1 && git push origin v0.0.1
+docker run --rm -p 3001:3001 ghcr.io/benjenjones/bosch-shc-web-ui node demo.js
+# or, with Node.js and the repo: npm install && npm run demo
 ```
 
-This publishes `ghcr.io/benjenjones/bosch-shc-web-ui:0.0.1` for `amd64` and `aarch64` (64-bit Raspberry Pi). The git tag (`v0.0.1`) must match the `version` in `bosch-shc-ui/config.yaml`. The first time, set the package visibility to **Public** under the repo's *Packages* so users can pull without authentication.
+Then open `http://localhost:3001`.
 
-**Installing (users):**
+## Features in detail
 
-1. **Settings → Add-ons → Add-on Store → ⋮ → Repositories** and add
-   `https://github.com/BenjenJones/bosch-shc-web-ui`.
-2. Open **Bosch SHC Web UI → Install**, then **Start**.
-3. Open **Bosch SHC** in the HA sidebar (or **Open Web UI**) and run the pairing wizard. Direct access via `http://<home-assistant-ip>:3000` works as well.
+<details>
+<summary><b>Dashboard</b></summary>
 
-The Supervisor provides and persists `/data` automatically, so pairing survives add-on restarts and updates.
+- Devices grouped by room, with collapsible room sections
+- Filter bar (search by name, model, room), device type filter, expand/collapse-all
+- Room header: temperature and humidity with 24 h sparklines, devices switched on, open windows, heating setpoint
+- Switchable plugs and lights (dimming and colour where supported)
+- Room climate: setpoint, schedule vs. manual, boost, heating pause on open windows
+- Temperature, humidity, window/door contacts, power consumption, battery status, signal quality
+- Grouped shutter control per room and for all shutters
+- Twinguard: air quality, temperature, humidity
+- Camera controls: privacy mode, push notifications, light
+- Bell with the device's active messages
+- **Live updates** via the SHC's long polling
+</details>
 
-**Sidebar panel (ingress):** the add-on registers an ingress panel, so the UI opens inside Home Assistant — through HA's own URL, including remote access and HTTPS (which also enables installing it as an app, see PWA). Notes:
-- The UI's own login (if enabled) still applies inside the panel.
-- Ingress talks plain HTTP to the add-on — don't set `uiTls` when running as add-on.
-- Port 3000 stays open for direct/standalone access; clear the host port in the add-on's *Network* settings if you only want the panel.
-- The UI uses relative URLs only, so it also works behind any reverse proxy under a sub-path.
+<details>
+<summary><b>History & charts</b></summary>
 
-## Demo mode
+- Records temperature, humidity, setpoint, power, energy counter, window/door contacts, valve position, air quality, shutter position and illuminance — from live events plus a snapshot every 15 minutes
+- Chart on each device card: 24 h / 7 days / 30 days / 1 year, min/max band, setpoint overlay, crosshair tooltip; energy as consumption bars
+- Retention configurable under *Admin → History*: individual values (default 14 days), hourly values (730 days), daily values (unlimited)
+- Stored locally in SQLite (`history.sqlite` in the data folder)
+</details>
 
-Want to explore the UI without owning a Smart Home Controller (or any devices)? Run:
+<details>
+<summary><b>Energy</b></summary>
 
-```
-npm run demo
-```
+- Consumption of all metering devices per day / week / month / year, browsable back in time
+- Tiles: consumption, cost, comparison with the previous period, current total power
+- Consumption chart and a ranking of all consumers with share and cost
+- Electricity price per kWh with a *valid from* date — add a row when the tariff changes
+</details>
 
-This starts a self-contained **demo SHC** (`demo/shc-server.js`) that mimics the real controller's `/smarthome/*` HTTP API, then boots the normal UI server pointed at it via a temporary `shcProtocol: 'http'` config — so `server.js` carries no demo-specific code; the abstraction is the HTTP interface itself. It listens on a **separate port (3001 by default, override with `BOSCH_SHC_DEMO_PORT`)** so it can run alongside a real instance on 3000. No real `config.json`, certificates or login are required. The dataset covers **one of every device model** (thermostats, contacts, shutters, lights, plugs, smoke/motion/water sensors, Twinguard, intrusion system, …) plus automations spanning every trigger/condition/action type, scenarios, user-defined states and active/archived messages.
+<details>
+<summary><b>Health</b></summary>
 
-Everything is interactive: toggling a plug, moving a setpoint, arming the alarm or renaming a room all persist **in memory** for the lifetime of the process (a restart resets to the dataset on disk, which is never modified). It's a self-contained playground for screenshots, UI development and trying things out.
+- Summary tiles: unreachable devices, battery, device faults, poor signal, firmware updates — click to filter
+- Issue list sorted by severity
+- All battery-powered devices and all devices' signal quality, worst first
+- Tab badge with the number of devices that need attention
+</details>
 
-### The demo dataset
+<details>
+<summary><b>Favourites & kiosk</b></summary>
 
-The committed dataset lives in [`demo/dataset/`](demo/dataset/) (`devices.json`, `services.json`, `rooms.json`, `scenarios.json`, `automations.json`, `userdefinedstates.json`, `messages.json`, `messages-archive.json`) and is what `npm run demo` loads. It is **anonymized and curated** — one device per `deviceModel`, real device/state IDs replaced with deterministic placeholders, device names genericized, free-text push messages scrubbed.
+- Pin devices and scenarios with ☆ — they appear at the top of the dashboard. Stored per browser, so each tablet/phone keeps its own selection
+- *Kiosk* (header button, or open the UI with `?kiosk`): clock plus favourites only, larger touch targets; keeps the screen awake where supported
+</details>
 
-It is generated from real SHC exports placed under `examples/` (which are **gitignored** — they come from a real system and are never committed):
+<details>
+<summary><b>Scenarios, automations, security, messages</b></summary>
 
-```
-node demo/build-dataset.js   # or: npm run demo:build
-```
+- Run scenarios, enable/disable and edit automations, toggle user-defined states
+- Arm / disarm the alarm system (full, partial, custom), mute an active alarm
+- Messages with translated titles, severity, source device, dismissal, archive and optional browser notifications
+- Universal switch / Twist button assignments
+</details>
 
-Drop your own `examples/devices.json` + `examples/services.json` (and optionally `automations.json` / `scenarios.json`, or the `02_*`-prefixed variants) there, re-run the build, and the dataset regenerates. The service states are borrowed from the real `services.json` as per-service-id templates; `BatteryLevel` carries no state — exactly like a real SHC, which reports low battery only via `faults` — so battery-powered devices show "OK" without inventing a level.
+<details>
+<summary><b>Admin & users</b></summary>
 
-### Managing users (when auth is enabled)
+- Controller overview with firmware and update status, re-pairing
+- Manage paired clients, rename rooms, rename or remove devices, inspect raw device JSON
+- Optional login: admin creates users, resets passwords, sees and revokes sessions. Passwords are stored as scrypt hashes
+- Regular users see the dashboard, scenarios, security and messages
+</details>
 
-After signing in as the admin you'll see three additional tabs:
+<details>
+<summary><b>Install as app (PWA)</b></summary>
 
-- **Admin** — controller info, rooms, devices, paired Bosch clients
-- **Users** — create new users with an initial password (they're forced to change it on first login), reset passwords, delete users
-- **Sessions** — view every active session (user, device, IP, last activity) and revoke individual sessions; the revoked device is bounced back to the login screen on its next request
+- "Install app" / "Add to Home Screen" gives the UI its own window and icon
+- Needs a **secure context**: `https://` with a certificate the device trusts (see [HTTPS](#https)), the Home Assistant add-on via HA's URL, or `localhost`. Over plain `http://<ip>:3000` everything else works, just without install
+</details>
 
-Regular users see only the Dashboard, Scenarios, Security and Messages tabs and can change their own password via the account button in the header.
+## HTTPS
 
-## Security notes
+By default the UI is served over plain HTTP. Two ways to add TLS:
 
-- Setup uses `rejectUnauthorized: false` because the SHC presents a self-signed certificate. For a hardened deployment, Bosch recommends additional **host/CA pinning** — the required CAs are published in the official repo and can be wired into `server.js` (the `ca:` option of `https.Agent`).
-- The certificates in `certs/` are your key to the SHC — don't commit them, don't share them. They are already covered by `.gitignore`.
-- The UI server listens on `0.0.0.0:3000` by default (port configurable via `config.json` → `uiPort`). If you don't want it reachable from the LAN, bind it to `127.0.0.1` instead.
-- `auth.json` contains password hashes (scrypt, per-user salt) and active session tokens. Treat it like a secret — it's already gitignored. Sessions are persisted so they survive server restarts; revoke a session from the **Sessions** tab to force a device to sign in again.
-
-## Serving over HTTPS
-
-By default the UI is served over plain HTTP. There are two ways to add TLS:
-
-**1. Native HTTPS (no extra software).** Generate a certificate for the UI and point `config.json` at it:
+**Native HTTPS.** Point `config.json` (in the data folder) at a certificate:
 
 ```json
-"uiTls": {
-  "certPath": "certs/ui-cert.pem",
-  "keyPath":  "certs/ui-key.pem"
-}
+"uiTls": { "certPath": "certs/ui-cert.pem", "keyPath": "certs/ui-key.pem" }
 ```
 
-Paths may be relative (resolved against the project directory) or absolute — both Windows (`C:\\certs\\ui-cert.pem`) and Linux (`/etc/ssl/shc/cert.pem`) absolute paths work. When the block is present (and both paths are set) the server starts on `https://`; remove it to fall back to plain HTTP. The `/api/events` SSE stream works without any extra configuration since there's no proxy buffering in the way.
-
-Generate a self-signed one with OpenSSL (browser will warn):
+Paths may be relative to the project folder or absolute. A self-signed certificate works but browsers warn and won't allow installing the app:
 
 ```bash
 openssl req -x509 -newkey rsa:2048 -nodes -days 825 -keyout certs/ui-key.pem -out certs/ui-cert.pem -subj "/CN=shc.home.lan"
 ```
 
-Note: `uiTls` is independent of the `certPath`/`keyPath` used for the SHC mTLS client cert — don't reuse those here.
+`uiTls` is independent of the client certificate used for the SHC — don't reuse that one. Don't set `uiTls` in the Home Assistant add-on (ingress expects HTTP).
 
-To install the UI as an app (PWA), the browser must *trust* the certificate — clicking through the warning of a self-signed one is not enough for the service worker. Either import the certificate (or your own CA) on each device, or use a reverse proxy with a trusted certificate (option 2).
+**Reverse proxy.** Keep the UI on `127.0.0.1:3000` and terminate TLS in front — Caddy is simplest (`reverse_proxy 127.0.0.1:3000`). With Apache/nginx make sure `/api/events` (Server-Sent Events) isn't buffered and the proxy timeout is high (Apache: `ProxyPass / http://127.0.0.1:3000/ flushpackets=on` + `ProxyTimeout 3600`). The UI uses relative URLs only, so sub-paths work.
 
-**2. Reverse proxy.** Keep the server on `127.0.0.1:3000` and terminate TLS in front. Caddy is the simplest (`reverse_proxy 127.0.0.1:3000` + `tls internal`). With Apache/nginx make sure the `/api/events` SSE endpoint isn't buffered and the proxy timeout is high (e.g. Apache: `ProxyPass / http://127.0.0.1:3000/ flushpackets=on` + `ProxyTimeout 3600`).
+## Security notes
 
-## Bosch licensing
-
-The client id `oss_bosch_shc_web_ui` follows the `oss_…` naming convention required by Bosch's terms. Per Bosch, the SHC API may only be used for **private, non-commercial purposes**.
-
-## Extending
-
-The backend proxy (`server.js`) is intentionally thin — adding a new endpoint usually means adding one entry to `GET_ENDPOINTS` or a single new route. The UI (`public/index.html`) renders generically from the `services` array; further service types can be added inside `renderDeviceCard()` (e.g. `ShutterControl`, `MultiLevelSwitch`, `BinarySwitch`, `IntrusionDetectionControl`).
-
-The translation dictionaries live in `public/i18n/de.json` and `public/i18n/en.json`; add new keys to both.
-
-For frontend iteration, `npm run watch:css` rebuilds `public/tailwind.css` on every change to `public/index.html` or `public/app.js` so new utility classes show up without restarting the server.
+- The files in `certs/` are your key to the SHC — don't share them.
+- Without login, anyone who can reach port 3000 can switch your devices. Enable login in the wizard (or later with `npm run setup:auth`) if your network isn't fully trusted, and don't expose the port to the internet.
+- `auth.json` holds password hashes and session tokens — treat it like a secret.
+- The SHC presents a self-signed certificate, so the connection to it isn't verified against a CA. For a hardened setup, pin Bosch's CAs (published in the official API repo) via the `ca:` option of the `https.Agent` in `server.js`.
 
 ## Troubleshooting
 
-| Problem                              | Possible cause                                                                                             |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Setup: `401 Unauthorized`            | wrong system password                                                                                      |
-| Setup: `400 Bad Request`             | SHC not in pairing mode, or client id already taken                                                        |
-| Server start: `EADDRINUSE`           | port 3000 already in use — change `uiPort` in `config.json`                                                |
-| Server start: `auth.json is missing` | `authEnabled` is true in `config.json` but `auth.json` was deleted — re-run `npm run setup`                |
-| UI loads but no devices              | inspect `/api/devices` in the browser DevTools → Network                                                   |
-| Live indicator red                   | long-polling broke — or the session was revoked; check the server logs / refresh and re-login              |
-| `ssl/tls alert certificate unknown`, red banner "SHC no longer recognises this installation" | the SHC rejects our client certificate — another install paired with the same client id, or the client was removed in the Bosch app. Use **Re-pair** in the banner or under *Admin → Controller* (keeps users, history, settings). Since this version every pairing gets its own client id (`oss_bosch_shc_web_ui_xxxxxx`), so installs no longer kick each other out |
-| Forgot the admin password            | run `npm run setup:auth` — it rewrites the admin in `auth.json`, keeps existing regular users, and clears all sessions, without re-pairing the SHC |
-| `503` from SHC on a `PUT`            | usually a wrong payload schema — open the device's *info* (ⓘ) in **Admin** to see the actual service state |
+| Problem | Possible cause |
+| --- | --- |
+| Pairing: *registration failed* / `401` | Wrong system password, or the SHC wasn't in pairing mode (LED blinking) — press the button and retry right away |
+| Pairing: *certificate generation failed* | OpenSSL missing — see [INSTALL.md](docs/INSTALL.md#first-start-pairing-with-the-shc) |
+| `EADDRINUSE` on start | Port 3000 is taken — change `uiPort` in `config.json` (Docker: change the left port number) |
+| Red banner *"SHC no longer recognises this installation"* / `certificate unknown` | The client was removed in the Bosch app, or the SHC was reset. Use **Re-pair** in the banner or under *Admin → Controller* (keeps users, history, settings) |
+| Live indicator stays red | Connection to the SHC lost — check the SHC is online and the server log |
+| UI loads but shows no devices | Check `/api/devices` in the browser's developer tools (Network tab) |
+| Forgot the admin password | `npm run setup:auth` (Linux service: see [INSTALL.md](docs/INSTALL.md#nodejs-on-linux-raspberry-pi-debian-ubuntu)) — keeps other users and the pairing |
+| `503` from the SHC when switching | Usually an unsupported value — open the device's info (ⓘ) under *Admin* to see its actual state |
+| Charts missing on a Node install | Node.js older than 22.13 — update Node |
 
-## License
+## For developers
 
-MIT for this wrapper — see [LICENSE](LICENSE). The Bosch SHC API itself is governed by Bosch's terms (see the official repo).
+Architecture, demo dataset, screenshots, tests and the release process: **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)**.
 
-**Exception:** the OpenAPI specs under [`test/openapi/`](test/openapi/) (`*-local-openapi-v3.yml`) are **not** covered by the MIT license. They are verbatim, unmodified copies of Bosch's official API documentation, © Robert Bosch GmbH, licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode) and subject to [Bosch's Terms & Conditions](https://github.com/BoschSmartHome/bosch-shc-api-docs#terms-and-conditions). See [`test/openapi/NOTICE.md`](test/openapi/NOTICE.md). They are redistributed verbatim for non-commercial use only, as the contract source for the test suite's mock server.
+## Disclaimer & license
+
+This is an **unofficial hobby project** with **no affiliation** to Robert Bosch GmbH or Bosch Smart Home GmbH. "Bosch" and "Smart Home Controller" are trademarks of their respective owners. It uses the official [local SHC API](https://github.com/BoschSmartHome/bosch-shc-api-docs), which Bosch permits for **private, non-commercial use** only; the client id `oss_bosch_shc_web_ui` follows Bosch's `oss_…` naming rule. Use at your own risk. Created with the help of AI (Claude Opus 4.7) under the supervision of an experienced software architect.
+
+MIT licensed — see [LICENSE](LICENSE). **Exception:** the OpenAPI specs under [`test/openapi/`](test/openapi/) are verbatim copies of Bosch's API documentation, © Robert Bosch GmbH, licensed under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode) and subject to [Bosch's Terms & Conditions](https://github.com/BoschSmartHome/bosch-shc-api-docs#terms-and-conditions); see [`test/openapi/NOTICE.md`](test/openapi/NOTICE.md). They are redistributed for non-commercial use only, as the contract source for the test suite.

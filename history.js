@@ -10,12 +10,12 @@
 //  Hourly/daily rows are maintained on insert (upsert), so aggregates are
 //  always current; prune() only deletes rows past their retention.
 //
-//  Uses the built-in `node:sqlite` (Node >= 22.5). On older Node the module
+//  Uses the built-in `node:sqlite` (Node >= 22.13). On older Node the module
 //  reports `available: false` and every call is a no-op — the rest of the
 //  UI keeps working without history.
 // =========================================================================
 let DatabaseSync = null;
-try { ({ DatabaseSync } = require('node:sqlite')); } catch { /* Node < 22.5 */ }
+try { ({ DatabaseSync } = require('node:sqlite')); } catch { /* Node < 22.13 */ }
 
 const HOUR = 3600e3;
 const DAY = 24 * HOUR;
@@ -52,7 +52,7 @@ const hourStart = (ts) => Math.floor(ts / HOUR) * HOUR;
 const dayStart = (ts) => { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); };
 
 function openHistory(file) {
-  if (!DatabaseSync) return disabledStore('node:sqlite not available (Node >= 22.5 required)');
+  if (!DatabaseSync) return disabledStore('node:sqlite not available (Node >= 22.13 required)');
   let db;
   try {
     db = new DatabaseSync(file);

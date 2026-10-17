@@ -27,7 +27,12 @@
   <header class="bg-white border-b sticky top-0 z-10">
     <div class="max-w-6xl mx-auto px-4 py-3">
       <div class="flex items-center justify-between gap-3 sm:gap-4">
-        <h1 class="text-lg font-semibold min-w-0">Bosch Smart Home</h1>
+        <div class="flex items-center gap-2 min-w-0">
+          <h1 id="app-title" class="text-lg font-semibold min-w-0">Bosch Smart Home</h1>
+          <!-- Shown by applyStaticTexts() when /api/version reports a newer release -->
+          <a id="update-badge" href="https://github.com/BenjenJones/bosch-shc-web-ui/blob/main/CHANGELOG.md" target="_blank" rel="noopener"
+            class="hidden shrink-0 text-[11px] font-medium bg-emerald-100 text-emerald-800 hover:bg-emerald-200 rounded-full px-2 py-0.5"></a>
+        </div>
         <div class="relative shrink-0 flex items-center gap-2 sm:gap-3">
         <!-- Always visible: live-event status + primary refresh action -->
         <span id="event-dot" class="inline-block w-2.5 h-2.5 rounded-full bg-slate-300"></span>

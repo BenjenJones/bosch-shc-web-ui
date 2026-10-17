@@ -39,6 +39,7 @@ function t(key, ...args) {
 
 const state = {
   info: {},
+  version: null,     // { version, latest, updateAvailable } from /api/version
   // false until the first loadAll() finishes. Lets the header tell "still
   // connecting" (initial paint) apart from "load finished but the SHC gave us
   // nothing" (unreachable) — see applyStaticTexts.
@@ -168,6 +169,17 @@ function applyStaticTexts() {
   $('#kiosk-enter').title = t('kiosk.enterTitle');
   $('#kiosk-exit').textContent = t('kiosk.exit');
   $('#event-dot').title = t('header.liveStatus');
+  // Version in the title tooltip; badge only when a newer release exists.
+  const ver = state.version;
+  if (ver?.version) $('#app-title').title = `v${ver.version}`;
+  const badge = $('#update-badge');
+  if (badge) {
+    badge.classList.toggle('hidden', !ver?.updateAvailable);
+    if (ver?.updateAvailable) {
+      badge.textContent = t('header.update', ver.latest);
+      badge.title = t('header.updateTitle', ver.version, ver.latest);
+    }
+  }
   // Tab-Beschriftungen — bei #messages innerhalb des span[data-tab-label]
   $('[data-tab="devices"]').textContent   = t('tab.devices');
   $('[data-tab="scenarios"]').textContent = t('tab.scenarios');
@@ -264,7 +276,7 @@ const safeApi = (p, o) => api(p, o).catch(() => null);
 async function loadAll() {
   // /api/clients is admin-only; non-admins skip it (the server would return 403)
   const [info, rooms, devices, services, scenarios, messages,
-         clients, automations, userdefinedstates, intrusion, messageArchive, historyProbe, setupStatus] = await Promise.all([
+         clients, automations, userdefinedstates, intrusion, messageArchive, historyProbe, setupStatus, version] = await Promise.all([
     safeApi('api/info'),
     safeApi('api/rooms'),
     safeApi('api/devices'),
@@ -278,6 +290,7 @@ async function loadAll() {
     safeApi('api/messages/archive'),
     safeApi('api/history/spark'),
     safeApi('api/setup/status'),
+    safeApi('api/version'),
   ]);
   state.info        = info || {};
   state.rooms       = rooms || [];
@@ -296,6 +309,7 @@ async function loadAll() {
   state.intrusion   = intrusion;
   state.messageArchive = messageArchive || [];
   state.historyAvailable = !!historyProbe?.available;
+  state.version = version;
   state.pairing = { lost: !!setupStatus?.pairingLost, clientId: setupStatus?.clientId || null, shcIp: setupStatus?.shcIp || null };
   state.loaded = true;
 

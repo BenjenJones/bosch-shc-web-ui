@@ -1,6 +1,6 @@
 {
   "name": "bosch-shc-ui",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "Lokale Web-UI für den Bosch Smart Home Controller (SHC)",
   "main": "server.js",
   "scripts": {
@@ -16,18 +16,20 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "mock:build": "node test/scripts/merge-openapi.mjs",
-    "mock:serve": "prism mock test/openapi/_bundled.yml -p 4010 --errors"
+    "mock:serve": "prism mock test/openapi/_bundled.yml -p 4010 --errors",
+    "screenshots": "node scripts/screenshots.mjs"
   },
   "dependencies": {
     "@tailwindcss/cli": "^4.1.0",
     "express": "5.2.1"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22.13"
   },
   "devDependencies": {
     "@stoplight/prism-cli": "^5.15.10",
     "js-yaml": "^4.2.0",
+    "playwright-core": "^1.64.1",
     "supertest": "^7.2.2",
     "tailwindcss": "^4.1.0",
     "vitest": "4.1.9"

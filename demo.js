@@ -45,6 +45,7 @@ fs.writeFileSync(configFile, JSON.stringify({
   authEnabled: false,
   uiPort: UI_PORT,
   clientId: 'oss_bosch_shc_web_ui',
+  updateCheck: false, // Demo fragt GitHub nicht nach neuen Versionen
 }, null, 2));
 
 // Archiv-Seed aus dem Datensatz (bereits mit Zeitstempeln versehen) als NDJSON.

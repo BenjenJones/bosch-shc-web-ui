@@ -1,0 +1,42 @@
+# systemd unit for running the UI as a permanent service on Linux
+# (Raspberry Pi OS, Debian, Ubuntu, …). Step-by-step guide: docs/INSTALL.md.
+#
+#   sudo useradd --system --no-create-home --shell /usr/sbin/nologin bosch-shc
+#   sudo cp deploy/bosch-shc-ui.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now bosch-shc-ui
+#   journalctl -u bosch-shc-ui -f        # logs
+#
+# Assumes the repo is checked out to /opt/bosch-shc-web-ui. Adjust
+# WorkingDirectory if you put it elsewhere.
+
+[Unit]
+Description=Bosch SHC Web UI
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/bosch-shc-web-ui
+# Not `npm start` — that would rebuild the CSS on every boot. Run
+# `npm run build:css` once after install/update instead (see docs/INSTALL.md).
+ExecStart=/usr/bin/env node server.js
+Environment=NODE_ENV=production
+# Pairing, login, certificates and history live here instead of next to the
+# code, so updating the code (git pull) never touches them. systemd creates
+# /var/lib/bosch-shc-ui owned by the service user (StateDirectory). CLI tools
+# must use the same dir and user, e.g. to reset the admin password:
+#   sudo -u bosch-shc env BOSCH_SHC_DATA_DIR=/var/lib/bosch-shc-ui node setup.js --auth-only
+Environment=BOSCH_SHC_DATA_DIR=/var/lib/bosch-shc-ui
+StateDirectory=bosch-shc-ui
+User=bosch-shc
+Group=bosch-shc
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

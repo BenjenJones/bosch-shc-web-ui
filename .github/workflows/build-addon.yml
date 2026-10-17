@@ -29,6 +29,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The in-app update check compares package.json against the newest tag,
+      # and the add-on pulls the image by config.yaml's version — all three
+      # must agree or users see a phantom (or missing) update.
+      - name: Check version consistency
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg=$(node -p "require('./package.json').version")
+          addon=$(sed -n 's/^version: *"\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' bosch-shc-ui/config.yaml)
+          echo "tag=$tag package.json=$pkg config.yaml=$addon"
+          [ "$tag" = "$pkg" ] && [ "$tag" = "$addon" ] || { echo "::error::version mismatch"; exit 1; }
+
       # Authenticate to Docker Hub before buildx so pulling the moby/buildkit
       # image (and base images) uses the account rate limit, not the anonymous
       # one that stalls the "booting builder" step. Skipped if no secret set.

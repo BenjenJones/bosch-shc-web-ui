@@ -401,6 +401,8 @@
     "modal.servicesLabel":    "Services ({0})",
     "modal.noServices":       "(none)",
     "modal.noState":          "(no state)",
+    "header.update":          "Update {0}",
+    "header.updateTitle":     "Installed: v{0} – available: v{1}. Click for changes.",
     "error.generic":          "Error: {0}",
     "error.loading":          "Loading error: {0}",
     "error.cardRender":       "Display error: {0}",

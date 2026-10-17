@@ -841,6 +841,75 @@ app.get('/api/info', wrap(async (_req, res) => {
 }));
 
 // =========================================================================
+//  Update check — compares our version against the newest release tag on
+//  GitHub (tags are what publishes the container image, see build-addon.yml).
+//  Runs every 12 h (60 unauthenticated API calls/h per IP is plenty); any
+//  failure (offline, rate limit) just leaves `latest` unknown. Opt out with
+//  config.updateCheck = false or BOSCH_SHC_UPDATE_CHECK=0. Inside the HA
+//  add-on the Supervisor already announces updates, so we don't duplicate it.
+// =========================================================================
+const APP_VERSION = require('./package.json').version;
+const RELEASE_TAGS_URL = 'https://api.github.com/repos/BenjenJones/bosch-shc-web-ui/tags?per_page=100';
+const UPDATE_CHECK_MS  = 12 * 60 * 60e3;
+const IS_HA_ADDON = !!process.env.SUPERVISOR_TOKEN;
+let latestVersion = null;
+
+// "v0.1.4" → [0, 1, 4]; null for anything that isn't plain x.y.z.
+function parseVersion(v) {
+  const m = /^v?(\d+)\.(\d+)\.(\d+)$/.exec(String(v ?? '').trim());
+  return m ? m.slice(1).map(Number) : null;
+}
+function compareVersions(a, b) {
+  const pa = parseVersion(a), pb = parseVersion(b);
+  if (!pa || !pb) return 0;
+  for (let i = 0; i < 3; i++) if (pa[i] !== pb[i]) return pa[i] - pb[i];
+  return 0;
+}
+// Highest x.y.z among GitHub tag objects ([{ name: 'v0.1.4' }, …]).
+function newestTag(tags) {
+  return (Array.isArray(tags) ? tags : [])
+    .map(t => t?.name).filter(parseVersion)
+    .map(n => n.replace(/^v/, ''))
+    .reduce((best, v) => (!best || compareVersions(v, best) > 0 ? v : best), null);
+}
+
+function updateCheckEnabled() {
+  return process.env.BOSCH_SHC_UPDATE_CHECK !== '0' && config?.updateCheck !== false && !IS_HA_ADDON;
+}
+
+function checkForUpdate() {
+  if (!updateCheckEnabled()) return;
+  const req = https.get(RELEASE_TAGS_URL, {
+    headers: { 'User-Agent': `bosch-shc-web-ui/${APP_VERSION}`, Accept: 'application/vnd.github+json' },
+    timeout: 10e3,
+  }, (res) => {
+    let body = '';
+    res.setEncoding('utf8');
+    res.on('data', (c) => { body += c; });
+    res.on('end', () => {
+      if (res.statusCode !== 200) return;
+      try { latestVersion = newestTag(JSON.parse(body)) || latestVersion; } catch { /* ignore */ }
+    });
+  });
+  req.on('timeout', () => req.destroy());
+  req.on('error', () => { /* offline / blocked — try again next round */ });
+}
+
+function startUpdateCheck() {
+  checkForUpdate();
+  setInterval(checkForUpdate, UPDATE_CHECK_MS).unref();
+}
+
+app.get('/api/version', (_req, res) => {
+  const enabled = updateCheckEnabled();
+  res.json({
+    version: APP_VERSION,
+    latest: enabled ? latestVersion : null,
+    updateAvailable: enabled && !!latestVersion && compareVersions(latestVersion, APP_VERSION) > 0,
+  });
+});
+
+// =========================================================================
 //  Device services
 // =========================================================================
 app.get('/api/devices/:id/services/:service', wrap(async (req, res) => {
@@ -1248,8 +1317,8 @@ const sseClients = new Set();
 // the status lamp in the UI (a green EventSource only proves the browser
 // reached *this* proxy, not that the proxy reached the SHC). In demo/test mode
 // (http) the poll loop doesn't run and the "SHC" is the demo server we're
-// serving from, so treat it as connected.
-let shcConnected = SHC_PROTOCOL !== 'https';
+// serving from, so kickPollLoop() marks it connected.
+let shcConnected = false;
 
 function broadcast(events) {
   const payload = `data: ${JSON.stringify(events)}\n\n`;
@@ -1323,7 +1392,9 @@ function kickPollLoop() {
   if (pollStarted || !isReady()) return;
   // The test harness talks to Prism over plain HTTP; pollLoop would spam
   // /remote/json-rpc subscribe forever in that mode, so skip it there.
-  if (SHC_PROTOCOL !== 'https') return;
+  // No poll loop there, so report the (demo) SHC as reachable — the initial
+  // value of shcConnected was computed before initRuntime() set SHC_PROTOCOL.
+  if (SHC_PROTOCOL !== 'https') { setShcConnected(true); return; }
   pollStarted = true;
   pollLoop().catch((e) => { console.error('pollLoop crashed:', e); pollStarted = false; });
 }
@@ -1391,11 +1462,12 @@ if (!process.env.BOSCH_SHC_NO_LISTEN) {
     }
     kickPollLoop();
     startHistorySampler();
+    startUpdateCheck();
   });
 }
 
 module.exports = {
   app, shcRequest,
   // Internals exposed for unit tests — pure functions, no live state.
-  _internals: { hashPassword, verifyPassword, readCookie, adaptIntrusionState, publicUser, newToken, isIngressRequest, frameAncestorsFor, isCertRejected },
+  _internals: { hashPassword, verifyPassword, readCookie, adaptIntrusionState, publicUser, newToken, isIngressRequest, frameAncestorsFor, isCertRejected, compareVersions, newestTag },
 };
