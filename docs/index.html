@@ -106,10 +106,11 @@ footer { padding: 32px 0 48px; color: var(--muted); font-size: 14px; }
     <p class="sub">Everything runs in your home network and talks to the controller over Bosch's official local API.</p>
     <div class="grid">
       <div class="card"><h3>Dashboard</h3><p>All devices by room: heating, shutters, lights, plugs, window contacts, smoke and motion detectors, Twinguard, cameras. Live updates.</p></div>
+      <div class="card"><h3>Custom dashboards</h3><p>Build your own pages from widgets – devices, rooms, charts, energy, scenario buttons, clock, notes – and arrange them by drag &amp; drop.</p></div>
       <div class="card"><h3>History charts</h3><p>Temperature, humidity, power, valve position, air quality and more, from 24 hours to a year. Includes values the Bosch app doesn't show.</p></div>
       <div class="card"><h3>Energy &amp; cost</h3><p>Consumption and cost per day, week, month and year, per device, with your own electricity price.</p></div>
       <div class="card"><h3>Device health</h3><p>Unreachable devices, low batteries, weak signal and pending firmware updates at a glance.</p></div>
-      <div class="card"><h3>Kiosk &amp; favourites</h3><p>A clean wall-tablet view with only the devices and scenarios you need.</p></div>
+      <div class="card"><h3>Kiosk &amp; favourites</h3><p>A clean wall-tablet view with only the devices and scenarios you need – or one of your own dashboards.</p></div>
       <div class="card"><h3>Scenarios &amp; alarm</h3><p>Run scenarios, switch automations, arm and disarm the alarm system, read messages.</p></div>
       <div class="card"><h3>App &amp; users</h3><p>Install as an app (PWA), optional login with multiple users, light and dark theme, English and German.</p></div>
       <div class="card"><h3>Private</h3><p>No cloud, no account, no tracking. Your data stays on your controller and your server.</p></div>
@@ -122,6 +123,8 @@ footer { padding: 32px 0 48px; color: var(--muted); font-size: 14px; }
     <h2>Screenshots</h2>
     <p class="sub">Made with the built-in demo — no real home involved.</p>
     <div class="shots">
+      <figure><img src="img/custom-dashboard.png" loading="lazy" alt="Custom dashboard with clock, scenario buttons, energy, chart and device widgets"><figcaption>Custom dashboards</figcaption></figure>
+      <figure><img src="img/dashboard-editor.png" loading="lazy" alt="Dashboard editor with drag and drop grid"><figcaption>Drag &amp; drop editor</figcaption></figure>
       <figure><img src="img/history.png" loading="lazy" alt="History chart of a room thermostat"><figcaption>History charts</figcaption></figure>
       <figure><img src="img/energy.png" loading="lazy" alt="Energy consumption and cost per device"><figcaption>Energy and cost</figcaption></figure>
       <figure><img src="img/health.png" loading="lazy" alt="Device health overview with batteries and signal quality"><figcaption>Device health</figcaption></figure>
@@ -163,7 +166,7 @@ npm ci &amp;&amp; npm start</code></pre></div>
 <section lang="de">
   <div class="wrap">
     <h2>Auf Deutsch</h2>
-    <p>Die <b>Bosch SHC Web UI</b> ist eine lokale Weboberfläche für den Bosch Smart Home Controller (SHC I und II). Du steuerst alle Geräte im Browser – Heizung, Rollläden, Licht, Steckdosen, Fensterkontakte, Rauchmelder, Twinguard und Kameras – siehst Verlaufsdiagramme für Temperatur und Luftfeuchtigkeit, Stromverbrauch und Stromkosten und behältst Batterien und Funkqualität im Blick.</p>
+    <p>Die <b>Bosch SHC Web UI</b> ist eine lokale Weboberfläche für den Bosch Smart Home Controller (SHC I und II). Du steuerst alle Geräte im Browser – Heizung, Rollläden, Licht, Steckdosen, Fensterkontakte, Rauchmelder, Twinguard und Kameras – siehst Verlaufsdiagramme für Temperatur und Luftfeuchtigkeit, Stromverbrauch und Stromkosten und behältst Batterien und Funkqualität im Blick. Eigene Dashboards stellst du dir per Drag &amp; Drop aus Widgets zusammen.</p>
     <p>Alles läuft in deinem Heimnetz, ohne Cloud. Installation als Home-Assistant-Add-on, Docker-Container oder mit Node.js. Die Oberfläche gibt es komplett auf Deutsch.</p>
   </div>
 </section>

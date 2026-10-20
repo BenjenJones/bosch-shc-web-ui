@@ -11,6 +11,8 @@ import { connectEvents } from './live.js';
 import { applySetupTexts, wireSetupWizard } from './setup.js';
 import { initFavorites } from './favorites.js';
 import { initKiosk } from './kiosk.js';
+import { initDashboards, startTab } from './dashboards.js';
+import { selectTab } from './tabs.js';
 import { initCharts } from './charts.js';
 import { initPairing } from './pairing.js';
 
@@ -19,6 +21,7 @@ initTabs();
 initAuth();
 initFavorites();
 initKiosk();
+initDashboards();
 initCharts();
 initPairing();
 
@@ -64,6 +67,9 @@ if ('serviceWorker' in navigator && window.isSecureContext) {
     hideLogin();
     applyRoleVisibility();
     await loadAll();
+    // Per-browser start page (a custom dashboard), see js/dashboards.js.
+    const start = startTab();
+    if (start) selectTab(start);
     connectEvents();
   } catch (err) {
     document.body.insertAdjacentHTML('afterbegin',

@@ -12,6 +12,7 @@ import { renderAdmin } from './admin.js';
 import { renderUsers } from './users.js';
 import { renderSessions } from './sessions.js';
 import { showLogin } from './auth.js';
+import { renderDashboardNav } from './dashboards.js';
 
 const $  = (sel, root=document) => root.querySelector(sel);
 const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
@@ -56,6 +57,8 @@ const state = {
   clients: [],
   automations: [],
   userdefinedstates: [],
+  // Custom dashboards (/api/dashboards, see js/dashboards.js).
+  dashboards: [],
   intrusion: null,
   // Server-side sensor history (SQLite) usable? false on Node < 22.5 or when
   // the DB can't be opened — chart buttons/sparklines are hidden then.
@@ -276,7 +279,7 @@ const safeApi = (p, o) => api(p, o).catch(() => null);
 async function loadAll() {
   // /api/clients is admin-only; non-admins skip it (the server would return 403)
   const [info, rooms, devices, services, scenarios, messages,
-         clients, automations, userdefinedstates, intrusion, messageArchive, historyProbe, setupStatus, version] = await Promise.all([
+         clients, automations, userdefinedstates, intrusion, messageArchive, historyProbe, setupStatus, version, dashboards] = await Promise.all([
     safeApi('api/info'),
     safeApi('api/rooms'),
     safeApi('api/devices'),
@@ -291,6 +294,7 @@ async function loadAll() {
     safeApi('api/history/spark'),
     safeApi('api/setup/status'),
     safeApi('api/version'),
+    safeApi('api/dashboards'),
   ]);
   state.info        = info || {};
   state.rooms       = rooms || [];
@@ -310,10 +314,12 @@ async function loadAll() {
   state.messageArchive = messageArchive || [];
   state.historyAvailable = !!historyProbe?.available;
   state.version = version;
+  state.dashboards = Array.isArray(dashboards) ? dashboards : [];
   state.pairing = { lost: !!setupStatus?.pairingLost, clientId: setupStatus?.clientId || null, shcIp: setupStatus?.shcIp || null };
   state.loaded = true;
 
   applyStaticTexts();
+  renderDashboardNav();
   renderAll();
 }
 

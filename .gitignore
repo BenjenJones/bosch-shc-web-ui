@@ -11,3 +11,4 @@ examples/
 test/openapi/_bundled.yml
 public/tailwind.css
 /history.sqlite*
+/dashboards.json

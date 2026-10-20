@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 (2026-10-20)
+
+- (Dashboards) Custom dashboards: admins (everyone when login is off) build their own pages from widgets — device, scenario button, room, history chart, energy, health, messages, alarm system, clock, text, all shutters and a divider (optionally with a section title) — placed and resized freely on a grid by drag & drop. Each dashboard gets its own tab with its own name; *+* in the tab bar adds one. Stored on the server (`dashboards.json` in the data folder), so all devices see the same dashboards.
+- (Dashboards) Per device (browser) you choose whether a dashboard is the start page and/or what the kiosk view shows (otherwise the favourites as before); `?kiosk=<dashboard id>` sets it via the URL. On phones the widgets stack in reading order; editing needs a wider screen.
+- (UI) Fix bright list dividers in dark mode (Energy, Health).
+- (Demo) Custom dashboards are kept across demo restarts (the rest of the demo data still starts fresh).
+- (Docs) README and website: custom dashboards with new screenshots.
+
 ## 0.1.7 (2026-10-20)
 
 - (Devices) Room Thermostat II: the terminal input is labelled *External temperature sensor* instead of *Floor sensor* — any sensor (floor, air, water…) can be wired to it. When it is used for control, the card says so.

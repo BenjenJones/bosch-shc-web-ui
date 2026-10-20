@@ -93,8 +93,8 @@ const tooltipTime = (ts, res) => new Date(ts).toLocaleString(locale(), res === '
 
 // ---- chart rendering -----------------------------------------------------
 // series: [{ label, cls, dashed, step, points: [[ts, avg, min, max]] }]
-function renderLineChart(el, series, { from, to, rangeKey, res, def }) {
-  const W = Math.max(280, el.clientWidth || 560), H = 220;
+function renderLineChart(el, series, { from, to, rangeKey, res, def, height = 220 }) {
+  const W = Math.max(280, el.clientWidth || 560), H = Math.max(120, height);
   const P = { l: 44, r: 10, t: 10, b: 24 };
   const iw = W - P.l - P.r, ih = H - P.t - P.b;
   const band = res !== 'raw';
@@ -186,8 +186,8 @@ function renderLineChart(el, series, { from, to, rangeKey, res, def }) {
 }
 
 // bars: [[ts, value, label]]
-function renderBarChart(el, bars, { def }) {
-  const W = Math.max(280, el.clientWidth || 560), H = 220;
+function renderBarChart(el, bars, { def, height = 220 }) {
+  const W = Math.max(280, el.clientWidth || 560), H = Math.max(120, height);
   const P = { l: 44, r: 10, t: 10, b: 24 };
   const iw = W - P.l - P.r, ih = H - P.t - P.b;
   if (!bars.length) { el.innerHTML = `<p class="text-sm text-slate-500 py-8 text-center">${t('history.noData')}</p>`; return; }
@@ -394,4 +394,4 @@ function initCharts() {
   });
 }
 
-export { initCharts, hasHistory, openHistoryModal, fillSparklines, energyBars, niceTicks, tickDec, renderBarChart };
+export { initCharts, hasHistory, openHistoryModal, fillSparklines, energyBars, niceTicks, tickDec, renderBarChart, renderLineChart, fetchSeries, METRIC_ORDER, METRIC_DEFS, RANGES };

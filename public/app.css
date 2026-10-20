@@ -245,6 +245,7 @@ html[data-kiosk] #kiosk-exit {
 /* The page header uses bare `border-b` (no color utility) → preflight default
    leaks through. Force it to a dark divider. */
 [data-theme="dark"] header.border-b   { border-color: #334155; }
+[data-theme="dark"] .divide-slate-200 > * { border-color: #334155; }
 
 /* Hover variants — neutrals */
 [data-theme="dark"] .hover\:bg-slate-50:hover   { background-color: #1f2937; }
@@ -316,4 +317,100 @@ html[data-kiosk] #kiosk-exit {
 /* Soften the card hover shadow on dark surfaces. */
 [data-theme="dark"] .card:hover {
     box-shadow: 0 8px 20px -8px rgba(0, 0, 0, .55);
+}
+/* =========================================================================
+   Custom dashboards (js/dashboards.js). Free 12-column grid; ROW/GAP in the
+   JS must match grid-auto-rows/gap here. Below 640 px the widgets stack in
+   reading order (DOM order = sorted by row, then column).
+   ========================================================================= */
+.dash-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-auto-rows: 40px;
+    gap: 12px;
+}
+.dash-w {
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+}
+.dash-body {
+    height: 100%;
+    overflow: auto;
+}
+.dash-panel > .dash-body {
+    padding: .75rem 1rem;
+}
+.dash-body > .card {
+    height: 100%;
+    overflow: auto;
+}
+.dash-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: .75rem;
+}
+@media (max-width: 639px) {
+    .dash-grid { display: flex; flex-direction: column; }
+    .dash-w { overflow: visible; }
+    .dash-body { height: auto; overflow: visible; }
+    .dash-body > .card { height: auto; }
+    [data-dash-spacer] { display: none; }
+}
+
+/* Edit mode: grid lines, content inert, drag/resize affordances. */
+.dash-grid.editing {
+    background-image:
+      linear-gradient(to right, rgb(148 163 184 / .25) 1px, transparent 1px);
+    background-size: calc((100% + 12px) / 12) 100%;
+    min-height: 200px;
+}
+.dash-grid.editing .dash-w {
+    cursor: move;
+    outline: 2px dashed rgb(37 99 235 / .45);
+    outline-offset: -2px;
+    border-radius: .5rem;
+    touch-action: none;
+    user-select: none;
+}
+.dash-grid.editing .dash-w.dragging {
+    outline-color: rgb(37 99 235);
+    z-index: 2;
+    box-shadow: 0 8px 24px rgb(0 0 0 / .15);
+}
+.dash-grid.editing .dash-body {
+    pointer-events: none;
+    opacity: .85;
+}
+/* The widget tools sit where "Show all" links are. */
+.dash-grid.editing [data-dash-goto] { visibility: hidden; }
+.dash-tools {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    gap: 4px;
+    z-index: 1;
+}
+.dash-tools button {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 14px;
+    line-height: 28px;
+    cursor: pointer;
+}
+.dash-tools button[data-w-remove] { background: #e11d48; }
+.dash-resize {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 18px;
+    height: 18px;
+    cursor: nwse-resize;
+    background: linear-gradient(135deg, transparent 50%, #2563eb 50%);
+    border-bottom-right-radius: .5rem;
+    z-index: 1;
 }

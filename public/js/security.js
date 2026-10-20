@@ -3,7 +3,8 @@ import { state, $, $$, t, api } from './core.js';
 // =========================================================================
 //  Tab: Security (intrusion detection + user-defined states)
 // =========================================================================
-function renderSecurity() {
+// Alarm card markup — shared by the Security tab and the dashboard widget.
+function alarmCardHtml() {
   const ids = state.intrusion;
   let idsBlock = '';
   if (ids?.state) {
@@ -58,9 +59,11 @@ function renderSecurity() {
     </article>`;
   }
 
-  $('#tab-security').innerHTML = idsBlock;
+  return idsBlock;
+}
 
-  $$('#tab-security [data-ids]').forEach(b => b.addEventListener('click', async () => {
+function wireAlarmButtons(root) {
+  $$('[data-ids]', root).forEach(b => b.addEventListener('click', async () => {
     const value = b.dataset.ids;
     const body = { value };
     if (b.dataset.profile != null) body.activeProfile = b.dataset.profile;
@@ -69,5 +72,11 @@ function renderSecurity() {
   }));
 }
 
+function renderSecurity() {
+  const root = $('#tab-security');
+  root.innerHTML = alarmCardHtml();
+  wireAlarmButtons(root);
+}
 
-export { renderSecurity };
+
+export { renderSecurity, alarmCardHtml, wireAlarmButtons };

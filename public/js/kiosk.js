@@ -1,12 +1,15 @@
 import { $, t, state } from './core.js';
 import { wireDeviceControls } from './devices.js';
 import { favDevices, favScenarios, renderFavScenarioButtons, renderFavDeviceCards } from './favorites.js';
+import { kioskDashboardHtml, wireKioskDashboard, setKioskDashboard } from './dashboards.js';
 
 // =========================================================================
-//  Kiosk view — for wall tablets: clock + favourites only, larger controls,
-//  no tabs/toolbar, screen kept awake. Entered via the header button or the
-//  URL `?kiosk` (handy as a tablet bookmark / PWA start URL) and remembered
-//  per browser, so a reload stays in kiosk. `<html data-kiosk>` drives the
+//  Kiosk view — for wall tablets: clock + favourites (or the custom
+//  dashboard this browser picked for kiosk), larger controls, no
+//  tabs/toolbar, screen kept awake. Entered via the header button or the
+//  URL `?kiosk` (`?kiosk=<dashboard id>` also picks the dashboard; handy as
+//  a tablet bookmark / PWA start URL) and remembered per browser, so a
+//  reload stays in kiosk. `<html data-kiosk>` drives the
 //  layout switch in app.css.
 // =========================================================================
 const KIOSK_KEY = 'kiosk';
@@ -38,16 +41,18 @@ function renderKiosk() {
   // Before the first loadAll() there are no texts/data yet; renderDevices()
   // calls us again once they are.
   if (!root || !active || !state.loaded) return;
+  const dash = kioskDashboardHtml();
   const empty = !favDevices().length && !favScenarios().length;
   root.innerHTML = `
     <div class="mb-5">
       <div data-kiosk-time class="text-5xl font-light tabular-nums"></div>
       <div data-kiosk-date class="text-slate-500 mt-1"></div>
     </div>
-    ${empty
+    ${dash ?? (empty
       ? `<p class="bg-white border border-slate-200 rounded-lg p-6 text-slate-600">${t('kiosk.empty')}</p>`
-      : `<div class="space-y-4">${renderFavScenarioButtons({ big: true })}${renderFavDeviceCards()}</div>`}`;
-  wireDeviceControls(root);
+      : `<div class="space-y-4">${renderFavScenarioButtons({ big: true })}${renderFavDeviceCards()}</div>`)}`;
+  if (dash) wireKioskDashboard(root);
+  else wireDeviceControls(root);
   updateClock();
 }
 
@@ -86,7 +91,9 @@ function initKiosk() {
   });
   let stored = false;
   try { stored = localStorage.getItem(KIOSK_KEY) === '1'; } catch { /* ignore */ }
-  if (new URLSearchParams(location.search).has('kiosk') || stored) setKiosk(true);
+  const param = new URLSearchParams(location.search).get('kiosk');
+  if (param) setKioskDashboard(param);
+  if (param != null || stored) setKiosk(true);
 }
 
 export { initKiosk, isKiosk, renderKiosk, setKiosk };

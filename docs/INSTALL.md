@@ -199,7 +199,7 @@ New-NetFirewallRule -DisplayName 'Bosch SHC Web UI' -Direction Inbound -Protocol
 
 **4.** Open `http://localhost:3000` and [pair](#first-start-pairing-with-the-shc).
 
-The UI now runs in the background, also when nobody is logged in. Data stays in `C:\bosch-shc-web-ui` (`config.json`, `auth.json`, `certs\`, `history.sqlite`) — `git pull` doesn't touch these files.
+The UI now runs in the background, also when nobody is logged in. Data stays in `C:\bosch-shc-web-ui` (`config.json`, `auth.json`, `certs\`, `history.sqlite`, `dashboards.json`) — `git pull` doesn't touch these files.
 
 **Update** — PowerShell as Administrator:
 ```powershell
@@ -244,7 +244,7 @@ Back up the data folder — it contains everything:
 | Home Assistant add-on | included in Home Assistant backups |
 | Docker | the `/data` volume (`docker run --rm -v bosch-shc-data:/data -v "$PWD":/backup alpine tar czf /backup/bosch-shc-ui.tgz -C /data .`) |
 | Linux service | `/var/lib/bosch-shc-ui` |
-| Windows / plain `npm start` | `config.json`, `auth.json`, `certs/`, `history.sqlite*`, `messages-archive.ndjson` in the project folder |
+| Windows / plain `npm start` | `config.json`, `auth.json`, `certs/`, `history.sqlite*`, `messages-archive.ndjson`, `dashboards.json` in the project folder |
 
 The files in `certs/` are the key to your SHC — keep the backup private.
 

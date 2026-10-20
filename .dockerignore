@@ -9,6 +9,7 @@ auth.json
 messages-archive.ndjson
 certs/
 history.sqlite*
+dashboards.json
 
 # Local-only / tooling
 .git

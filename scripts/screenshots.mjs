@@ -14,6 +14,7 @@
 // =========================================================================
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
@@ -32,6 +33,24 @@ const FAVORITES = {
   scenario: ['425cf9f4-6f24-4d91-88b4-1c2dafd28657', 'b510ceed-0fe5-45dd-85c6-44ad41c8007c'],
 };
 
+// Custom dashboard for the README (demo dataset ids). Its tab shows in every
+// shot's navigation, like on an install that uses the feature.
+const DASHBOARD = (en) => [{ id: 'overview', name: en ? 'Overview' : 'Übersicht', widgets: [
+  { id: 'clock', type: 'clock', x: 0, y: 0, w: 3, h: 3, cfg: {} },
+  { id: 'home', type: 'scenario', x: 3, y: 0, w: 3, h: 2, cfg: { scenarioId: '425cf9f4-6f24-4d91-88b4-1c2dafd28657' } },
+  { id: 'door', type: 'scenario', x: 3, y: 2, w: 3, h: 2, cfg: { scenarioId: 'b510ceed-0fe5-45dd-85c6-44ad41c8007c' } },
+  { id: 'energy', type: 'energy', x: 6, y: 0, w: 6, h: 4, cfg: {} },
+  { id: 'div1', type: 'divider', x: 0, y: 4, w: 12, h: 1, cfg: { title: en ? 'Climate' : 'Klima' } },
+  { id: 'chart', type: 'chart', x: 0, y: 5, w: 8, h: 6, cfg: { deviceId: 'hdm:ZigBee:90a5f7b696ca5616', metric: 'temperature', range: '7d' } },
+  { id: 'health', type: 'health', x: 8, y: 5, w: 4, h: 3, cfg: {} },
+  { id: 'note', type: 'text', x: 8, y: 8, w: 4, h: 3, cfg: { title: en ? 'Note' : 'Notiz', text: en ? 'Bins out on Thursday\nFilter change in May' : 'Donnerstag Müll rausstellen\nFilterwechsel im Mai' } },
+  { id: 'div2', type: 'divider', x: 0, y: 11, w: 12, h: 1, cfg: { title: en ? 'Devices' : 'Geräte' } },
+  { id: 'twinguard', type: 'device', x: 0, y: 12, w: 4, h: 5, cfg: { deviceId: 'hdm:ZigBee:b001c93a64f7653a' } },
+  { id: 'plug', type: 'device', x: 4, y: 12, w: 4, h: 5, cfg: { deviceId: 'hdm:ZigBee:358e310bee9f4e26' } },
+  { id: 'shutters', type: 'shutters', x: 8, y: 12, w: 4, h: 2, cfg: {} },
+  { id: 'shutter', type: 'device', x: 8, y: 14, w: 4, h: 3, cfg: { deviceId: 'hdm:HomeMaticIP:3014F711AEEE5B597C270A80' } },
+] }];
+
 async function waitForServer(url, ms = 30e3) {
   const end = Date.now() + ms;
   while (Date.now() < end) {
@@ -43,7 +62,9 @@ async function waitForServer(url, ms = 30e3) {
 
 const demo = spawn(process.execPath, ['demo.js'], {
   cwd: ROOT,
-  env: { ...process.env, BOSCH_SHC_DEMO_PORT: String(PORT), BOSCH_SHC_DEMO_SHC_PORT: String(SHC_PORT) },
+  env: { ...process.env, BOSCH_SHC_DEMO_PORT: String(PORT), BOSCH_SHC_DEMO_SHC_PORT: String(SHC_PORT),
+    // Fresh dashboards, not the ones kept from interactive demo runs.
+    BOSCH_SHC_DEMO_DASHBOARDS_FILE: path.join(os.tmpdir(), `bosch-shc-shots-dashboards-${process.pid}.json`) },
   stdio: ['ignore', 'inherit', 'inherit'],
 });
 // Stop only the process we started (by its PID) — never anything by name.
@@ -53,6 +74,10 @@ process.on('exit', stopDemo);
 let browser;
 try {
   await waitForServer(BASE + 'api/setup/status');
+  const put = await fetch(BASE + 'api/dashboards', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(DASHBOARD(LANG === 'en')),
+  });
+  if (!put.ok) throw new Error(`seeding the dashboard failed: ${put.status}`);
   fs.mkdirSync(OUT, { recursive: true });
   browser = await chromium.launch(CHANNEL === 'chromium' ? {} : { channel: CHANNEL });
 
@@ -95,6 +120,20 @@ try {
       await page.click('[data-history="hdm:ZigBee:90a5f7b696ca5616"]:not([data-room-setpoint])');
       await page.waitForSelector('#modal-card svg');
       await page.waitForLoadState('networkidle');
+    },
+  });
+  const dashboard = async (page) => {
+    await page.click('[data-tab="dash:overview"]');
+    await page.waitForSelector('#tab-dashboard [data-dash-chart] svg');
+    await page.waitForLoadState('networkidle');
+  };
+  await shot('custom-dashboard', { height: 1000, prepare: dashboard });
+  await shot('dashboard-editor', {
+    height: 1000,
+    prepare: async (page) => {
+      await dashboard(page);
+      await page.click('[data-dash-edit]');
+      await page.waitForSelector('.dash-grid.editing [data-dash-chart] svg');
     },
   });
   await shot('energy', { prepare: tab('energy') });

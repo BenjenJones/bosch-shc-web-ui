@@ -13,6 +13,7 @@ const crypto = require('crypto');
 const express = require('express');
 const setupLib = require('./setup.js');
 const historyLib = require('./history.js');
+const dashboardsLib = require('./dashboards.js');
 
 // All writable state defaults to setupLib.DATA_DIR (= BOSCH_SHC_DATA_DIR or
 // this source dir). The per-file env overrides below stay for the test harness
@@ -30,6 +31,10 @@ const HISTORY_FILE = process.env.BOSCH_SHC_HISTORY_FILE
   || (process.env.BOSCH_SHC_NO_LISTEN ? ':memory:' : path.join(setupLib.DATA_DIR, 'history.sqlite'));
 const history = historyLib.openHistory(HISTORY_FILE);
 if (!history.available) console.warn('History disabled:', history.reason);
+// Custom dashboards (see dashboards.js). Tests keep them in memory.
+const DASHBOARDS_FILE = process.env.BOSCH_SHC_DASHBOARDS_FILE
+  || (process.env.BOSCH_SHC_NO_LISTEN ? ':memory:' : path.join(setupLib.DATA_DIR, 'dashboards.json'));
+const dashboards = dashboardsLib.openDashboards(DASHBOARDS_FILE);
 
 // CSP `frame-ancestors` value. Default 'none' keeps clickjacking protection on
 // for standalone use. To embed the UI in a Home Assistant dashboard (Webpage
@@ -1246,6 +1251,22 @@ app.delete('/api/messages/archive/:id', (req, res) => {
   if (messageArchive.length === before) return res.status(404).json({ error: 'not in archive' });
   saveMessageArchive();
   res.json({ ok: true });
+});
+
+// =========================================================================
+//  Custom dashboards — everyone reads, admins (or anyone without login) edit.
+//  PUT replaces the whole list; the UI always sends all dashboards.
+// =========================================================================
+app.get('/api/dashboards', (_req, res) => {
+  res.json(dashboards.get());
+});
+
+app.put('/api/dashboards', requireAdmin, (req, res) => {
+  try {
+    res.json(dashboards.set(req.body));
+  } catch (err) {
+    res.status(err.status || 500).json({ error: err.message });
+  }
 });
 
 // =========================================================================

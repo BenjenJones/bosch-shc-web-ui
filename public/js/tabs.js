@@ -2,11 +2,15 @@ import { $, $$, loadAll, setLang, setTheme, toggleNotify } from './core.js';
 import { loadUsers } from './users.js';
 import { loadSessions } from './sessions.js';
 import { loadEnergy } from './energy.js';
+import { showDashboard } from './dashboards.js';
 
 const ALL_TABS = ['devices','scenarios','security','messages','health','energy','admin','users','sessions'];
 
+// name: one of ALL_TABS, or "dash:<id>" for a custom dashboard (all of
+// them share the #tab-dashboard section, see dashboards.js).
 function selectTab(name) {
-  if (!ALL_TABS.includes(name)) return;
+  const dashId = name?.startsWith('dash:') ? name.slice(5) : null;
+  if (!ALL_TABS.includes(name) && !dashId) return;
   $$('.tab').forEach(x => {
     const active = x.dataset.tab === name;
     x.classList.toggle('border-blue-600', active);
@@ -16,6 +20,8 @@ function selectTab(name) {
   });
   ALL_TABS.forEach(n =>
     $('#tab-' + n).classList.toggle('hidden', n !== name));
+  $('#tab-dashboard').classList.toggle('hidden', !dashId);
+  showDashboard(dashId);
   // Keep the mobile <select> in sync when the change was initiated by a
   // button click on a wider viewport.
   const sel = $('#tab-select');
@@ -29,8 +35,11 @@ function selectTab(name) {
 }
 // Header/tab controls + the mobile hamburger menu. Called once from boot.
 function initTabs() {
-  $$('.tab').forEach(tabEl =>
-    tabEl.addEventListener('click', () => selectTab(tabEl.dataset.tab)));
+  // Delegated: dashboard tabs are added and removed at runtime.
+  $('nav').addEventListener('click', (e) => {
+    const tabEl = e.target.closest('.tab');
+    if (tabEl) selectTab(tabEl.dataset.tab);
+  });
   $('#tab-select')?.addEventListener('change', (e) => selectTab(e.target.value));
   $('#refresh').addEventListener('click', loadAll);
   $$('#lang-switch [data-lang]').forEach(b =>

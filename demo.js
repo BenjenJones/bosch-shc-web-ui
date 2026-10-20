@@ -56,6 +56,10 @@ fs.writeFileSync(archiveFile, ndjson ? ndjson + '\n' : '');
 process.env.BOSCH_SHC_CONFIG_FILE          = configFile;
 process.env.BOSCH_SHC_AUTH_FILE            = path.join(tmp, 'auth.json'); // ungenutzt (Auth aus)
 process.env.BOSCH_SHC_MESSAGE_ARCHIVE_FILE = archiveFile;
+// Eigene Dashboards überleben einen Demo-Neustart (anders als der Rest im
+// Tempverzeichnis) — sonst ist das Ausprobieren nach jedem Start verloren.
+process.env.BOSCH_SHC_DASHBOARDS_FILE      = process.env.BOSCH_SHC_DEMO_DASHBOARDS_FILE
+  || path.join(os.tmpdir(), 'bosch-shc-demo-dashboards.json');
 
 // Verlauf (Diagramme/Energie): eigene SQLite im Tempverzeichnis, vorab mit
 // einem Jahr synthetischer Werte gefüllt (demo/history-seed.js).

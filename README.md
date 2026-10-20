@@ -14,13 +14,16 @@
 - **History charts** — temperature, humidity, power, valve position, air quality and more, from 24 hours to a year. Includes values the Bosch app doesn't show.
 - **Energy** — consumption and cost per day, week, month and year, per device, with your own electricity price.
 - **Health** — unreachable devices, low batteries, weak signal and pending firmware updates at a glance.
-- **Favourites & kiosk mode** — a clean wall-tablet view with just the devices and scenarios you need.
+- **Custom dashboards** — build your own pages from widgets (devices, rooms, charts, energy, health, scenario buttons, clock, notes, …) and arrange them by drag & drop. Each one gets its own tab; pick one as start page or for the kiosk view per device.
+- **Favourites & kiosk mode** — a clean wall-tablet view with just the devices and scenarios you need, or one of your dashboards.
 - **Scenarios, automations, alarm system, messages** — run, switch and arm from the browser.
 - **Install as an app** on phone or desktop (PWA), optional login with multiple users, light and dark theme.
 
-| History | Energy | Health |
+| Custom dashboard | Dashboard editor | History |
 | --- | --- | --- |
-| [![History chart of a room thermostat with temperature over 24 hours](docs/img/history.png)](docs/img/history.png) | [![Energy tab with consumption and electricity cost per device](docs/img/energy.png)](docs/img/energy.png) | [![Health tab with unreachable devices, low batteries and weak signal](docs/img/health.png)](docs/img/health.png) |
+| [![Custom dashboard with clock, scenario buttons, energy, temperature chart, health and device widgets](docs/img/custom-dashboard.png)](docs/img/custom-dashboard.png) | [![Dashboard editor: widgets with settings, remove and resize handles on a grid](docs/img/dashboard-editor.png)](docs/img/dashboard-editor.png) | [![History chart of a room thermostat with temperature over 24 hours](docs/img/history.png)](docs/img/history.png) |
+| **Energy** | **Health** | |
+| [![Energy tab with consumption and electricity cost per device](docs/img/energy.png)](docs/img/energy.png) | [![Health tab with unreachable devices, low batteries and weak signal](docs/img/health.png)](docs/img/health.png) | |
 | **Dark theme** | **Kiosk** | **Mobile** |
 | [![Dashboard in dark theme](docs/img/dashboard-dark.png)](docs/img/dashboard-dark.png) | [![Kiosk mode for wall tablets with clock and favourite devices](docs/img/kiosk.png)](docs/img/kiosk.png) | [![Mobile view of the dashboard on a phone](docs/img/mobile.png)](docs/img/mobile.png) |
 
@@ -78,6 +81,17 @@ Then open `http://localhost:3001`.
 </details>
 
 <details>
+<summary><b>Custom dashboards</b></summary>
+
+- Build your own pages from widgets: device, room (with climate and shutters), history chart, energy (today, month, power now, cost), health, messages, alarm system, scenario button, all shutters, clock, text/note and divider
+- Free grid with drag & drop: move widgets, resize them from the corner, others make room
+- Each dashboard gets its own tab with its own name; **+** in the tab bar adds one
+- Created and edited by admins (by anyone when login is off); everyone sees the same dashboards — stored on the server (`dashboards.json` in the data folder)
+- Per device: use a dashboard as the start page and/or as the kiosk view (`?kiosk=<dashboard id>` also works)
+- On phones the widgets stack in reading order
+</details>
+
+<details>
 <summary><b>History & charts</b></summary>
 
 - Records temperature, humidity, setpoint, power, energy counter, window/door contacts, valve position, air quality, shutter position and illuminance — from live events plus a snapshot every 15 minutes
@@ -108,7 +122,7 @@ Then open `http://localhost:3001`.
 <summary><b>Favourites & kiosk</b></summary>
 
 - Pin devices and scenarios with ☆ — they appear at the top of the dashboard. Stored per browser, so each tablet/phone keeps its own selection
-- *Kiosk* (header button, or open the UI with `?kiosk`): clock plus favourites only, larger touch targets; keeps the screen awake where supported
+- *Kiosk* (header button, or open the UI with `?kiosk`): clock plus favourites only — or a custom dashboard chosen for this device — larger touch targets; keeps the screen awake where supported
 </details>
 
 <details>

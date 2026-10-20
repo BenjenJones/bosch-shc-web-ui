@@ -223,4 +223,4 @@ function renderHealth() {
   }));
 }
 
-export { renderHealth, deviceIssues, batterySeverity };
+export { renderHealth, deviceIssues, batterySeverity, healthDevices, KINDS as HEALTH_KINDS };

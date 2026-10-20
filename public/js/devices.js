@@ -1,5 +1,6 @@
 import { favButton, renderFavoritesSection } from './favorites.js';
 import { isKiosk, renderKiosk } from './kiosk.js';
+import { refreshDashboard } from './dashboards.js';
 import { hasHistory, fillSparklines } from './charts.js';
 import { state, $, $$, t, api, escapeHtml, roomName, deviceName, serviceOf, deviceUpdateInfo, deviceBatteryLevel, deviceFaults, saveCollapsedRooms, isMessageActive } from './core.js';
 import { severityFromMessage, messageTitle, activeMessagesForDevice, openDeviceMessagesModal } from './messages.js';
@@ -176,6 +177,7 @@ function renderDevices() {
   renderTypeFilterOptions();
   renderDeviceList();
   if (isKiosk()) renderKiosk();
+  else refreshDashboard();
 }
 
 // Populates the type filter dropdown panel. Only categories that actually
@@ -1646,4 +1648,4 @@ function onColorChange(e) {
 }
 
 
-export { requestCommQualityTest, wireDeviceControls, DEVICE_CATEGORIES, deviceCategory, deviceSortRank, batteryInfo, faultChip, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange, onHeatingSetpointChange, onShutterLevelChange, onDimmerLevelChange, onColorChange, onKeypadScenarioChange };
+export { requestCommQualityTest, wireDeviceControls, shutterDevices, renderShutterGroup, renderRoomShutterGroup, DEVICE_CATEGORIES, deviceCategory, deviceSortRank, batteryInfo, faultChip, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange, onHeatingSetpointChange, onShutterLevelChange, onDimmerLevelChange, onColorChange, onKeypadScenarioChange };
