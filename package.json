@@ -1,6 +1,6 @@
 {
   "name": "bosch-shc-ui",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Local web UI and dashboard for the Bosch Smart Home Controller (SHC I/II): history charts, energy costs, device health. No cloud. Home Assistant add-on, Docker or Node.js.",
   "keywords": [
     "bosch",
