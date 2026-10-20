@@ -823,6 +823,7 @@ function batteryInfo(level) {
     CRITICAL_LOW:          { icon: 'battery-low',         cls: 'text-rose-700',    label: t('battery.critical') },
     CRITICAL_BATTERY:      { icon: 'battery-low',         cls: 'text-rose-700',    label: t('battery.critical') },
     CRITICAL_LOW_BATTERY:  { icon: 'battery-low',         cls: 'text-rose-700',    label: t('battery.critical') },
+    CRITICALLY_LOW_BATTERY:{ icon: 'battery-low',         cls: 'text-rose-700',    label: t('battery.critical') },
     INSERT_BATTERY:        { icon: 'battery-off-outline', cls: 'text-rose-700',    label: t('battery.insert') },
   };
   // Unknown level: never pretend it's full — show a neutral half battery.
@@ -998,15 +999,16 @@ function renderDeviceCard(device, { showRoom = false } = {}) {
     body += `<div class="mt-2">${humTxt}</div>`;
   }
   // Room thermostat II: temperature of a sensor wired to its terminals
-  // (floor / outdoor sensor). Absent while no sensor is connected.
+  // Absent while no sensor is connected. The API calls it FLOOR_SENSOR_*, but
+  // the input takes any temperature sensor — only "used for regulation" or
+  // not matters (then the internal sensor becomes the informational one).
   if (typeof terminal?.state?.temperature === 'number') {
-    const type = String(terminal.state.type || '');
-    const key = type.startsWith('FLOOR_') ? 'devices.floorSensor'
-      : type.startsWith('OUTDOOR_') ? 'devices.outdoorSensor' : 'devices.externalSensor';
+    const regulating = /REGULATION/.test(String(terminal.state.type || ''));
     body += `
       <div class="mt-1 flex items-baseline gap-2 text-sm">
-        <span class="text-slate-600">${t(key)}</span>
+        <span class="text-slate-600">${t('devices.externalSensor')}</span>
         <span class="tabular-nums font-medium">${terminal.state.temperature.toFixed(1)}°</span>
+        ${regulating ? `<span class="text-xs text-slate-500">${t('devices.externalSensorRegulating')}</span>` : ''}
       </div>`;
   }
   if (shutter) {

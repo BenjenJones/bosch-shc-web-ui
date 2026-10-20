@@ -399,8 +399,9 @@ function deviceUpdateInfo(device) {
 // devices like the Outdoor Siren) instead expose
 // BatteryLevel.state.warningLevel, which we honour as a fallback.
 // Possible levels: OK, LOW_BATTERY, CRITICAL_LOW, CRITICAL_BATTERY,
-// CRITICAL_LOW_BATTERY, INSERT_BATTERY, NOT_AVAILABLE. null = mains-powered.
-const BATTERY_FAULTS = ['LOW_BATTERY', 'CRITICAL_LOW', 'CRITICAL_BATTERY', 'CRITICAL_LOW_BATTERY', 'INSERT_BATTERY'];
+// CRITICAL_LOW_BATTERY, CRITICALLY_LOW_BATTERY (message code seen on a real
+// SHC), INSERT_BATTERY, NOT_AVAILABLE. null = mains-powered.
+const BATTERY_FAULTS = ['LOW_BATTERY', 'CRITICAL_LOW', 'CRITICAL_BATTERY', 'CRITICAL_LOW_BATTERY', 'CRITICALLY_LOW_BATTERY', 'INSERT_BATTERY'];
 const faultList = f => Array.isArray(f) ? f : (f?.entries || []);
 
 function deviceBatteryLevel(device) {

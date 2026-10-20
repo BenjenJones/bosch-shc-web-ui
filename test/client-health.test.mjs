@@ -53,6 +53,12 @@ describe('deviceBatteryLevel', () => {
     state.messageArchive = [{ id: 'm1' }];
     expect(deviceBatteryLevel(dev())).toBe('OK');
   });
+
+  test('CRITICALLY_LOW_BATTERY message counts', () => {
+    state.services = [{ id: 'BatteryLevel', deviceId: 'd1' }];
+    state.messages = [{ id: 'm2', sourceId: 'd1', messageCode: { name: 'CRITICALLY_LOW_BATTERY' } }];
+    expect(deviceBatteryLevel(dev())).toBe('CRITICALLY_LOW_BATTERY');
+  });
 });
 
 describe('deviceFaults', () => {
@@ -69,7 +75,7 @@ describe('deviceFaults', () => {
 describe('batterySeverity', () => {
   test.each([
     [null, 0], ['OK', 0], ['NOT_AVAILABLE', 0],
-    ['LOW_BATTERY', 2], ['CRITICAL_LOW', 3], ['INSERT_BATTERY', 3], ['SOMETHING_NEW', 1],
+    ['LOW_BATTERY', 2], ['CRITICAL_LOW', 3], ['CRITICALLY_LOW_BATTERY', 3], ['INSERT_BATTERY', 3], ['SOMETHING_NEW', 1],
   ])('%s → %i', (level, sev) => expect(batterySeverity(level)).toBe(sev));
 });
 

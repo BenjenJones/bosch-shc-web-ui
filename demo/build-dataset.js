@@ -177,7 +177,7 @@ const GEN = {
   // rgb is a signed 32-bit ARGB int (full alpha); pick a warm-ish demo colour.
   HSBColorActuator: (d) => ({ '@type': 'colorState', rgb: (0xff << 24) | (255 << 16) | (Math.round(120 + h01(d.id + 'co') * 100) << 8) | 40 }),
   ImpulseSwitch: () => ({ '@type': 'impulseSwitchState', impulseState: false, instantOfLastImpulse: '', impulseLength: 6 }),
-  // RTH2 mit angeschlossenem Bodenfühler.
+  // RTH2 mit angeschlossenem externem Temperaturfühler (ohne Regelung).
   TerminalConfiguration: (d) => ({
     '@type': 'terminalConfigurationState', type: 'FLOOR_SENSOR_CONNECTED',
     supportedTypes: ['NOT_CONNECTED', 'FLOOR_SENSOR_CONNECTED', 'FLOOR_SENSOR_USED_FOR_REGULATION'],

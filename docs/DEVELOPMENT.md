@@ -85,6 +85,8 @@ Versions live in three places that must agree: `package.json` (`version`, shown 
 git tag v0.1.5 && git push origin v0.1.5
 ```
 
+`CHANGELOG.md` sections are headed `## <version> (<date>)`, e.g. `## 0.1.5 (2026-10-17)`.
+
 `.github/workflows/build-addon.yml` builds the multi-arch image (`amd64`, `arm64`) and publishes `ghcr.io/benjenjones/bosch-shc-web-ui:0.1.5` and `:latest`. The GHCR package must be **Public** (set once under the repo's *Packages*) so users can pull without authentication.
 
 Running installs notice the new tag within 12 hours (update badge in the header; see `checkForUpdate()` in `server.js`). The HA add-on is excluded — Home Assistant announces add-on updates itself.
