@@ -4,6 +4,7 @@ import { hasHistory, fillSparklines } from './charts.js';
 import { state, $, $$, t, api, escapeHtml, roomName, deviceName, serviceOf, deviceUpdateInfo, deviceBatteryLevel, deviceFaults, saveCollapsedRooms, isMessageActive } from './core.js';
 import { severityFromMessage, messageTitle, activeMessagesForDevice, openDeviceMessagesModal } from './messages.js';
 import { showModal, hideModal } from './modals.js';
+import { renderHealth } from './health.js';
 
 // Service ids that the per-device settings dialog (⚙) can configure.
 const CONFIG_SVC_IDS = ['Thermostat', 'ChildProtection', 'TemperatureOffset', 'PowerSwitchConfiguration', 'VibrationSensor', 'Bypass', 'KeypadTrigger'];
@@ -783,6 +784,22 @@ const CAMERA_SERVICE_DEFS = {
   },
 };
 
+// Start a connection test (as the app's "signal strength test"). The SHC sets
+// quality to FETCHING and reports the result via long polling; battery devices
+// answer only once they wake up.
+async function requestCommQualityTest(deviceId) {
+  try {
+    await api(`api/devices/${encodeURIComponent(deviceId)}/services/CommunicationQuality/state`, {
+      method: 'PUT',
+      body: { '@type': 'communicationQualityState', requestState: 'REQUEST' },
+    });
+    const svc = serviceOf(deviceId, 'CommunicationQuality');
+    if (svc) svc.state = { ...(svc.state || {}), quality: 'FETCHING' };
+    renderDevices();
+    renderHealth();
+  } catch (err) { alert(t('error.generic', err.message)); }
+}
+
 // Maps the value of CommunicationQuality.state.quality to icon, color and a
 // human-readable tooltip. Possible values per the Bosch SHC API:
 // UNKNOWN, FETCHING, BAD, MEDIUM, NORMAL, GOOD.
@@ -872,6 +889,7 @@ function renderDeviceCard(device, { showRoom = false } = {}) {
   const illuminanceSvc = services.find(s => s.id === 'MultiLevelSensor'); // motion detector
   const heatingCircuit = services.find(s => s.id === 'HeatingCircuit');
   const communicationQuality = services.find(s => s.id === 'CommunicationQuality');
+  const terminal = services.find(s => s.id === 'TerminalConfiguration'); // RTH2 external sensor
 
   const humTxt = (humidity?.state?.humidity != null)
     ? `<span class="inline-flex items-center gap-1 text-slate-500 text-sm tabular-nums">
@@ -979,6 +997,18 @@ function renderDeviceCard(device, { showRoom = false } = {}) {
   } else if (humidity) {
     body += `<div class="mt-2">${humTxt}</div>`;
   }
+  // Room thermostat II: temperature of a sensor wired to its terminals
+  // (floor / outdoor sensor). Absent while no sensor is connected.
+  if (typeof terminal?.state?.temperature === 'number') {
+    const type = String(terminal.state.type || '');
+    const key = type.startsWith('FLOOR_') ? 'devices.floorSensor'
+      : type.startsWith('OUTDOOR_') ? 'devices.outdoorSensor' : 'devices.externalSensor';
+    body += `
+      <div class="mt-1 flex items-baseline gap-2 text-sm">
+        <span class="text-slate-600">${t(key)}</span>
+        <span class="tabular-nums font-medium">${terminal.state.temperature.toFixed(1)}°</span>
+      </div>`;
+  }
   if (shutter) {
     const open = shutter.state?.value === 'OPEN';
     body += `<div class="mt-2 inline-flex items-center gap-1.5 text-sm
@@ -1072,14 +1102,18 @@ function renderDeviceCard(device, { showRoom = false } = {}) {
     ? `<div class="mt-2 flex flex-wrap gap-1">${otherFaults.map(faultChip).join('')}</div>`
     : '';
 
+  // The SHC reports the result of the last connection test, not a live value;
+  // mains-powered devices stay UNKNOWN until one runs. Clicking starts a test.
   let cqHtml = '';
   if (communicationQuality?.state?.quality) {
-    const cq = commQualityInfo(communicationQuality.state.quality);
+    const q = communicationQuality.state.quality;
+    const cq = commQualityInfo(q);
     const url = `svg/${cq.icon}.svg`;
-    const tip = t('devices.commQuality', cq.label, communicationQuality.state.quality);
-    cqHtml = `<span class="icon-mask ${cq.cls}"
-        style="width:18px;height:18px;mask-image:url(${url});-webkit-mask-image:url(${url})"
-        title="${tip}" aria-label="${tip}"></span>`;
+    const tip = `${t('devices.commQuality', cq.label, q)} – ${t(q === 'FETCHING' ? 'commQuality.testRunning' : 'commQuality.testHint')}`;
+    cqHtml = `<button type="button" data-action="cq-test" data-device="${device.id}" ${q === 'FETCHING' ? 'disabled' : ''}
+        class="inline-flex hover:opacity-70 disabled:cursor-wait" title="${tip}" aria-label="${tip}">
+        <span class="icon-mask ${cq.cls}"
+          style="width:18px;height:18px;mask-image:url(${url});-webkit-mask-image:url(${url})"></span></button>`;
   }
 
   // Outside its room section the virtual climate controller's technical name
@@ -1146,6 +1180,10 @@ async function onDeviceAction(e) {
   }
   if (action === 'messages') {
     openDeviceMessagesModal(device);
+    return;
+  }
+  if (action === 'cq-test') {
+    requestCommQualityTest(device);
     return;
   }
   if (action === 'toggle-power') {
@@ -1606,4 +1644,4 @@ function onColorChange(e) {
 }
 
 
-export { wireDeviceControls, DEVICE_CATEGORIES, deviceCategory, deviceSortRank, batteryInfo, faultChip, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange, onHeatingSetpointChange, onShutterLevelChange, onDimmerLevelChange, onColorChange, onKeypadScenarioChange };
+export { requestCommQualityTest, wireDeviceControls, DEVICE_CATEGORIES, deviceCategory, deviceSortRank, batteryInfo, faultChip, renderDevices, renderTypeFilterOptions, updateTypeFilterBadge, updateStatusFilterButtons, renderDeviceList, messageRoomId, activeMessagesForRoom, renderRoomMessageBadge, renderRoomClimateBadge, deviceIcon, commQualityInfo, safeRenderDeviceCard, renderDeviceCard, onDeviceAction, onTemperatureChange, onHeatingSetpointChange, onShutterLevelChange, onDimmerLevelChange, onColorChange, onKeypadScenarioChange };

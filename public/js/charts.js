@@ -18,10 +18,12 @@ const SERVICE_METRICS = {
   TemperatureLevel: ['temperature'], HumidityLevel: ['humidity'], RoomClimateControl: ['setpoint'],
   PowerMeter: ['power', 'energy'], ShutterContact: ['contact'], ValveTappet: ['valve'],
   AirQualityLevel: ['purity', 'temperature', 'humidity'], ShutterControl: ['shutter'], MultiLevelSensor: ['illuminance'],
+  TerminalConfiguration: ['externalTemperature'],
 };
-const METRIC_ORDER = ['temperature', 'humidity', 'energy', 'power', 'contact', 'valve', 'purity', 'shutter', 'illuminance', 'setpoint'];
+const METRIC_ORDER = ['temperature', 'externalTemperature', 'humidity', 'energy', 'power', 'contact', 'valve', 'purity', 'shutter', 'illuminance', 'setpoint'];
 const METRIC_DEFS = {
   temperature: { unit: '°C', dec: 1 },
+  externalTemperature: { unit: '°C', dec: 1 },
   setpoint:    { unit: '°C', dec: 1, step: true },
   humidity:    { unit: '%', dec: 0 },
   power:       { unit: 'W', dec: 0 },

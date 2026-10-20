@@ -31,6 +31,7 @@ const season = (ts) => -Math.cos(((new Date(ts).getMonth() + new Date(ts).getDat
 // Generator je Metrik: (ts, rand, current) -> Wert
 const MODELS = {
   temperature: (ts, r, cur) => cur + 0.8 * daySine(ts, 17) + 1.2 * season(ts) + (r() - 0.5) * 0.3,
+  externalTemperature: (ts, r, cur) => cur + 0.5 * daySine(ts, 19) + 1.5 * season(ts) + (r() - 0.5) * 0.2,
   humidity:    (ts, r, cur) => cur + 6 * daySine(ts, 6) + 5 * season(ts) + (r() - 0.5) * 3,
   setpoint:    (ts, _r, cur) => { const h = localHour(ts); return h >= 6 && h < 22 ? cur : cur - 3; },
   valve:       (ts, r) => Math.max(0, Math.round((40 - 35 * season(ts)) * (0.5 - 0.5 * daySine(ts, 15)) + (r() - 0.5) * 10)),

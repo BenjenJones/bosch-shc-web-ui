@@ -1,5 +1,5 @@
 import { state, $, $$, t, escapeHtml, roomName, serviceOf, deviceUpdateInfo, deviceBatteryLevel, deviceFaults } from './core.js';
-import { deviceIcon, commQualityInfo, batteryInfo, faultChip } from './devices.js';
+import { deviceIcon, commQualityInfo, batteryInfo, faultChip, requestCommQualityTest } from './devices.js';
 
 // =========================================================================
 //  Health tab — one place to see which devices need attention: unreachable,
@@ -178,15 +178,21 @@ function renderHealth() {
     .filter(r => r.q)
     .sort((a, b) => rank(a.q) - rank(b.q) || byName(a.d, b.d));
   const signalBody = radios.length
-    ? `<ul class="divide-y divide-slate-200">${radios.map(({ d, q }) => {
+    ? `<p class="text-xs text-slate-500 pt-1">${t('health.signalHint')}</p>
+      <ul class="divide-y divide-slate-200">${radios.map(({ d, q }) => {
         const cq = commQualityInfo(q);
         const url = `svg/${cq.icon}.svg`;
         return `
         <li class="py-2 flex items-center justify-between gap-3">
           ${deviceHead(d)}
-          <span class="inline-flex items-center gap-1.5 text-xs shrink-0 ${cq.cls}">
-            <span class="icon-mask" style="width:16px;height:16px;mask-image:url(${url});-webkit-mask-image:url(${url})"></span>
-            ${escapeHtml(cq.label)}</span>
+          <span class="inline-flex items-center gap-3 shrink-0">
+            <span class="inline-flex items-center gap-1.5 text-xs ${cq.cls}">
+              <span class="icon-mask" style="width:16px;height:16px;mask-image:url(${url});-webkit-mask-image:url(${url})"></span>
+              ${escapeHtml(cq.label)}</span>
+            <button type="button" data-cq-test="${escapeHtml(d.id)}" ${q === 'FETCHING' ? 'disabled' : ''}
+              class="text-xs text-blue-600 hover:underline disabled:text-slate-400 disabled:no-underline"
+              title="${t('commQuality.testHint')}">${t('commQuality.test')}</button>
+          </span>
         </li>`;
       }).join('')}</ul>`
     : `<p class="text-sm text-slate-500 py-2">${t('health.noSignal')}</p>`;
@@ -206,6 +212,7 @@ function renderHealth() {
     </div>`;
 
   // Clicking the active tile (or "show all") clears the filter.
+  $$('[data-cq-test]', root).forEach(b => b.addEventListener('click', () => requestCommQualityTest(b.dataset.cqTest)));
   $$('[data-health-kind]', root).forEach(b => b.addEventListener('click', () => {
     kindFilter = kindFilter === b.dataset.healthKind ? null : b.dataset.healthKind;
     renderHealth();

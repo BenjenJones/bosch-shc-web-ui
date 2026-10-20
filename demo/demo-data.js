@@ -165,6 +165,11 @@ async function handle(method, urlPath, body) {
     if (seg.length === 4 && m === 'GET') return svc || notFound();
     if (seg.length === 5 && seg[4] === 'state' && m === 'PUT') {
       if (!svc) return notFound();
+      // Verbindungstest: ohne Long-Polling im Demo gleich mit Ergebnis antworten.
+      if (svc.id === 'CommunicationQuality' && body?.requestState === 'REQUEST') {
+        svc.state = { ...svc.state, quality: 'GOOD' };
+        return svc.state;
+      }
       svc.state = typeof body === 'object' && body !== null ? { ...svc.state, ...body } : body;
       return svc.state;
     }

@@ -34,6 +34,8 @@ const METRICS = {
   AirQualityLevel:    s => [['purity', s.purity], ['temperature', s.temperature], ['humidity', s.humidity]],
   ShutterControl:     s => [['shutter', typeof s.level === 'number' ? Math.round(s.level * 100) : null]],
   MultiLevelSensor:   s => [['illuminance', typeof s.illuminance === 'number' ? s.illuminance : null]],
+  // Room thermostat II: reading of an external sensor wired to its terminals.
+  TerminalConfiguration: s => [['externalTemperature', s.temperature]],
 };
 
 // Extract [{series, value}] from one DeviceServiceData object (as returned by
@@ -265,8 +267,11 @@ function openHistory(file) {
   // Consumption of every energy counter in [from, to), per bucket
   // ('hour' | 'day' | 'month'). A bucket's consumption is its last counter
   // reading minus the previous reading (the last one before the bucket, which
-  // may lie before `from`). A missed bucket is absorbed by the next one; a
-  // negative delta (counter reset / device replaced) counts as 0.
+  // may lie before `from`). Without any earlier reading (first bucket after
+  // logging started) the bucket's own lowest reading is the baseline, so the
+  // first day still counts from the first reading on. A missed bucket is
+  // absorbed by the next one; a negative delta (counter reset / device
+  // replaced) counts as 0.
   // Returns { buckets: [ts], devices: [{ deviceId, kwh, cost, values: [kWh per bucket] }],
   //           totals: [kWh per bucket], kwh, cost, priced }.
   function energy(from, to, bucket = 'day') {
@@ -274,7 +279,7 @@ function openHistory(file) {
     const bucketOf = bucket === 'month' ? monthStart : (ts) => ts;
     const tariffs = getTariffs();
     const counters = db.prepare("SELECT id, key FROM series WHERE key LIKE '%|energy'").all();
-    const rowsStmt = db.prepare(`SELECT ts, vlast FROM ${table} WHERE sid = ? AND ts >= ? AND ts < ? ORDER BY ts`);
+    const rowsStmt = db.prepare(`SELECT ts, vmin, vlast FROM ${table} WHERE sid = ? AND ts >= ? AND ts < ? ORDER BY ts`);
     const prevStmt = db.prepare(`SELECT vlast FROM ${table} WHERE sid = ? AND ts < ? ORDER BY ts DESC LIMIT 1`);
 
     const bucketSet = new Set();
@@ -285,7 +290,7 @@ function openHistory(file) {
       let prev = prevStmt.get(c.id, from)?.vlast;
       const byBucket = new Map();
       for (const r of rows) {
-        const kwh = prev == null ? 0 : Math.max(0, r.vlast - prev) / 1000;
+        const kwh = Math.max(0, r.vlast - (prev ?? r.vmin)) / 1000;
         prev = r.vlast;
         const b = bucketOf(r.ts);
         bucketSet.add(b);

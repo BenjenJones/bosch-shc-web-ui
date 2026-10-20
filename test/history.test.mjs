@@ -17,6 +17,9 @@ describe('extractMetrics', () => {
   test('maps known services to series and skips non-numeric values', () => {
     expect(extractMetrics({ id: 'TemperatureLevel', deviceId: 'd1', state: { temperature: 21.5 } }))
       .toEqual([{ series: 'd1|temperature', value: 21.5 }]);
+    expect(extractMetrics({ id: 'TerminalConfiguration', deviceId: 'rt', state: { type: 'FLOOR_SENSOR_CONNECTED', temperature: 24.5 } }))
+      .toEqual([{ series: 'rt|externalTemperature', value: 24.5 }]);
+    expect(extractMetrics({ id: 'TerminalConfiguration', deviceId: 'rt', state: { type: 'NOT_CONNECTED' } })).toEqual([]);
     expect(extractMetrics({ id: 'PowerMeter', deviceId: 'p', state: { powerConsumption: 12, energyConsumption: 5000 } }))
       .toEqual([{ series: 'p|power', value: 12 }, { series: 'p|energy', value: 5000 }]);
     expect(extractMetrics({ id: 'ShutterContact', deviceId: 'c', state: { value: 'OPEN' } }))
@@ -120,6 +123,17 @@ describe('energy', () => {
     expect(e.kwh).toBe(2.5);
   });
 
+  test('first bucket without an earlier reading counts from its own first reading', () => {
+    h.record([{ series: 'n|energy', value: 1000 }], at(2026, 10, 1, 9));
+    h.record([{ series: 'n|energy', value: 1600 }], at(2026, 10, 1, 18));
+    h.record([{ series: 'n|energy', value: 2000 }], at(2026, 10, 2, 12));
+    for (const bucket of ['day', 'month']) {
+      expect(h.energy(at(2026, 10, 1), at(2026, 11, 1), bucket).kwh).toBeCloseTo(1);
+    }
+    const hourly = h.energy(at(2026, 10, 1), at(2026, 10, 2), 'hour');
+    expect(hourly.kwh).toBeCloseTo(0.6);
+  });
+
   test('counter reset counts as 0, devices sorted by consumption, months grouped', () => {
     h.record([{ series: 'a|energy', value: 5000 }], at(2026, 1, 10, 12));
     h.record([{ series: 'a|energy', value: 100 }], at(2026, 1, 11, 12));   // reset
@@ -143,7 +157,7 @@ describe('energy', () => {
     expect(e.cost).toBeCloseTo(1 * 0.3 + 2 * 0.5);
     expect(e.priced).toBe(true);
     const early = h.energy(at(2026, 9, 30), at(2026, 10, 3), 'day');
-    expect(early.priced).toBe(true); // first day has no prior reading → 0 kWh, so nothing unpriced
+    expect(early.priced).toBe(true); // first day has a single reading → 0 kWh, so nothing unpriced
     h.record([{ series: 'p|energy', value: 0 }], at(2026, 9, 29, 12));
     h.record([{ series: 'p|energy', value: 500 }], at(2026, 9, 30, 13));
     expect(h.energy(at(2026, 9, 30), at(2026, 10, 3), 'day').priced).toBe(false);

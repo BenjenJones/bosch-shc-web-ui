@@ -1200,7 +1200,17 @@
     "@type": "DeviceServiceData",
     "id": "TerminalConfiguration",
     "deviceId": "hdm:ZigBee:90a5f7b696ca5616",
-    "path": "/devices/hdm:ZigBee:90a5f7b696ca5616/services/TerminalConfiguration"
+    "path": "/devices/hdm:ZigBee:90a5f7b696ca5616/services/TerminalConfiguration",
+    "state": {
+      "@type": "terminalConfigurationState",
+      "type": "FLOOR_SENSOR_CONNECTED",
+      "supportedTypes": [
+        "NOT_CONNECTED",
+        "FLOOR_SENSOR_CONNECTED",
+        "FLOOR_SENSOR_USED_FOR_REGULATION"
+      ],
+      "temperature": 25.4
+    }
   },
   {
     "@type": "DeviceServiceData",
