@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-20
+
+- (Energy) Fix: the first day of energy logging was missing from the *Week*, *Month* and *Year* views (bar and total) — without an earlier reading it counted as 0. The first bucket now counts from its own first reading.
+- (Devices) Signal quality is the result of the last connection test, not a live value — mains-powered devices (e.g. `PLUG_COMPACT`, `MICROMODULE_RELAY`) stay *unknown* until one runs. Clicking the signal icon on a device card, or *Test* in *Health → Signal quality*, now starts a test like the app's signal strength test; battery devices answer when they next wake up.
+- (Devices) Room Thermostat II: the temperature of an external sensor wired to its terminals (floor/outdoor sensor, `TerminalConfiguration`) is shown on the card and recorded in the history (*Ext. sensor* tab).
+
 ## 2026-10-17
 
 - (Auth) Login can now be turned on later from the UI under *Admin → Login* (create the admin, you stay logged in) and turned off again with your password. Previously this needed `npm run setup:auth` on the console, which isn't available in Docker or the Home Assistant add-on. Turning it off keeps `auth.json`, so the users come back when it's turned on again.
