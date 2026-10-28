@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 (2026-10-28)
+
+- (HA) switch from admin panel, to normal dashboard
+
 ## 0.2.0 (2026-10-20)
 
 - (Dashboards) Custom dashboards: admins (everyone when login is off) build their own pages from widgets — device, scenario button, room, history chart, energy, health, messages, alarm system, clock, text, all shutters and a divider (optionally with a section title) — placed and resized freely on a grid by drag & drop. Each dashboard gets its own tab with its own name; *+* in the tab bar adds one. Stored on the server (`dashboards.json` in the data folder), so all devices see the same dashboards.
