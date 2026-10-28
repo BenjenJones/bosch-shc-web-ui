@@ -5,7 +5,7 @@
 # The image tag used is this `version`, so it must match a published image
 # (push a git tag like v0.0.1 to build & publish ghcr.io/.../bosch-shc-web-ui:0.0.1).
 name: Bosch SHC Web UI
-version: "0.2.0"
+version: "0.2.1"
 slug: bosch_shc_web_ui
 description: Lokale Web-UI für den Bosch Smart Home Controller (SHC)
 url: https://github.com/BenjenJones/bosch-shc-web-ui
@@ -26,6 +26,9 @@ ingress: true
 ingress_port: 3000
 panel_icon: mdi:shield-home
 panel_title: Bosch SHC
+# Show the sidebar panel to all HA users, not just admins (default is
+# admin-only).
+panel_admin: false
 # Direct access on port 3000 stays available (standalone / other devices);
 # clear the host port in the add-on's Network settings to turn it off.
 ports:
